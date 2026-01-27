@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Street Vendor Tracker Demo</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .topbar {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    button { margin: 4px 0; padding: 6px 10px; }
+  </style>
+</head>
+
+<body>
+<div id="map"></div>
+
+<div class="topbar">
+  <div id="role"></div>
+  <div id="status">Not sharing location</div>
+  <div id="controls"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+/* ---------- BASIC SETUP ---------- */
+const params = new URLSearchParams(location.search);
+const role = params.get('role') || 'customer';
+const socket = io();
+
+document.getElementById('role').innerText = 'Role: ' + role;
+
+const map = L.map('map').setView([-6.2, 106.8166], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+const vendorMarkers = new Map();
+
+/* ---------- VENDOR MODE ---------- */
+if (role === 'vendor') {
+
+  const vendorId = params.get('vendorId') || ('vendor_' + Math.random().toString(36).slice(2,8));
+  let watchId = null;
+  let myMarker = null;
+
+  document.getElementById('controls').innerHTML = `
+    <strong>Vendor ID:</strong> ${vendorId}<br>
+    <button id="startBtn">Start sharing location</button><br>
+    <button id="stopBtn">Stop sharing location</button>
+  `;
+
+  socket.emit('registerVendor', {
+    vendorId,
+    meta: { name: 'Gerobak ' + vendorId.slice(-3) }
+  });
+
+  /* START SHARING */
+  document.getElementById('startBtn').onclick = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported');
+      return;
+    }
+
+    if (watchId !== null) return; // already running
+
+    watchId = navigator.geolocation.watchPosition(
+      pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        document.getElementById('status').innerText =
+          'Sharing: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+
+        socket.emit('vendorLocationUpdate', { vendorId, lat, lng });
+
+        if (!myMarker) {
+          myMarker = L.marker([lat, lng]).addTo(map).bindPopup('My gerobak');
+          map.setView([lat, lng], 16);
+        } else {
+          myMarker.setLatLng([lat, lng]);
+        }
+      },
+      err => console.error(err),
+      { enableHighAccuracy: true }
+    );
+  };
+
+  /* STOP SHARING */
+  document.getElementById('stopBtn').onclick = () => {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+
+    document.getElementById('status').innerText = 'Stopped sharing location';
+
+    socket.emit('vendorStop', { vendorId });
+
+    if (myMarker) {
+      map.removeLayer(myMarker);
+      myMarker = null;
+    }
+  };
+}
+
+/* ---------- CUSTOMER MODE ---------- */
+else {
+
+  let myLat = null;
+  let myLng = null;
+  let myMarker = null; // reusable marker for customer
+
+  document.getElementById('controls').innerHTML = `
+    <button id="shareMe">Share my location</button>
+  `;
+
+  document.getElementById('shareMe').onclick = () => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      myLat = pos.coords.latitude;
+      myLng = pos.coords.longitude;
+
+      document.getElementById('status').innerText =
+        'You: ' + myLat.toFixed(5) + ', ' + myLng.toFixed(5);
+
+     // L.marker([myLat, myLng]).addTo(map).bindPopup('You');
+
+/* icon slay */
+if (!myMarker) {
+  myMarker = L.circleMarker([myLat, myLng], {
+    radius: 8,
+    color: '#007AFF',
+    fillColor: '#007AFF',
+    fillOpacity: 0.9
+  }).addTo(map).bindPopup('You (Customer)');
+} else {
+  myMarker.setLatLng([myLat, myLng]);
+}
+/* icon slay */
+
+      map.setView([myLat, myLng], 16);
+    });
+  };
+
+  socket.on('vendorPosition', data => {
+    let m = vendorMarkers.get(data.vendorId);
+
+    if (!m) {
+      m = L.marker([data.lat, data.lng])
+        .addTo(map)
+        .bindPopup(data.meta?.name || data.vendorId);
+
+      vendorMarkers.set(data.vendorId, m);
+    } else {
+      m.setLatLng([data.lat, data.lng]);
+    }
+  });
+
+  socket.on('vendorGone', data => {
+    const m = vendorMarkers.get(data.vendorId);
+    if (m) {
+      map.removeLayer(m);
+      vendorMarkers.delete(data.vendorId);
+    }
+  });
+}
+</script>
+</body>
+</html>
