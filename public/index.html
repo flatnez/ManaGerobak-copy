@@ -87,6 +87,30 @@
     });
 
     /* ===============================
+       iPHONE LOCATION ERROR HANDLER
+    =============================== */
+
+    function requestLocationErrorHandler(err) {
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (isIOS) {
+        alert(
+          "Location could not be accessed.\n\n" +
+          "To enable location on iPhone:\n\n" +
+          "1. Open the Settings app\n" +
+          "2. Go to Privacy & Security\n" +
+          "3. Tap Location Services\n" +
+          "4. Make sure Location Services is ON\n" +
+          "5. Scroll down and tap Safari\n" +
+          "6. Set location access to “While Using the App”\n\n" +
+          "Then return to this page and try again."
+        );
+      } else {
+        alert("Location error: " + err.message);
+      }
+    }
+
+    /* ===============================
        VENDOR MODE
     =============================== */
 
@@ -135,7 +159,7 @@
             }
           },
           err => {
-            alert("Location error: " + err.message);
+            requestLocationErrorHandler(err); // <-- iPhone safe handler
           },
           { enableHighAccuracy: true }
         );
@@ -200,7 +224,7 @@
             map.setView([latitude, longitude], 16);
           },
           err => {
-            alert("Location error: " + err.message);
+            requestLocationErrorHandler(err); // <-- iPhone safe handler
           }
         );
       };
