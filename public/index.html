@@ -124,11 +124,11 @@
             if (!myMarker) {
               myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
                 .addTo(map)
-                .bindPopup(`${vendorId} (you)`);
+                .bindPopup(`${vendorId} (You)`);
               map.setView([latitude, longitude], 16);
             } else {
               myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent(`${vendorId} (you)`);
+                      .setPopupContent(`${vendorId} (You)`);
             }
           },
           err => {
@@ -162,23 +162,39 @@
     }
 
     /* ===============================
-       CUSTOMER MODE - auto share location
+       CUSTOMER MODE
     =============================== */
     else {
-      document.getElementById("controls").innerHTML = ``; // no button
+      const controlsDiv = document.getElementById("controls");
+      const statusDiv = document.getElementById("status");
 
-      if (navigator.geolocation) {
+      // Show "See My Location" button
+      const btn = document.createElement("button");
+      btn.textContent = "See My Location";
+      btn.onclick = shareLocation;
+      controlsDiv.appendChild(btn);
+
+      function shareLocation() {
+        if (!navigator.geolocation) {
+          alert("Geolocation not supported");
+          return;
+        }
+
         navigator.geolocation.getCurrentPosition(
           pos => {
             const { latitude, longitude } = pos.coords;
-            document.getElementById("status").innerText = "You";
+            statusDiv.innerText = "You";
 
-            myMarker = L.circleMarker([latitude, longitude], {
-              radius: 8,
-              color: "#007AFF",
-              fillColor: "#007AFF",
-              fillOpacity: 0.9
-            }).addTo(map).bindPopup("You");
+            if (!myMarker) {
+              myMarker = L.circleMarker([latitude, longitude], {
+                radius: 8,
+                color: "#007AFF",
+                fillColor: "#007AFF",
+                fillOpacity: 0.9
+              }).addTo(map).bindPopup("You");
+            } else {
+              myMarker.setLatLng([latitude, longitude]);
+            }
 
             map.setView([latitude, longitude], 16);
           },
