@@ -48,13 +48,9 @@
   <script src="/socket.io/socket.io.js"></script>
 
   <script>
-    /* ===============================
-       BASIC SETUP
-    =============================== */
-
     const params = new URLSearchParams(window.location.search);
     const role = params.get("role") || "customer";
-    let vendorId = params.get("vendorId"); // we will ask if not present
+    let vendorId = params.get("vendorId"); // ask if not provided
     const socket = io();
 
     document.getElementById("role").innerText = "Role: " + role;
@@ -79,7 +75,7 @@
     =============================== */
     if (role === "vendor") {
 
-      // Prompt vendor to enter their Vendor ID first
+      // Prompt for Vendor ID if not in URL
       if (!vendorId) {
         vendorId = prompt("Enter your Vendor ID:", "gerobak1");
         if (!vendorId || vendorId.trim() === "") {
@@ -87,33 +83,16 @@
         }
       }
 
-      // Default Gerobak name is the Vendor ID
-      let gerobakName = vendorId;
-
       document.getElementById("controls").innerHTML = `
         <div><strong>ID:</strong> ${vendorId}</div>
-        <div><strong>Name:</strong> <span id="gerobakNameDisplay">${gerobakName}</span> 
-          <button id="changeNameBtn">Change</button>
-        </div>
         <button id="start">Start sharing</button>
         <button id="stop">Stop sharing</button>
       `;
 
       socket.emit("registerVendor", {
         vendorId,
-        meta: { name: gerobakName }
+        meta: { name: vendorId }
       });
-
-      // Change Gerobak name
-      document.getElementById("changeNameBtn").onclick = () => {
-        const newName = prompt("Enter new Gerobak name:", gerobakName);
-        if (newName && newName.trim() !== "") {
-          gerobakName = newName.trim();
-          document.getElementById("gerobakNameDisplay").innerText = gerobakName;
-          socket.emit("updateVendorName", { vendorId, name: gerobakName });
-          if (myMarker) myMarker.setPopupContent(gerobakName);
-        }
-      };
 
       // Start sharing location
       document.getElementById("start").onclick = () => {
@@ -131,18 +110,17 @@
             socket.emit("vendorLocationUpdate", {
               vendorId,
               lat: latitude,
-              lng: longitude,
-              name: gerobakName
+              lng: longitude
             });
 
             if (!myMarker) {
               myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
                 .addTo(map)
-                .bindPopup(gerobakName);
+                .bindPopup(vendorId);
               map.setView([latitude, longitude], 16);
             } else {
               myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent(gerobakName);
+                      .setPopupContent(vendorId);
             }
           },
           err => {
@@ -210,11 +188,11 @@
         if (!marker) {
           marker = L.marker([data.lat, data.lng], { icon: vendorIcon })
             .addTo(map)
-            .bindPopup(data.name || data.vendorId);
+            .bindPopup(data.vendorId);
           vendorMarkers.set(data.vendorId, marker);
         } else {
           marker.setLatLng([data.lat, data.lng])
-                .setPopupContent(data.name || data.vendorId);
+                .setPopupContent(data.vendorId);
         }
       });
 
