@@ -11,7 +11,10 @@
   />
 
   <style>
-    html, body, #map { height: 100%; margin: 0; }
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
 
     .topbar {
       position: absolute;
@@ -24,14 +27,11 @@
       font-size: 14px;
     }
 
-    button, input {
+    button {
       margin-top: 6px;
       padding: 6px 10px;
       width: 100%;
-      box-sizing: border-box;
     }
-
-    input { margin-bottom: 4px; }
   </style>
 </head>
 
@@ -48,145 +48,179 @@
   <script src="/socket.io/socket.io.js"></script>
 
   <script>
-    // ===============================
-    // iOS Browser Detection + Help Popup
-    // ===============================
-    function detectBrowser() {
-      const ua = navigator.userAgent;
-      if (/GSA/i.test(ua)) return "google_app";
-      if (/CriOS/i.test(ua)) return "chrome_ios";
-      if (/FxiOS/i.test(ua)) return "firefox_ios";
-      if (/EdgiOS/i.test(ua)) return "edge_ios";
-      if (/OPiOS/i.test(ua)) return "opera_ios";
-      if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
-      if (/Brave/i.test(ua)) return "brave_ios";
-      if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
-      return "other";
-    }
+    /* ===============================
+       BASIC SETUP
+    =============================== */
 
-    function showiOSLocationHelp() {
-      const browser = detectBrowser();
-      let message = "";
-      switch (browser) {
-        case "safari":
-          message = `Location could not be accessed.\n\nTo enable location on iPhone:\n1. Open Settings\n2. Tap Privacy & Security → Location Services\n3. Scroll down and tap Safari Websites\n4. Choose "While Using the App"\n\nThen return to this page and try again.`; break;
-        case "chrome_ios":
-          message = `Location could not be accessed.\n\nTo enable location on iPhone:\n1. Open Settings\n2. Tap Privacy & Security → Location Services\n3. Scroll down and tap Chrome\n4. Choose "While Using the App"\n\nThen return to this page and try again.`; break;
-        case "google_app":
-          message = `Location could not be accessed.\n\nTo enable location on iPhone:\n1. Open Settings\n2. Tap Privacy & Security → Location Services\n3. Scroll down and tap Google\n4. Choose "While Using the App"\n\nThen return to this page and try again.`; break;
-        default:
-          message = `Location could not be accessed.\n\nTo enable location on iPhone:\n1. Open Settings\n2. Tap Privacy & Security → Location Services\n3. Find your browser in the list\n4. Set Location to "While Using the App"\n\nThen return to this page and try again.`;
-      }
-      alert(message);
-    }
-
-    // ===============================
-    // BASIC SETUP
-    // ===============================
     const params = new URLSearchParams(window.location.search);
     const role = params.get("role") || "customer";
-    const vendorId = params.get("vendorId") || "vendor_" + Math.random().toString(36).slice(2,8);
-    let vendorName = "Gerobak " + vendorId.slice(-3);
+    const vendorId =
+      params.get("vendorId") ||
+      "vendor_" + Math.random().toString(36).slice(2, 8);
 
     const socket = io();
     document.getElementById("role").innerText = "Role: " + role;
 
     const map = L.map("map").setView([-6.2, 106.8166], 13);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
 
     let watchId = null;
     let myMarker = null;
     const vendorMarkers = new Map();
 
-    const vendorIcon = L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png", iconSize:[32,32], iconAnchor:[16,32] });
+    const vendorIcon = L.icon({
+      iconUrl: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    });
 
-    // ===============================
-    // VENDOR MODE
-    // ===============================
-    if(role==="vendor"){
+    /* ===============================
+       VENDOR MODE
+    =============================== */
+    if (role === "vendor") {
+
+      // Prompt vendor to enter their Gerobak name first
+      let gerobakName = prompt("Enter your Gerobak name:", "Gerobak " + vendorId.slice(-3));
+      if (!gerobakName || gerobakName.trim() === "") {
+        gerobakName = "Gerobak " + vendorId.slice(-3);
+      }
+
       document.getElementById("controls").innerHTML = `
         <div><strong>ID:</strong> ${vendorId}</div>
-        <input type="text" id="vendorNameInput" value="${vendorName}" placeholder="Enter Gerobak name" />
-        <button id="updateName">Update Name</button>
+        <div><strong>Name:</strong> <span id="gerobakNameDisplay">${gerobakName}</span> 
+          <button id="changeNameBtn">Change</button>
+        </div>
         <button id="start">Start sharing</button>
         <button id="stop">Stop sharing</button>
       `;
 
-      socket.emit("registerVendor",{ vendorId, meta:{ name: vendorName } });
+      socket.emit("registerVendor", {
+        vendorId,
+        meta: { name: gerobakName }
+      });
 
-      document.getElementById("updateName").onclick = ()=>{
-        const inputName = document.getElementById("vendorNameInput").value.trim();
-        if(inputName){
-          vendorName = inputName;
-          if(myMarker){ myMarker.bindPopup(vendorName); }
-          socket.emit("updateVendorName", { vendorId, name: vendorName });
+      // Change Gerobak name
+      document.getElementById("changeNameBtn").onclick = () => {
+        const newName = prompt("Enter new Gerobak name:", gerobakName);
+        if (newName && newName.trim() !== "") {
+          gerobakName = newName.trim();
+          document.getElementById("gerobakNameDisplay").innerText = gerobakName;
+          socket.emit("updateVendorName", { vendorId, name: gerobakName });
         }
       };
 
-      document.getElementById("start").onclick = ()=>{
-        if(!navigator.geolocation){ alert("Geolocation not supported"); return; }
-        if(watchId!==null) return;
+      // Start sharing location
+      document.getElementById("start").onclick = () => {
+        if (!navigator.geolocation) {
+          alert("Geolocation not supported");
+          return;
+        }
+        if (watchId !== null) return;
 
         watchId = navigator.geolocation.watchPosition(
-          pos=>{
+          pos => {
             const { latitude, longitude } = pos.coords;
             document.getElementById("status").innerText = "Sharing location";
 
-            socket.emit("vendorLocationUpdate",{ vendorId, lat:latitude, lng:longitude, name: vendorName });
+            socket.emit("vendorLocationUpdate", {
+              vendorId,
+              lat: latitude,
+              lng: longitude,
+              name: gerobakName
+            });
 
-            if(!myMarker){
-              myMarker = L.marker([latitude,longitude],{icon:vendorIcon}).addTo(map).bindPopup(vendorName);
-              map.setView([latitude,longitude],16);
-            } else { myMarker.setLatLng([latitude,longitude]); }
+            if (!myMarker) {
+              myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
+                .addTo(map)
+                .bindPopup(gerobakName);
+              map.setView([latitude, longitude], 16);
+            } else {
+              myMarker.setLatLng([latitude, longitude])
+                      .setPopupContent(gerobakName);
+            }
           },
-          err=>{ showiOSLocationHelp(); },
-          { enableHighAccuracy:true }
+          err => {
+            alert("Location error: " + err.message);
+          },
+          { enableHighAccuracy: true }
         );
       };
 
-      document.getElementById("stop").onclick = ()=>{
-        if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
-        document.getElementById("status").innerText="Stopped sharing";
-        socket.emit("vendorStop",{vendorId});
-        if(myMarker){ map.removeLayer(myMarker); myMarker=null; }
+      // Stop sharing location
+      document.getElementById("stop").onclick = () => {
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
+        document.getElementById("status").innerText = "Stopped sharing";
+        socket.emit("vendorStop", { vendorId });
+        if (myMarker) {
+          map.removeLayer(myMarker);
+          myMarker = null;
+        }
       };
     }
 
-    // ===============================
-    // CUSTOMER MODE
-    // ===============================
-    else{
-      document.getElementById("controls").innerHTML = `<button id="share">Share my location</button>`;
+    /* ===============================
+       CUSTOMER MODE
+    =============================== */
+    else {
+      document.getElementById("controls").innerHTML = `
+        <button id="share">Share my location</button>
+      `;
 
-      document.getElementById("share").onclick = ()=>{
-        if(!navigator.geolocation){ alert("Geolocation not supported"); return; }
+      document.getElementById("share").onclick = () => {
+        if (!navigator.geolocation) {
+          alert("Geolocation not supported");
+          return;
+        }
+
         navigator.geolocation.getCurrentPosition(
-          pos=>{
+          pos => {
             const { latitude, longitude } = pos.coords;
             document.getElementById("status").innerText = "You are here";
-            if(!myMarker){
-              myMarker = L.circleMarker([latitude,longitude],{ radius:8, color:"#007AFF", fillColor:"#007AFF", fillOpacity:0.9 }).addTo(map).bindPopup("You (Customer)");
-            } else { myMarker.setLatLng([latitude,longitude]); }
-            map.setView([latitude,longitude],16);
+
+            if (!myMarker) {
+              myMarker = L.circleMarker([latitude, longitude], {
+                radius: 8,
+                color: "#007AFF",
+                fillColor: "#007AFF",
+                fillOpacity: 0.9
+              }).addTo(map).bindPopup("You (Customer)");
+            } else {
+              myMarker.setLatLng([latitude, longitude]);
+            }
+
+            map.setView([latitude, longitude], 16);
           },
-          err=>{ showiOSLocationHelp(); }
+          err => {
+            alert("Location error: " + err.message);
+          }
         );
       };
 
-      socket.on("vendorPosition",data=>{
+      // Vendor updates on customer map
+      socket.on("vendorPosition", data => {
         let marker = vendorMarkers.get(data.vendorId);
-        if(!marker){
-          marker = L.marker([data.lat,data.lng],{icon:vendorIcon}).addTo(map).bindPopup(data.name || data.vendorId);
-          vendorMarkers.set(data.vendorId,marker);
+        if (!marker) {
+          marker = L.marker([data.lat, data.lng], { icon: vendorIcon })
+            .addTo(map)
+            .bindPopup(data.name || data.vendorId);
+          vendorMarkers.set(data.vendorId, marker);
         } else {
-          marker.setLatLng([data.lat,data.lng]);
-          marker.bindPopup(data.name || data.vendorId);
+          marker.setLatLng([data.lat, data.lng])
+                .setPopupContent(data.name || data.vendorId);
         }
       });
 
-      socket.on("vendorGone",data=>{
+      socket.on("vendorGone", data => {
         const marker = vendorMarkers.get(data.vendorId);
-        if(marker){ map.removeLayer(marker); vendorMarkers.delete(data.vendorId); }
+        if (marker) {
+          map.removeLayer(marker);
+          vendorMarkers.delete(data.vendorId);
+        }
       });
     }
   </script>
