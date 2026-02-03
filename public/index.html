@@ -70,9 +70,6 @@
       iconAnchor: [16, 32]
     });
 
-    /* ===============================
-       VENDOR MODE
-    =============================== */
     if (role === "vendor") {
       if (!vendorId) {
         vendorId = prompt("Enter your Vendor ID:", "gerobak1");
@@ -124,11 +121,11 @@
             if (!myMarker) {
               myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
                 .addTo(map)
-                .bindPopup(`${vendorId} (You)`);
+                .bindPopup(`${vendorId} (you)`);
               map.setView([latitude, longitude], 16);
             } else {
               myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent(`${vendorId} (You)`);
+                      .setPopupContent(`${vendorId} (you)`);
             }
           },
           err => {
@@ -137,7 +134,7 @@
           { enableHighAccuracy: true }
         );
 
-        updateButton(); // change to Stop Sharing Location
+        updateButton();
       }
 
       function stopSharing() {
@@ -154,21 +151,16 @@
           myMarker = null;
         }
 
-        updateButton(); // change to Start Sharing Location
+        updateButton();
       }
 
-      // Initial button
       updateButton();
     }
 
-    /* ===============================
-       CUSTOMER MODE
-    =============================== */
     else {
       const controlsDiv = document.getElementById("controls");
       const statusDiv = document.getElementById("status");
 
-      // Show "See My Location" button
       const btn = document.createElement("button");
       btn.textContent = "See My Location";
       btn.onclick = shareLocation;
@@ -191,9 +183,10 @@
                 color: "#007AFF",
                 fillColor: "#007AFF",
                 fillOpacity: 0.9
-              }).addTo(map).bindPopup("You");
+              }).addTo(map).bindPopup('<div style="text-align:center">You</div>');
             } else {
-              myMarker.setLatLng([latitude, longitude]);
+              myMarker.setLatLng([latitude, longitude])
+                      .setPopupContent('<div style="text-align:center">You</div>');
             }
 
             map.setView([latitude, longitude], 16);
