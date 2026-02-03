@@ -50,7 +50,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const role = params.get("role") || "customer";
-    let vendorId = params.get("vendorId"); // ask if not provided
+    let vendorId = params.get("vendorId");
     const socket = io();
 
     document.getElementById("role").innerText = "Role: " + role;
@@ -74,8 +74,6 @@
        VENDOR MODE
     =============================== */
     if (role === "vendor") {
-
-      // Prompt for Vendor ID if not in URL
       if (!vendorId) {
         vendorId = prompt("Enter your Vendor ID:", "gerobak1");
         if (!vendorId || vendorId.trim() === "") {
@@ -83,29 +81,39 @@
         }
       }
 
-      document.getElementById("controls").innerHTML = `
-        <div><strong>ID:</strong> ${vendorId}</div>
-        <button id="start">Start sharing</button>
-        <button id="stop">Stop sharing</button>
-      `;
+      const controlsDiv = document.getElementById("controls");
+      const statusDiv = document.getElementById("status");
+
+      function updateButton() {
+        controlsDiv.innerHTML = "";
+        const btn = document.createElement("button");
+        if (watchId === null) {
+          btn.textContent = "Start Sharing Location";
+          btn.onclick = startSharing;
+        } else {
+          btn.textContent = "Stop Sharing Location";
+          btn.onclick = stopSharing;
+        }
+        controlsDiv.appendChild(btn);
+      }
 
       socket.emit("registerVendor", {
         vendorId,
         meta: { name: vendorId }
       });
 
-      // Start sharing location
-      document.getElementById("start").onclick = () => {
+      function startSharing() {
         if (!navigator.geolocation) {
           alert("Geolocation not supported");
           return;
         }
+
         if (watchId !== null) return;
 
         watchId = navigator.geolocation.watchPosition(
           pos => {
             const { latitude, longitude } = pos.coords;
-            document.getElementById("status").innerText = "Sharing location";
+            statusDiv.innerText = "Sharing location";
 
             socket.emit("vendorLocationUpdate", {
               vendorId,
@@ -116,11 +124,11 @@
             if (!myMarker) {
               myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
                 .addTo(map)
-                .bindPopup(vendorId);
+                .bindPopup(`${vendorId} (you)`);
               map.setView([latitude, longitude], 16);
             } else {
               myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent(vendorId);
+                      .setPopupContent(`${vendorId} (you)`);
             }
           },
           err => {
@@ -128,52 +136,49 @@
           },
           { enableHighAccuracy: true }
         );
-      };
 
-      // Stop sharing location
-      document.getElementById("stop").onclick = () => {
+        updateButton(); // change to Stop Sharing Location
+      }
+
+      function stopSharing() {
         if (watchId !== null) {
           navigator.geolocation.clearWatch(watchId);
           watchId = null;
         }
-        document.getElementById("status").innerText = "Stopped sharing";
+
+        statusDiv.innerText = "Stopped sharing";
         socket.emit("vendorStop", { vendorId });
+
         if (myMarker) {
           map.removeLayer(myMarker);
           myMarker = null;
         }
-      };
+
+        updateButton(); // change to Start Sharing Location
+      }
+
+      // Initial button
+      updateButton();
     }
 
     /* ===============================
-       CUSTOMER MODE
+       CUSTOMER MODE - auto share location
     =============================== */
     else {
-      document.getElementById("controls").innerHTML = `
-        <button id="share">Share my location</button>
-      `;
+      document.getElementById("controls").innerHTML = ``; // no button
 
-      document.getElementById("share").onclick = () => {
-        if (!navigator.geolocation) {
-          alert("Geolocation not supported");
-          return;
-        }
-
+      if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           pos => {
             const { latitude, longitude } = pos.coords;
-            document.getElementById("status").innerText = "You are here";
+            document.getElementById("status").innerText = "You";
 
-            if (!myMarker) {
-              myMarker = L.circleMarker([latitude, longitude], {
-                radius: 8,
-                color: "#007AFF",
-                fillColor: "#007AFF",
-                fillOpacity: 0.9
-              }).addTo(map).bindPopup("You (Customer)");
-            } else {
-              myMarker.setLatLng([latitude, longitude]);
-            }
+            myMarker = L.circleMarker([latitude, longitude], {
+              radius: 8,
+              color: "#007AFF",
+              fillColor: "#007AFF",
+              fillOpacity: 0.9
+            }).addTo(map).bindPopup("You");
 
             map.setView([latitude, longitude], 16);
           },
@@ -181,7 +186,7 @@
             alert("Location error: " + err.message);
           }
         );
-      };
+      }
 
       socket.on("vendorPosition", data => {
         let marker = vendorMarkers.get(data.vendorId);
