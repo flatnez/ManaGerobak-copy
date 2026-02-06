@@ -1,94 +1,61 @@
-const express = require("express");
-const http = require("http");
-const socketIO = require("socket.io");
-const path = require("path");
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, "public")));
 
-const activeVendors = new Map(); 
-// Structure:
-// vendorId → { lat, lng, meta, socketId }
+app.use(express.static(path.join(__dirname, 'public')));
 
-io.on("connection", socket => {
-  console.log("Client connected:", socket.id);
 
-  /* -----------------------------
-     Register Vendor
-  ----------------------------- */
-  socket.on("registerVendor", data => {
-    activeVendors.set(data.vendorId, {
-      lat: null,
-      lng: null,
-      meta: data.meta || {},
-      socketId: socket.id
-    });
+const vendors = new Map();
 
-    console.log("Vendor registered:", data.vendorId);
-  });
 
-  /* -----------------------------
-     Vendor Updates Location
-  ----------------------------- */
-  socket.on("vendorLocationUpdate", data => {
-    if (activeVendors.has(data.vendorId)) {
-      activeVendors.get(data.vendorId).lat = data.lat;
-      activeVendors.get(data.vendorId).lng = data.lng;
-    }
+io.on('connection', (socket) => {
+console.log('socket connected', socket.id);
 
-    io.emit("vendorPosition", {
-      vendorId: data.vendorId,
-      lat: data.lat,
-      lng: data.lng,
-      meta: activeVendors.get(data.vendorId)?.meta || {}
-    });
-  });
 
-  /* -----------------------------
-     Vendor Stops Sharing
-  ----------------------------- */
-  socket.on("vendorStop", data => {
-    activeVendors.delete(data.vendorId);
-
-    io.emit("vendorGone", {
-      vendorId: data.vendorId
-    });
-  });
-
-  /* -----------------------------
-     When ANY client connects,
-     send all active vendors
-  ----------------------------- */
-  socket.emit("initialVendorList",
-    Array.from(activeVendors.entries()).map(([vendorId, info]) => ({
-      vendorId,
-      lat: info.lat,
-      lng: info.lng,
-      meta: info.meta
-    }))
-  );
-
-  /* -----------------------------
-     Handle Disconnect
-  ----------------------------- */
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-
-    for (const [vendorId, info] of activeVendors.entries()) {
-      if (info.socketId === socket.id) {
-        activeVendors.delete(vendorId);
-
-        io.emit("vendorGone", {
-          vendorId: vendorId
-        });
-      }
-    }
-  });
+socket.on('registerVendor', (data) => {
+vendors.set(data.vendorId, { socketId: socket.id, lat: null, lng: null, meta: data.meta || {} });
+console.log('vendor registered', data.vendorId);
 });
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log("Server running");
+
+socket.on('vendorLocationUpdate', (data) => {
+const v = vendors.get(data.vendorId);
+if (v) {
+v.lat = data.lat;
+v.lng = data.lng;
+io.emit('vendorPosition', { vendorId: data.vendorId, lat: data.lat, lng: data.lng, meta: v.meta });
+}
 });
+
+
+socket.on('callVendor', (data) => {
+const v = vendors.get(data.vendorId);
+if (v) {
+io.to(v.socketId).emit('incomingCall', { customerId: data.customerId, customerLat: data.customerLat, customerLng: data.customerLng });
+} else {
+socket.emit('callFailed', { reason: 'vendor_offline' });
+}
+});
+
+
+socket.on('disconnect', () => {
+for (const [vendorId, info] of vendors.entries()) {
+if (info.socketId === socket.id) {
+vendors.delete(vendorId);
+io.emit('vendorGone', { vendorId });
+console.log('vendor disconnected', vendorId);
+}
+}
+});
+});
+
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log('Server listening on', PORT));
