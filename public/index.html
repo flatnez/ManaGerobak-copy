@@ -1,223 +1,268 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gerobak Tracker</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerobak Map App</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
 
-  <style>
-    html, body, #map {
-      height: 100%;
-      margin: 0;
-    }
+        #map {
+            width: 100vw;
+            height: 100vh;
+        }
 
-    .topbar {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 14px;
-    }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
 
-    button {
-      margin-top: 6px;
-      padding: 6px 10px;
-      width: 100%;
-    }
-  </style>
+        #vendorIdInput {
+            width: 140px;
+            padding: 5px;
+        }
+
+        .label {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            text-align: center;
+            transform: translate(-50%, -25px);
+            font-size: 12px;
+        }
+    </style>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
 </head>
-
 <body>
-  <div id="map"></div>
 
-  <div class="topbar">
-    <div id="role"></div>
-    <div id="status">Not sharing</div>
-    <div id="controls"></div>
-  </div>
+<div id="controls"></div>
+<div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
+<script>
+// ---------------------------------------------------
+// CONFIG
+// ---------------------------------------------------
+const API_BASE = "https://mygerobak-production.up.railway.app";
+let map, userMarker, vendorMarker, watchId;
+let sharing = false;
+let role, vendorId;
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const role = params.get("role") || "customer";
-    let vendorId = params.get("vendorId");
-    const socket = io();
 
-    document.getElementById("role").innerText = "Role: " + role;
-
-    const map = L.map("map").setView([-6.2, 106.8166], 13);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap"
-    }).addTo(map);
-
-    let watchId = null;
-    let myMarker = null;
-    const vendorMarkers = new Map();
-
-    const vendorIcon = L.icon({
-      iconUrl: "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
-      iconSize: [32, 32],
-      iconAnchor: [16, 32]
+// ---------------------------------------------------
+// INIT MAP
+// ---------------------------------------------------
+function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: -6.2, lng: 106.8 },
+        zoom: 13,
     });
 
+    determineRole();
+}
+
+// ---------------------------------------------------
+// ROLE HANDLING
+// ---------------------------------------------------
+function determineRole() {
+    const urlParams = new URLSearchParams(window.location.search);
+    role = urlParams.get("role");
+
     if (role === "vendor") {
-      if (!vendorId) {
-        vendorId = prompt("Enter your Vendor ID:", "gerobak1");
-        if (!vendorId || vendorId.trim() === "") {
-          vendorId = "vendor_" + Math.random().toString(36).slice(2, 8);
-        }
-      }
+        buildVendorUI();
+    } else {
+        role = "customer";
+        buildCustomerUI();
+    }
+}
 
-      const controlsDiv = document.getElementById("controls");
-      const statusDiv = document.getElementById("status");
+// ---------------------------------------------------
+// VENDOR UI
+// ---------------------------------------------------
+function buildVendorUI() {
+    const controls = document.getElementById("controls");
+    controls.innerHTML = `
+        <input id="vendorIdInput" placeholder="Enter Vendor ID" />
+        <button id="vendorContinueBtn">Continue</button>
+        <br><br>
+        <button id="toggleShareBtn" style="width:180px; display:none;"></button>
+    `;
 
-      function updateButton() {
-        controlsDiv.innerHTML = "";
-        const btn = document.createElement("button");
-        if (watchId === null) {
-          btn.textContent = "Start Sharing Location";
-          btn.onclick = startSharing;
-        } else {
-          btn.textContent = "Stop Sharing Location";
-          btn.onclick = stopSharing;
-        }
-        controlsDiv.appendChild(btn);
-      }
+    document.getElementById("vendorContinueBtn").onclick = () => {
+        vendorId = document.getElementById("vendorIdInput").value.trim();
+        if (!vendorId) { alert("Vendor ID required"); return; }
 
-      socket.emit("registerVendor", {
-        vendorId,
-        meta: { name: vendorId }
-      });
+        document.getElementById("vendorContinueBtn").style.display = "none";
+        document.getElementById("vendorIdInput").style.display = "none";
 
-      function startSharing() {
-        if (!navigator.geolocation) {
-          alert("Geolocation not supported");
-          return;
-        }
+        loadVendorButtonState();
+    };
+}
 
-        if (watchId !== null) return;
+// Fetch current vendor sharing state
+async function loadVendorButtonState() {
+    updateVendorButton();
+    document.getElementById("toggleShareBtn").style.display = "block";
+}
 
-        watchId = navigator.geolocation.watchPosition(
-          pos => {
-            const { latitude, longitude } = pos.coords;
-            statusDiv.innerText = "Sharing location";
+function updateVendorButton() {
+    const btn = document.getElementById("toggleShareBtn");
 
-            socket.emit("vendorLocationUpdate", {
-              vendorId,
-              lat: latitude,
-              lng: longitude
+    if (sharing) {
+        btn.textContent = "Stop sharing location";
+        btn.onclick = stopVendorSharing;
+    } else {
+        btn.textContent = "Start sharing location";
+        btn.onclick = startVendorSharing;
+    }
+}
+
+// START sharing
+function startVendorSharing() {
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
+    }
+
+    sharing = true;
+    updateVendorButton();
+
+    watchId = navigator.geolocation.watchPosition(
+        async pos => {
+            const data = {
+                vendorId,
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude
+            };
+
+            await fetch(`${API_BASE}/updateVendorLocation`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
             });
 
-            if (!myMarker) {
-              myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
-                .addTo(map)
-                .bindPopup(`${vendorId} (you)`);
-              map.setView([latitude, longitude], 16);
-            } else {
-              myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent(`${vendorId} (you)`);
-            }
-          },
-          err => {
-            alert("Location error: " + err.message);
-          },
-          { enableHighAccuracy: true }
-        );
+            placeVendorMarker(pos.coords.latitude, pos.coords.longitude, true);
+        },
+        err => alert("Location error: " + err.message),
+        { enableHighAccuracy: true }
+    );
+}
 
-        updateButton();
-      }
+// STOP sharing
+async function stopVendorSharing() {
+    sharing = false;
+    updateVendorButton();
 
-      function stopSharing() {
-        if (watchId !== null) {
-          navigator.geolocation.clearWatch(watchId);
-          watchId = null;
-        }
+    navigator.geolocation.clearWatch(watchId);
 
-        statusDiv.innerText = "Stopped sharing";
-        socket.emit("vendorStop", { vendorId });
+    await fetch(`${API_BASE}/stopVendor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorId })
+    });
 
-        if (myMarker) {
-          map.removeLayer(myMarker);
-          myMarker = null;
-        }
+    if (vendorMarker) vendorMarker.setMap(null);
+}
 
-        updateButton();
-      }
+// Place vendor marker
+function placeVendorMarker(lat, lng, isSelf = false) {
+    if (vendorMarker) vendorMarker.setMap(null);
 
-      updateButton();
+    vendorMarker = new google.maps.Marker({
+        position: { lat, lng },
+        map,
+    });
+
+    const label = new google.maps.InfoWindow({
+        content: `<div class="label">${vendorId}${isSelf ? " (you)" : ""}</div>`
+    });
+
+    vendorMarker.addListener("click", () => label.open(map, vendorMarker));
+}
+
+
+
+// ---------------------------------------------------
+// CUSTOMER UI
+// ---------------------------------------------------
+function buildCustomerUI() {
+    const controls = document.getElementById("controls");
+    controls.innerHTML = `
+        <button id="seeMyLocationBtn">See my location</button>
+    `;
+
+    document.getElementById("seeMyLocationBtn").onclick = shareCustomerLocation;
+
+    startVendorPolling();
+}
+
+// CUSTOMER location button
+function shareCustomerLocation() {
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
     }
 
-    else {
-      const controlsDiv = document.getElementById("controls");
-      const statusDiv = document.getElementById("status");
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            placeCustomerMarker(pos.coords.latitude, pos.coords.longitude);
+            map.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        err => alert("Location error: " + err.message),
+        { enableHighAccuracy: true }
+    );
+}
 
-      const btn = document.createElement("button");
-      btn.textContent = "See My Location";
-      btn.onclick = shareLocation;
-      controlsDiv.appendChild(btn);
+// Customer marker
+function placeCustomerMarker(lat, lng) {
+    if (userMarker) userMarker.setMap(null);
 
-      function shareLocation() {
-        if (!navigator.geolocation) {
-          alert("Geolocation not supported");
-          return;
-        }
+    userMarker = new google.maps.Marker({
+        position: { lat, lng },
+        map,
+    });
 
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            const { latitude, longitude } = pos.coords;
-            statusDiv.innerText = "You";
+    const label = new google.maps.InfoWindow({
+        content: `<div class="label" style="text-align:center;">You</div>`
+    });
 
-            if (!myMarker) {
-              myMarker = L.circleMarker([latitude, longitude], {
-                radius: 8,
-                color: "#007AFF",
-                fillColor: "#007AFF",
-                fillOpacity: 0.9
-              }).addTo(map).bindPopup('<div style="text-align:center">You</div>');
-            } else {
-              myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent('<div style="text-align:center">You</div>');
-            }
+    label.open(map, userMarker);
+}
 
-            map.setView([latitude, longitude], 16);
-          },
-          err => {
-            alert("Location error: " + err.message);
-          }
-        );
-      }
 
-      socket.on("vendorPosition", data => {
-        let marker = vendorMarkers.get(data.vendorId);
-        if (!marker) {
-          marker = L.marker([data.lat, data.lng], { icon: vendorIcon })
-            .addTo(map)
-            .bindPopup(data.vendorId);
-          vendorMarkers.set(data.vendorId, marker);
-        } else {
-          marker.setLatLng([data.lat, data.lng])
-                .setPopupContent(data.vendorId);
-        }
-      });
 
-      socket.on("vendorGone", data => {
-        const marker = vendorMarkers.get(data.vendorId);
-        if (marker) {
-          map.removeLayer(marker);
-          vendorMarkers.delete(data.vendorId);
-        }
-      });
-    }
-  </script>
+// ---------------------------------------------------
+// CUSTOMER FETCH VENDOR LOCATIONS
+// ---------------------------------------------------
+function startVendorPolling() {
+    setInterval(async () => {
+        const res = await fetch(`${API_BASE}/vendors`);
+        const vendors = await res.json();
+
+        vendors.forEach(v => {
+            placeVendorMarker(v.lat, v.lng, false);
+        });
+
+    }, 3000);
+}
+
+
+// ---------------------------------------------------
+window.onload = initMap;
+</script>
+
 </body>
 </html>
