@@ -1,15 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ManaGerobak</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<title>ManaGerobak?</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-html,body,#map { height: 100%; margin: 0; }
-.topbar { position:absolute; top:10px; left:10px; z-index:1000; background:white; padding:10px; border-radius:8px; font-size:14px; }
-.topbar input { width:100%; margin-top:4px; padding:4px; box-sizing:border-box; }
-button { margin-top:6px; padding:6px 10px; width:100%; }
+html, body, #map { height: 100%; margin: 0; }
+.topbar { position: absolute; top: 10px; left: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; font-size: 14px; }
+button { display: block; margin: 6px 0; padding: 6px 10px; width: 100%; }
 </style>
 </head>
 <body>
@@ -26,18 +25,13 @@ button { margin-top:6px; padding:6px 10px; width:100%; }
 <script>
 const params = new URLSearchParams(window.location.search);
 const role = params.get("role") || "customer";
-const vendorId = localStorage.getItem("gerobakId");
 const socket = io();
+const map = L.map("map").setView([-6.2, 106.8166], 13);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
 
-if(role==="vendor" && !vendorId) window.location.href="login.html";
-
-const map = L.map("map").setView([-6.2,106.8166],13);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap"}).addTo(map);
-
-let watchId = null;
 let myMarker = null;
-const gerobakMarkers = new Map();
-const gerobakIcon = L.icon({ iconUrl:"image/kiosk.png", iconSize:[32,32], iconAnchor:[16,32] });
+const vendorMarkers = new Map();
+const vendorIcon = L.icon({ iconUrl: "image/kiosk.png", iconSize: [32,32], iconAnchor: [16,32] });
 
 /* ===============================================
         iOS Browser Detection + Location Help Popup
@@ -175,109 +169,94 @@ Then return to this page and try again.`;
       alert(message);
     }
 
-// ===============================
-// Logout button
-// ===============================
+const vendorId = localStorage.getItem("vendorId");
+if (role === "vendor" && !vendorId) location.href = "login.html";
+
 const controlsDiv = document.getElementById("controls");
-if(role==="vendor"){
-  const logoutBtn = document.createElement("button");
-  logoutBtn.textContent="Logout";
-  logoutBtn.onclick=()=>{ localStorage.removeItem("gerobakId"); window.location.href="login.html"; };
-  controlsDiv.appendChild(logoutBtn);
-}
+const statusDiv = document.getElementById("status");
+const roleDiv = document.getElementById("role");
+roleDiv.innerText = role==="vendor"?`Vendor: ${vendorId}`:"Customer";
 
-// ===============================
-// Vendor Logic
-// ===============================
-if(role==="vendor"){
-  document.getElementById("role").innerText = "Nama: "+vendorId;
-  const statusDiv = document.getElementById("status");
-  const statusInput = document.createElement("input");
-  statusInput.placeholder="Tulis status gerobak...";
-  controlsDiv.appendChild(statusInput);
+// Logout button
+const logoutBtn = document.createElement("button");
+logoutBtn.textContent = "Logout";
+logoutBtn.onclick = () => { localStorage.removeItem("vendorId"); location.href="login.html"; };
+controlsDiv.appendChild(logoutBtn);
 
+// Vendor location toggle
+let watchId = null;
+if (role==="vendor") {
   const toggleBtn = document.createElement("button");
-  toggleBtn.textContent="Mulai Berbagi Lokasi";
+  toggleBtn.textContent = "Mulai Berbagi Lokasi";
+  toggleBtn.onclick = () => { if(!watchId) startSharing(); else stopSharing(); };
   controlsDiv.appendChild(toggleBtn);
-  toggleBtn.onclick=()=>{ if(watchId===null) startSharing(); else stopSharing(); };
 
-  async function startSharing(){
-    if(!navigator.geolocation) return alert("Geolocation not supported");
-    watchId = navigator.geolocation.watchPosition(async pos=>{
-      const {latitude,longitude}=pos.coords;
-      statusDiv.innerText="Berbagi lokasi";
-      socket.emit("vendorLocationUpdate",{ vendorId, lat:latitude, lng:longitude, profile:{name:vendorId,status:statusInput.value||""} });
-      if(!myMarker){ myMarker=L.marker([latitude,longitude],{icon:gerobakIcon}).addTo(map).bindPopup(`${vendorId} (Anda)`); map.setView([latitude,longitude],16); }
+  function startSharing() {
+    if (!navigator.geolocation) return alert("Geolocation not supported");
+    watchId = navigator.geolocation.watchPosition(pos=>{
+      const {latitude, longitude}=pos.coords;
+      statusDiv.innerText = "Berbagi lokasi";
+      socket.emit("vendorLocationUpdate", { vendorId, lat:latitude, lng:longitude, profile:{name:vendorId,status:statusDiv.innerText}});
+      if (!myMarker) myMarker=L.marker([latitude,longitude],{icon:vendorIcon}).addTo(map).bindPopup(`${vendorId} (Anda)`);
       else myMarker.setLatLng([latitude,longitude]).setPopupContent(`${vendorId} (Anda)`);
-    },err=>alert("Location error: "+err.message),{enableHighAccuracy:true});
+    }, err=>alert(err.message), {enableHighAccuracy:true});
     toggleBtn.textContent="Berhenti Berbagi Lokasi";
   }
 
-  function stopSharing(){
-    if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+  function stopSharing() {
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    watchId=null;
     statusDiv.innerText="Tidak berbagi lokasi";
     socket.emit("vendorStop",{vendorId});
     if(myMarker){ map.removeLayer(myMarker); myMarker=null; }
     toggleBtn.textContent="Mulai Berbagi Lokasi";
   }
-
-  // Save status button
-  const saveBtn = document.createElement("button");
-  saveBtn.textContent="Simpan Status";
-  saveBtn.onclick=async ()=>{
-    await fetch("/updateProfile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vendorId,status:statusInput.value||""})});
-    alert("Status diperbarui!");
-  };
-  controlsDiv.appendChild(saveBtn);
-
-  socket.emit("registerVendor",{vendorId});
 }
 
-// ===============================
-// Customer Logic
-// ===============================
-else{
-  document.getElementById("role").innerText="Customer";
-  const statusDiv=document.getElementById("status");
-  const btn=document.createElement("button");
+// Customer location
+else {
+  const btn = document.createElement("button");
   btn.textContent="Lihat Lokasi Saya";
-  btn.onclick=()=>{ if(!navigator.geolocation) return alert("Geolocation not supported"); navigator.geolocation.getCurrentPosition(pos=>{
+  btn.onclick=()=>{navigator.geolocation.getCurrentPosition(pos=>{
     const {latitude,longitude}=pos.coords;
-    if(!myMarker){ myMarker=L.circleMarker([latitude,longitude],{radius:8,color:"#007AFF",fillColor:"#007AFF",fillOpacity:0.9}).addTo(map).bindPopup('<div style="text-align:center">Anda</div>'); }
-    else myMarker.setLatLng([latitude,longitude]).setPopupContent('<div style="text-align:center">Anda</div>');
+    if(!myMarker) myMarker=L.circleMarker([latitude,longitude],{radius:8,color:"#007AFF",fillColor:"#007AFF",fillOpacity:0.9}).addTo(map).bindPopup('Anda');
+    else myMarker.setLatLng([latitude,longitude]);
     map.setView([latitude,longitude],16);
-  },err=>alert("Location error: "+err.message)); };
+  }, err=>alert(err.message));};
   controlsDiv.appendChild(btn);
-  socket.emit("registerCustomer");
 }
 
-// ===============================
-// Show live vendors to both customer & vendor
-// ===============================
-socket.on("activeVendors",vendors=>{
+// Socket events for showing vendors
+socket.emit(role==="vendor"? "registerVendor":"registerCustomer",{vendorId});
+socket.on("activeVendors", vendors=>{
   vendors.forEach(data=>{
-    let marker=gerobakMarkers.get(data.vendorId);
-    const profile=data.meta||{};
-    const name=profile.name||data.vendorId;
-    const status=profile.status||"Tidak ada status";
-
-    if(!marker){ marker=L.marker([data.lat,data.lng],{icon:gerobakIcon}).addTo(map).bindPopup(`<b>${name}</b><br><i>${status}</i>`); gerobakMarkers.set(data.vendorId,marker); }
-    else marker.setLatLng([data.lat,data.lng]).setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
+    let marker=vendorMarkers.get(data.vendorId);
+    const name=data.meta?.name||data.vendorId;
+    const status=data.meta?.status||"Tidak ada status";
+    if(!marker){
+      marker=L.marker([data.lat,data.lng],{icon:vendorIcon}).addTo(map).bindPopup(`<b>${name}</b><br><i>${status}</i>`);
+      vendorMarkers.set(data.vendorId,marker);
+    } else {
+      marker.setLatLng([data.lat,data.lng]).setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
+    }
   });
 });
 
 socket.on("vendorPosition",data=>{
-  let marker=gerobakMarkers.get(data.vendorId);
-  const profile=data.meta||{};
-  const name=profile.name||data.vendorId;
-  const status=profile.status||"Tidak ada status";
-  if(!marker){ marker=L.marker([data.lat,data.lng],{icon:gerobakIcon}).addTo(map).bindPopup(`<b>${name}</b><br><i>${status}</i>`); gerobakMarkers.set(data.vendorId,marker); }
-  else marker.setLatLng([data.lat,data.lng]).setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
+  let marker=vendorMarkers.get(data.vendorId);
+  const name=data.meta?.name||data.vendorId;
+  const status=data.meta?.status||"Tidak ada status";
+  if(!marker){
+    marker=L.marker([data.lat,data.lng],{icon:vendorIcon}).addTo(map).bindPopup(`<b>${name}</b><br><i>${status}</i>`);
+    vendorMarkers.set(data.vendorId,marker);
+  } else {
+    marker.setLatLng([data.lat,data.lng]).setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
+  }
 });
 
 socket.on("vendorGone",data=>{
-  const marker=gerobakMarkers.get(data.vendorId);
-  if(marker){ map.removeLayer(marker); gerobakMarkers.delete(data.vendorId); }
+  const marker=vendorMarkers.get(data.vendorId);
+  if(marker){ map.removeLayer(marker); vendorMarkers.delete(data.vendorId); }
 });
 </script>
 </body>
