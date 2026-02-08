@@ -57,7 +57,24 @@ db.ref('vendors').on('value', snapshot => {
     `);
   });
 });
+</script>
 
+<script>
+// === FIX REDIRECT LOOP ===
+setTimeout(() => {
+    const uid = localStorage.getItem("vendorUid");
+    const role = new URLSearchParams(window.location.search).get("role");
+
+    if (role === "vendor" && !uid) {
+        console.log("Vendor not logged in → redirect");
+        window.location.href = "login.html";
+    }
+}, 300);
+
+// Logging saja, tidak redirect apa pun
+auth.onAuthStateChanged(user => {
+    console.log("Auth state changed:", user ? "Logged-in" : "Logged-out");
+});
 </script>
 
 </head>
@@ -92,25 +109,6 @@ db.ref('vendors').on('value', snapshot => {
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/socket.io/socket.io.js"></script>
-
-<script>
-// PERBAIKAN REDIRECT LOOP
-setTimeout(() => {
-    const uid = localStorage.getItem("vendorUid");
-    const role = new URLSearchParams(window.location.search).get("role");
-
-    // Vendor harus login → jika tidak ada UID, arahkan ke login
-    if (role === "vendor" && !uid) {
-        console.log("Vendor not logged in -> redirect");
-        window.location.href = "login.html";
-    }
-}, 300);
-
-// Jangan redirect lewat authState lagi (bahaya)
-auth.onAuthStateChanged(user => {
-    console.log("Auth state changed:", user ? "Logged-in" : "Logged-out");
-});
-</script>
 
 <script>
 const params = new URLSearchParams(window.location.search);
@@ -260,8 +258,6 @@ Then return to this page and try again.`;
     }
 
 // Role handling
-const vendorId = localStorage.getItem("vendorId");
-if(role==="vendor" && !vendorId) location.href="login.html";
 
 const controlsDiv = document.getElementById("controls");
 const statusDiv = document.getElementById("status");
