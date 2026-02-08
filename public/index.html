@@ -1,32 +1,19 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ManaGerobak?</title>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
   <style>
     html, body, #map { height: 100%; margin: 0; }
-    .topbar {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    .topbar input { width: 100%; margin-top: 4px; padding: 4px; box-sizing: border-box; }
-    button { margin-top: 6px; padding: 6px 10px; width: 100%; }
+    .topbar { position: absolute; top: 10px; left: 10px; z-index:1000; background:white; padding:10px; border-radius:8px; font-size:14px; }
+    .topbar input { width:100%; margin-top:4px; padding:4px; box-sizing:border-box; }
+    button { margin-top:6px; padding:6px 10px; width:100%; }
   </style>
 </head>
-
 <body>
 <div id="map"></div>
-
 <div class="topbar">
   <div id="role"></div>
   <div id="status">Tidak berbagi lokasi</div>
@@ -37,287 +24,245 @@
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
-const params = new URLSearchParams(window.location.search);
-const role = params.get("role") || "customer";
-let gerobakId = params.get("vendorId") || localStorage.getItem("gerobakId");
-const socket = io();
+const role = new URLSearchParams(window.location.search).get("role") || "customer";
+const gerobakId = localStorage.getItem("gerobakId");
+if(role==="vendor" && !gerobakId) window.location.href = "login.html";
 
-const map = L.map("map").setView([-6.2, 106.8166], 13);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
+const socket = io();
+const map = L.map("map").setView([-6.2,106.8166],13);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(map);
 
 let watchId = null;
 let myMarker = null;
 const gerobakMarkers = new Map();
-const gerobakIcon = L.icon({ iconUrl: "image/kiosk.png", iconSize: [32, 32], iconAnchor: [16, 32] });
+const gerobakIcon = L.icon({ iconUrl:"image/kiosk.png", iconSize:[32,32], iconAnchor:[16,32] });
 
-// ===============================================
-// iOS Browser Detection + Location Help Popup
-// ===============================================
-function detectBrowser() {
-  const ua = navigator.userAgent;
-  if (/GSA/i.test(ua)) return "google_app";
-  if (/CriOS/i.test(ua)) return "chrome_ios";
-  if (/FxiOS/i.test(ua)) return "firefox_ios";
-  if (/EdgiOS/i.test(ua)) return "edge_ios";
-  if (/OPiOS/i.test(ua)) return "opera_ios";
-  if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
-  if (/Brave/i.test(ua)) return "brave_ios";
-  if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
-  return "other";
-}
+/* ===============================================
+        iOS Browser Detection + Location Help Popup
+    =============================================== */
 
-function showiOSLocationHelp() {
-  const browser = detectBrowser();
-  let message = "";
-  switch (browser) {
-    case "safari":
-      message = `Location could not be accessed.
-      
+    function detectBrowser() {
+      const ua = navigator.userAgent;
+
+      if (/GSA/i.test(ua)) return "google_app";
+      if (/CriOS/i.test(ua)) return "chrome_ios";
+      if (/FxiOS/i.test(ua)) return "firefox_ios";
+      if (/EdgiOS/i.test(ua)) return "edge_ios";
+      if (/OPiOS/i.test(ua)) return "opera_ios";
+      if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
+      if (/Brave/i.test(ua)) return "brave_ios";
+
+      if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
+
+      return "other";
+    }
+
+    function showiOSLocationHelp() {
+      const browser = detectBrowser();
+      let message = "";
+
+      switch (browser) {
+        case "safari":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Safari Websites
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap Safari Websites
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    case "chrome_ios":
-      message = `Location could not be accessed.
-      
+          break;
+
+        case "chrome_ios":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Chrome
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap Chrome
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    case "google_app":
-      message = `Location could not be accessed.
-      
+          break;
+
+        case "google_app":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Google
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap Google
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    case "firefox_ios":
-      message = `Location could not be accessed.
-      
+          break;
+
+        case "firefox_ios":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Firefox
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap Firefox
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    case "edge_ios":
-      message = `Location could not be accessed.
-      
+          break;
+
+        case "edge_ios":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Microsoft Edge
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap Microsoft Edge
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    case "opera_ios":
-      message = `Location could not be accessed.
-      
+          break;
+
+        case "opera_ios":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Opera
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap Opera
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    case "duckduckgo_ios":
-      message = `Location could not be accessed.
-      
+          break;
+
+        case "duckduckgo_ios":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap DuckDuckGo
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap DuckDuckGo
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    case "brave_ios":
-      message = `Location could not be accessed.
-      
+          break;
+
+        case "brave_ios":
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Brave
-4. Choose "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Scroll down and tap Brave
+4.⁠ ⁠Choose "While Using the App"
 
 Then return to this page and try again.`;
-      break;
-    default:
-      message = `Location could not be accessed.
-      
+          break;
+
+        default:
+          message = `Location could not be accessed.
+          
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Find your browser in the list
-4. Set Location to "While Using the App"
+1.⁠ ⁠Open Settings
+2.⁠ ⁠Tap Privacy & Security → Location Services
+3.⁠ ⁠Find your browser in the list
+4.⁠ ⁠Set Location to "While Using the App"
 
 Then return to this page and try again.`;
-  }
-  alert(message);
-}
+      }
 
-function handleLocationError(err) {
-  console.warn("Geolocation error:", err);
-  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) showiOSLocationHelp();
-  else alert("Location error: " + err.message);
+      alert(message);
+    }
+
+function handleLocationError(err){console.warn("Geolocation error:", err); if(/iPhone|iPad|iPod/i.test(navigator.userAgent)) showiOSLocationHelp(); else alert("Location error: "+err.message);}
+
+// ===============================
+// LOGOUT BUTTON
+// ===============================
+function addLogoutButton(){
+  const controlsDiv=document.getElementById("controls");
+  const logoutBtn=document.createElement("button");
+  logoutBtn.textContent="Logout";
+  logoutBtn.onclick=()=>{ localStorage.removeItem("gerobakId"); window.location.href="login.html"; }
+  controlsDiv.appendChild(logoutBtn);
 }
 
 // ===============================
 // VENDOR LOGIC
 // ===============================
-if (role === "vendor") {
-  if (!gerobakId) {
-    gerobakId = prompt("Masukkan ID Gerobak Anda:", "gerobak1") || "gerobak_" + Math.random().toString(36).slice(2,8);
-    localStorage.setItem("gerobakId", gerobakId);
-  }
+if(role==="vendor"){
+  document.getElementById("role").innerText="Nama: "+gerobakId;
+  const controlsDiv=document.getElementById("controls");
+  const statusDiv=document.getElementById("status");
+  addLogoutButton();
 
-  document.getElementById("role").innerText = "Nama: " + gerobakId;
-  const controlsDiv = document.getElementById("controls");
-  const statusDiv = document.getElementById("status");
-
-  const statusInput = document.createElement("input");
-  statusInput.id = "statusInput";
-  statusInput.placeholder = "Tulis status gerobak...";
+  const statusInput=document.createElement("input");
+  statusInput.id="statusInput";
+  statusInput.placeholder="Tulis status gerobak...";
   controlsDiv.appendChild(statusInput);
 
-  const toggleBtn = document.createElement("button");
-  toggleBtn.textContent = "Mulai Berbagi Lokasi";
+  const toggleBtn=document.createElement("button");
+  toggleBtn.textContent="Mulai Berbagi Lokasi";
   controlsDiv.appendChild(toggleBtn);
 
-  toggleBtn.onclick = () => { if(watchId===null) startSharing(); else stopSharing(); };
+  toggleBtn.onclick=()=>{ if(watchId===null) startSharing(); else stopSharing(); }
 
-  function startSharing() {
-    if (!navigator.geolocation) return alert("Geolocation not supported");
-
-    watchId = navigator.geolocation.watchPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      statusDiv.innerText = "Berbagi lokasi";
-
-      socket.emit("vendorLocationUpdate", {
-        vendorId: gerobakId,
-        lat: latitude,
-        lng: longitude,
-        meta: { name: gerobakId, status: statusInput.value || "" }
-      });
-
-      if (!myMarker) {
-        myMarker = L.marker([latitude, longitude], { icon: gerobakIcon }).addTo(map)
-          .bindPopup(`${gerobakId} (Anda)`);
-        map.setView([latitude, longitude], 16);
-      } else {
-        myMarker.setLatLng([latitude, longitude])
-                .setPopupContent(`${gerobakId} (Anda)`);
-      }
-    }, handleLocationError, { enableHighAccuracy: true });
-
-    toggleBtn.textContent = "Berhenti Berbagi Lokasi";
+  function startSharing(){
+    if(!navigator.geolocation) return alert("Geolocation not supported");
+    watchId=navigator.geolocation.watchPosition(pos=>{
+      const {latitude,longitude}=pos.coords;
+      statusDiv.innerText="Berbagi lokasi";
+      socket.emit("vendorLocationUpdate",{vendorId:gerobakId,lat:latitude,lng:longitude,profile:{name:gerobakId,status:statusInput.value||""}});
+      if(!myMarker){ myMarker=L.marker([latitude,longitude],{icon:gerobakIcon}).addTo(map).bindPopup(`${gerobakId} (Anda)`); map.setView([latitude,longitude],16);}
+      else myMarker.setLatLng([latitude,longitude]).setPopupContent(`${gerobakId} (Anda)`);
+    },handleLocationError,{enableHighAccuracy:true});
+    toggleBtn.textContent="Berhenti Berbagi Lokasi";
   }
 
-  function stopSharing() {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      watchId = null;
-    }
-    statusDiv.innerText = "Tidak berbagi lokasi";
-    socket.emit("vendorStop", { vendorId: gerobakId });
-    if (myMarker) { map.removeLayer(myMarker); myMarker = null; }
-    toggleBtn.textContent = "Mulai Berbagi Lokasi";
+  function stopSharing(){
+    if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+    statusDiv.innerText="Tidak berbagi lokasi";
+    socket.emit("vendorStop",{vendorId:gerobakId});
+    if(myMarker){ map.removeLayer(myMarker); myMarker=null; }
+    toggleBtn.textContent="Mulai Berbagi Lokasi";
   }
 
-  const saveBtn = document.createElement("button");
-  saveBtn.textContent = "Simpan Status";
-  saveBtn.onclick = () => {
-    fetch("/updateProfile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vendorId: gerobakId, status: statusInput.value || "" })
-    });
-    alert("Status diperbarui!");
-  };
+  const saveBtn=document.createElement("button");
+  saveBtn.textContent="Simpan Status";
+  saveBtn.onclick=()=>{ fetch("/updateProfile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vendorId:gerobakId,status:statusInput.value||""})}); alert("Status diperbarui!"); }
   controlsDiv.appendChild(saveBtn);
 
-  socket.emit("registerVendor", { vendorId: gerobakId });
+  socket.emit("registerVendor",{vendorId:gerobakId});
 }
 
 // ===============================
 // CUSTOMER LOGIC
 // ===============================
-else {
-  document.getElementById("role").innerText = "Customer";
-  const controlsDiv = document.getElementById("controls");
-  const statusDiv = document.getElementById("status");
-
-  const btn = document.createElement("button");
-  btn.textContent = "Lihat Lokasi Saya";
-  btn.onclick = shareLocation;
+else{
+  document.getElementById("role").innerText="Customer";
+  const controlsDiv=document.getElementById("controls");
+  const statusDiv=document.getElementById("status");
+  const btn=document.createElement("button");
+  btn.textContent="Lihat Lokasi Saya";
+  btn.onclick=shareLocation;
   controlsDiv.appendChild(btn);
+  addLogoutButton();
 
-  function shareLocation() {
-    if (!navigator.geolocation) return alert("Geolocation not supported");
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      statusDiv.innerText = "Anda";
-
-      if (!myMarker) {
-        myMarker = L.circleMarker([latitude, longitude], {
-          radius: 8,
-          color: "#007AFF",
-          fillColor: "#007AFF",
-          fillOpacity: 0.9
-        }).addTo(map).bindPopup('<div style="text-align:center">Anda</div>');
-      } else {
-        myMarker.setLatLng([latitude, longitude])
-                .setPopupContent('<div style="text-align:center">Anda</div>');
-      }
-      map.setView([latitude, longitude], 16);
-    }, handleLocationError);
-  }
+  function shareLocation(){ if(!navigator.geolocation) return alert("Geolocation not supported"); navigator.geolocation.getCurrentPosition(pos=>{ const {latitude,longitude}=pos.coords; statusDiv.innerText="Anda"; if(!myMarker){ myMarker=L.circleMarker([latitude,longitude],{radius:8,color:"#007AFF",fillColor:"#007AFF",fillOpacity:0.9}).addTo(map).bindPopup('<div style="text-align:center">Anda</div>'); } else { myMarker.setLatLng([latitude,longitude]).setPopupContent('<div style="text-align:center">Anda</div>'); } map.setView([latitude,longitude],16);},handleLocationError); }
 
   socket.emit("registerCustomer");
 
-  function updateGerobakMarker(data) {
-    let marker = gerobakMarkers.get(data.vendorId);
-    const profile = data.meta || {};
-    const name = profile.name || data.vendorId;
-    const status = profile.status || "Tidak ada status";
-
-    if (!marker) {
-      marker = L.marker([data.lat, data.lng], { icon: gerobakIcon })
-        .addTo(map)
-        .bindPopup(`<b>${name}</b><br><i>${status}</i>`);
-      gerobakMarkers.set(data.vendorId, marker);
-    } else {
-      marker.setLatLng([data.lat, data.lng])
-            .setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
-    }
+  function updateVendorMarkers(data){
+    let marker=gerobakMarkers.get(data.vendorId);
+    const profile=data.meta||{};
+    const name=profile.name||data.vendorId;
+    const status=profile.status||"Tidak ada status";
+    if(!marker){ marker=L.marker([data.lat,data.lng],{icon:gerobakIcon}).addTo(map).bindPopup(`<b>${name}</b><br><i>${status}</i>`); gerobakMarkers.set(data.vendorId,marker); }
+    else marker.setLatLng([data.lat,data.lng]).setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
   }
 
-  socket.on("activeVendors", vendors => {
-    vendors.forEach(updateGerobakMarker);
-  });
-
-  socket.on("vendorPosition", updateGerobakMarker);
-
-  socket.on("vendorGone", data => {
-    const marker = gerobakMarkers.get(data.vendorId);
-    if (marker) { map.removeLayer(marker); gerobakMarkers.delete(data.vendorId); }
-  });
+  socket.on("activeVendors",vendors=>vendors.forEach(updateVendorMarkers));
+  socket.on("vendorPosition",updateVendorMarkers);
+  socket.on("vendorGone",data=>{ const marker=gerobakMarkers.get(data.vendorId); if(marker){ map.removeLayer(marker); gerobakMarkers.delete(data.vendorId); } });
 }
 </script>
 </body>

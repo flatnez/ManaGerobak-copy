@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ManaGerobak - Login</title>
+  <style>
+    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    form { display: flex; flex-direction: column; width: 300px; }
+    input { margin-bottom: 10px; padding: 8px; }
+    button { padding: 8px; }
+  </style>
+</head>
+<body>
+  <form id="loginForm">
+    <h2>Login</h2>
+    <input type="text" id="gerobakId" placeholder="Gerobak ID" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+    <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+  </form>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    form.onsubmit = async e => {
+      e.preventDefault();
+      const gerobakId = document.getElementById("gerobakId").value.trim();
+      const password = document.getElementById("password").value;
+      if(!gerobakId || !password) return alert("Fill in all fields");
+
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ gerobakId, password })
+      });
+      const data = await res.json();
+      if(data.success){
+        localStorage.setItem("gerobakId", gerobakId);
+        alert("Login successful!");
+        window.location.href = "index.html?role=vendor";
+      } else {
+        alert(data.message);
+      }
+    }
+  </script>
+</body>
+</html>

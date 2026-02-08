@@ -1,131 +1,102 @@
-// ==============================
-// server.js
-// ==============================
-
 const fs = require("fs");
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
 const path = require("path");
 
-// ------------------------------
-// Ensure data folder and JSON exist
-// ------------------------------
-const dataDir = path.join(__dirname, "data");
-const profilesPath = path.join(dataDir, "vendorProfiles.json");
-
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
-if (!fs.existsSync(profilesPath)) fs.writeFileSync(profilesPath, "{}");
-
-const vendorProfiles = JSON.parse(fs.readFileSync(profilesPath, "utf-8"));
-
-function saveProfiles() {
-  fs.writeFileSync(profilesPath, JSON.stringify(vendorProfiles, null, 2));
-}
-
-// ------------------------------
-// Express + HTTP + Socket.IO setup
-// ------------------------------
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// Middleware
-app.use(express.json()); // for parsing JSON from client
-app.use(express.static(path.join(__dirname, "public"))); // serve index.html and images
+app.use(express.json());
+app.use(express.static(path.join(__dirname,"public")));
 
-// ------------------------------
-// Vendor Profile Route
-// ------------------------------
-app.post("/updateProfile", (req, res) => {
-  const { vendorId, name, status } = req.body;
+const vendorProfilesPath="./data/vendorProfiles.json";
+if(!fs.existsSync(vendorProfilesPath)) fs.writeFileSync(vendorProfilesPath,"{}");
 
-  vendorProfiles[vendorId] = {
-    name,
-    status,
-    lastUpdated: new Date().toISOString()
-  };
+const vendorProfiles=JSON.parse(fs.readFileSync(vendorProfilesPath));
 
+function saveProfiles(){ fs.writeFileSync(vendorProfilesPath,JSON.stringify(vendorProfiles,null,2)); }
+
+// =======================
+// Signup Endpoint
+// =======================
+app.post("/signup",(req,res)=>{
+  const {gerobakId,password} = req.body;
+  if(!gerobakId||!password) return res.json({success:false,message:"Fill in all fields"});
+  if(vendorProfiles[gerobakId]) return res.json({success:false,message:"Gerobak ID already exists"});
+  vendorProfiles[gerobakId]={password,status:"",lastUpdated:new Date().toISOString()};
   saveProfiles();
-
-  console.log("Profile updated:", vendorId, name, status);
-  res.json({ success: true });
+  res.json({success:true});
 });
 
-// ------------------------------
-// Active Vendors Map
-// ------------------------------
-const activeVendors = new Map(); 
-// Structure: vendorId → { lat, lng, meta, socketId }
+// =======================
+// Login Endpoint
+// =======================
+app.post("/login",(req,res)=>{
+  const {gerobakId,password} = req.body;
+  if(!gerobakId||!password) return res.json({success:false,message:"Fill in all fields"});
+  const vendor=vendorProfiles[gerobakId];
+  if(!vendor) return res.json({success:false,message:"Gerobak ID not found"});
+  if(vendor.password!==password) return res.json({success:false,message:"Incorrect password"});
+  res.json({success:true});
+});
 
-// ------------------------------
-// Socket.IO logic
-// ------------------------------
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+// =======================
+// Vendor profile update
+// =======================
+app.post("/updateProfile",(req,res)=>{
+  const {vendorId,status} = req.body;
+  if(vendorId && vendorProfiles[vendorId]){
+    vendorProfiles[vendorId].status=status||"";
+    vendorProfiles[vendorId].lastUpdated=new Date().toISOString();
+    saveProfiles();
+  }
+  res.json({success:true});
+});
 
-  // Register Vendor
-  socket.on("registerVendor", (data) => {
-    activeVendors.set(data.vendorId, {
-      lat: null,
-      lng: null,
-      meta: vendorProfiles[data.vendorId] || data.meta || {},
-      socketId: socket.id
-    });
-    console.log("Vendor registered:", data.vendorId);
+// =======================
+// Socket.IO Real-time
+// =======================
+const activeVendors = new Map();
+
+io.on("connection", socket=>{
+  console.log("Client connected:",socket.id);
+
+  socket.on("registerVendor",data=>{
+    activeVendors.set(data.vendorId,{lat:null,lng:null,meta:{name:data.vendorId,status:vendorProfiles[data.vendorId]?.status||""},socketId:socket.id});
+    // Send all active vendors to this vendor
+    socket.emit("activeVendors",Array.from(activeVendors.entries()).map(([vendorId,info])=>({vendorId,lat:info.lat,lng:info.lng,meta:info.meta})));
+    // Broadcast to all others
+    socket.broadcast.emit("activeVendors",Array.from(activeVendors.entries()).map(([vendorId,info])=>({vendorId,lat:info.lat,lng:info.lng,meta:info.meta})));
   });
 
-  // Register Customer
-  socket.on("registerCustomer", () => {
-    socket.emit(
-      "activeVendors",
-      Array.from(activeVendors.entries()).map(([vendorId, info]) => ({
-        vendorId,
-        lat: info.lat,
-        lng: info.lng,
-        meta: info.meta
-      }))
-    );
+  socket.on("registerCustomer",()=>{
+    socket.emit("activeVendors",Array.from(activeVendors.entries()).map(([vendorId,info])=>({vendorId,lat:info.lat,lng:info.lng,meta:info.meta})));
   });
 
-  // Vendor updates location
-  socket.on("vendorLocationUpdate", (data) => {
-    if (activeVendors.has(data.vendorId)) {
-      activeVendors.get(data.vendorId).lat = data.lat;
-      activeVendors.get(data.vendorId).lng = data.lng;
+  socket.on("vendorLocationUpdate",data=>{
+    if(activeVendors.has(data.vendorId)){
+      activeVendors.get(data.vendorId).lat=data.lat;
+      activeVendors.get(data.vendorId).lng=data.lng;
+      activeVendors.get(data.vendorId).meta=data.profile||activeVendors.get(data.vendorId).meta;
     }
-
-    io.emit("vendorPosition", {
-      vendorId: data.vendorId,
-      lat: data.lat,
-      lng: data.lng,
-      meta: activeVendors.get(data.vendorId)?.meta || {}
-    });
+    io.emit("vendorPosition",{vendorId:data.vendorId,lat:data.lat,lng:data.lng,meta:activeVendors.get(data.vendorId)?.meta||{}});
   });
 
-  // Vendor stops sharing
-  socket.on("vendorStop", (data) => {
+  socket.on("vendorStop",data=>{
     activeVendors.delete(data.vendorId);
-    io.emit("vendorGone", { vendorId: data.vendorId });
+    io.emit("vendorGone",{vendorId:data.vendorId});
   });
 
-  // Handle disconnect
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-
-    for (const [vendorId, info] of activeVendors.entries()) {
-      if (info.socketId === socket.id) {
+  socket.on("disconnect",()=>{
+    for(const [vendorId,info] of activeVendors.entries()){
+      if(info.socketId===socket.id){
         activeVendors.delete(vendorId);
-        io.emit("vendorGone", { vendorId });
+        io.emit("vendorGone",{vendorId});
       }
     }
   });
 });
 
-// ------------------------------
-// Start Server
-// ------------------------------
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(process.env.PORT||3000,()=>{console.log("Server running")});
