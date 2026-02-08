@@ -84,7 +84,6 @@
       if (/OPiOS/i.test(ua)) return "opera_ios";
       if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
       if (/Brave/i.test(ua)) return "brave_ios";
-
       if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
 
       return "other";
@@ -102,9 +101,7 @@ To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
 3. Scroll down and tap Safari Websites
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+4. Choose "While Using the App"`;
           break;
 
         case "chrome_ios":
@@ -114,96 +111,60 @@ To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
 3. Scroll down and tap Chrome
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+4. Choose "While Using the App"`;
           break;
 
         case "google_app":
           message = `Location could not be accessed.
           
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Google
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+To enable location:
+1. Open Settings → Privacy & Security → Location Services
+2. Tap Google
+3. Choose "While Using the App"`;
           break;
 
         case "firefox_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Firefox
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+          message = `Enable location:
+Settings → Privacy & Security → Location Services → Firefox → "While Using the App"`;
           break;
 
         case "edge_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Microsoft Edge
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+          message = `Enable location:
+Settings → Privacy & Security → Location Services → Microsoft Edge → "While Using the App"`;
           break;
 
         case "opera_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Opera
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+          message = `Enable location:
+Settings → Privacy & Security → Location Services → Opera → "While Using the App"`;
           break;
 
         case "duckduckgo_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap DuckDuckGo
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+          message = `Enable location:
+Settings → Privacy & Security → Location Services → DuckDuckGo → "While Using the App"`;
           break;
 
         case "brave_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Brave
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
+          message = `Enable location:
+Settings → Privacy & Security → Location Services → Brave → "While Using the App"`;
           break;
 
         default:
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Find your browser in the list
-4. Set Location to "While Using the App"
-
-Then return to this page and try again.`;
+          message = `Enable location on iPhone:
+Settings → Privacy & Security → Location Services → choose your browser → "While Using the App"`;
       }
 
       alert(message);
+    }
+
+    function handleLocationError(err) {
+      console.warn("Geolocation error:", err);
+
+      // Show iOS help only on iPhone/iPad
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        showiOSLocationHelp();
+      } else {
+        alert("Location error: " + err.message);
+      }
     }
 
     /* ===============================
@@ -243,6 +204,7 @@ Then return to this page and try again.`;
           alert("Geolocation not supported");
           return;
         }
+
         if (watchId !== null) return;
 
         watchId = navigator.geolocation.watchPosition(
@@ -266,9 +228,7 @@ Then return to this page and try again.`;
                       .setPopupContent(`${vendorId} (you)`);
             }
           },
-          err => {
-            alert("Location error: " + err.message);
-          },
+          handleLocationError,
           { enableHighAccuracy: true }
         );
 
@@ -301,7 +261,6 @@ Then return to this page and try again.`;
       const controlsDiv = document.getElementById("controls");
       const statusDiv = document.getElementById("status");
 
-      // See my location button
       const btn = document.createElement("button");
       btn.textContent = "See My Location";
       btn.onclick = shareLocation;
@@ -332,13 +291,10 @@ Then return to this page and try again.`;
 
             map.setView([latitude, longitude], 16);
           },
-          err => {
-            alert("Location error: " + err.message);
-          }
+          handleLocationError
         );
       }
 
-      // Tell server this is a customer to receive all active vendors immediately
       socket.emit("registerCustomer");
 
       socket.on("activeVendors", vendors => {
@@ -356,7 +312,6 @@ Then return to this page and try again.`;
         });
       });
 
-      // Listen for live vendor updates
       socket.on("vendorPosition", data => {
         let marker = vendorMarkers.get(data.vendorId);
         if (!marker) {
