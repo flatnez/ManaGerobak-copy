@@ -123,7 +123,7 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
     }
 
     /* ===============================
-       GER OBAK (Vendor) LOGIC
+       GEROBAK (Vendor) LOGIC
     =============================== */
     if (role === "vendor") {
 
@@ -135,7 +135,7 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
       }
 
       // Show vendor name in top-left
-      document.getElementById("role").innerText = "Gerobak: " + vendorId;
+      document.getElementById("role").innerText = "Nama: " + vendorId;
 
       const controlsDiv = document.getElementById("controls");
       const statusDiv = document.getElementById("status");
@@ -143,7 +143,7 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
       function updateButton() {
         controlsDiv.innerHTML = "";
         const btn = document.createElement("button");
-        btn.textContent = watchId === null ? "Start Sharing Location" : "Stop Sharing Location";
+        btn.textContent = watchId === null ? "Mulai Berbagi Lokasi" : "Berhenti Berbagi Lokasi";
         btn.onclick = watchId === null ? startSharing : stopSharing;
         controlsDiv.appendChild(btn);
       }
@@ -164,7 +164,7 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
         watchId = navigator.geolocation.watchPosition(
           pos => {
             const { latitude, longitude } = pos.coords;
-            statusDiv.innerText = "Sharing location";
+            statusDiv.innerText = "Berbagi lokasi";
 
             socket.emit("vendorLocationUpdate", {
               vendorId,
@@ -194,7 +194,7 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
           navigator.geolocation.clearWatch(watchId);
           watchId = null;
         }
-        statusDiv.innerText = "Stopped sharing";
+        statusDiv.innerText = "Berhenti berbagi";
         socket.emit("vendorStop", { vendorId });
 
         if (myMarker) {
@@ -218,7 +218,7 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
       const statusDiv = document.getElementById("status");
 
       const btn = document.createElement("button");
-      btn.textContent = "See My Location";
+      btn.textContent = "Lihat Lokasi Saya";
       btn.onclick = shareLocation;
       controlsDiv.appendChild(btn);
 
