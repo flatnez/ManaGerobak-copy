@@ -2,102 +2,94 @@ const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
 const path = require("path");
-const fs = require("fs");
+const { Pool } = require("pg");
+const bcrypt = require("bcrypt");
+const bodyParser = require("body-parser");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-app.use(express.json());
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-const dataFile = path.join(__dirname, "data/vendorProfiles.json");
-let vendorProfiles = {};
-
-// Load vendorProfiles.json
-try {
-  vendorProfiles = JSON.parse(fs.readFileSync(dataFile));
-} catch (err) {
-  vendorProfiles = {};
-}
-
-function saveProfiles() {
-  fs.writeFileSync(dataFile, JSON.stringify(vendorProfiles, null, 2));
-}
-
-// ------------------------
-// Signup
-// ------------------------
-app.post("/signup", (req, res) => {
-  const { vendorId, password } = req.body;
-  if (!vendorId || !password) return res.json({ success: false, message: "Vendor ID and password required" });
-  if (vendorProfiles[vendorId]) return res.json({ success: false, message: "Vendor already exists" });
-
-  vendorProfiles[vendorId] = { password, status: "" };
-  saveProfiles();
-  res.json({ success: true });
+// ====== PostgreSQL Setup ======
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
 
-// ------------------------
-// Login
-// ------------------------
-app.post("/login", (req, res) => {
+// ====== Vendor Map ======
+const activeVendors = new Map(); 
+// vendorId → { lat, lng, meta, socketId }
+
+// ================== Signup ==================
+app.post("/signup", async (req, res) => {
   const { vendorId, password } = req.body;
   if (!vendorId || !password) return res.json({ success: false, message: "Vendor ID and password required" });
-  if (!vendorProfiles[vendorId] || vendorProfiles[vendorId].password !== password)
-    return res.json({ success: false, message: "Invalid credentials" });
 
-  res.json({ success: true, status: vendorProfiles[vendorId].status });
-});
+  try {
+    const exists = await pool.query("SELECT * FROM vendors WHERE vendor_id=$1", [vendorId]);
+    if (exists.rows.length > 0) return res.json({ success: false, message: "Vendor already exists" });
 
-// ------------------------
-// Update Profile (status)
-// ------------------------
-const activeVendors = new Map();
-
-app.post("/updateProfile", (req, res) => {
-  const { vendorId, status } = req.body;
-  if (!vendorProfiles[vendorId]) vendorProfiles[vendorId] = { password: "", status: "" };
-  vendorProfiles[vendorId].status = status;
-  saveProfiles();
-
-  // Update in-memory activeVendors
-  if (activeVendors.has(vendorId)) {
-    activeVendors.get(vendorId).meta.status = status;
-    io.emit("vendorPosition", {
-      vendorId,
-      lat: activeVendors.get(vendorId).lat,
-      lng: activeVendors.get(vendorId).lng,
-      meta: activeVendors.get(vendorId).meta
-    });
+    const hashed = await bcrypt.hash(password, 10);
+    await pool.query("INSERT INTO vendors (vendor_id, password) VALUES ($1, $2)", [vendorId, hashed]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Error creating account" });
   }
-
-  res.json({ success: true });
 });
 
-// ------------------------
-// Socket.IO
-// ------------------------
+// ================== Login ==================
+app.post("/login", async (req, res) => {
+  const { vendorId, password } = req.body;
+  if (!vendorId || !password) return res.json({ success: false, message: "Vendor ID and password required" });
+
+  try {
+    const result = await pool.query("SELECT * FROM vendors WHERE vendor_id=$1", [vendorId]);
+    if (result.rows.length === 0) return res.json({ success: false, message: "Vendor not found" });
+
+    const vendor = result.rows[0];
+    const valid = await bcrypt.compare(password, vendor.password);
+    if (!valid) return res.json({ success: false, message: "Incorrect password" });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Error logging in" });
+  }
+});
+
+// ================== Update Status ==================
+app.post("/updateProfile", async (req, res) => {
+  const { vendorId, status } = req.body;
+  if (!vendorId) return res.json({ success: false, message: "Vendor ID required" });
+
+  try {
+    await pool.query("UPDATE vendors SET status=$1 WHERE vendor_id=$2", [status || "", vendorId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Error updating status" });
+  }
+});
+
+// ================== Socket.IO ==================
 io.on("connection", socket => {
   console.log("Client connected:", socket.id);
 
-  // Vendor registration
+  // Register Vendor
   socket.on("registerVendor", data => {
     activeVendors.set(data.vendorId, {
       lat: null,
       lng: null,
-      meta: { name: data.vendorId, status: vendorProfiles[data.vendorId]?.status || "" },
+      meta: {},
       socketId: socket.id
-    });
-    io.emit("vendorPosition", {
-      vendorId: data.vendorId,
-      lat: null,
-      lng: null,
-      meta: activeVendors.get(data.vendorId).meta
     });
   });
 
-  // Customer registration
+  // Register Customer
   socket.on("registerCustomer", () => {
     socket.emit("activeVendors", Array.from(activeVendors.entries()).map(([vendorId, info]) => ({
       vendorId,
@@ -107,20 +99,29 @@ io.on("connection", socket => {
     })));
   });
 
-  // Vendor updates location
-  socket.on("vendorLocationUpdate", data => {
-    if (activeVendors.has(data.vendorId)) {
-      const vendor = activeVendors.get(data.vendorId);
-      vendor.lat = data.lat;
-      vendor.lng = data.lng;
-      vendor.meta = { ...vendor.meta, status: data.profile?.status || vendor.meta.status };
+  // Vendor location update
+  socket.on("vendorLocationUpdate", async data => {
+    if (!data.vendorId) return;
+
+    activeVendors.set(data.vendorId, {
+      lat: data.lat,
+      lng: data.lng,
+      meta: data.profile || {},
+      socketId: socket.id
+    });
+
+    // Update status in DB
+    if (data.profile?.status !== undefined) {
+      try {
+        await pool.query("UPDATE vendors SET status=$1 WHERE vendor_id=$2", [data.profile.status, data.vendorId]);
+      } catch (err) { console.error(err); }
     }
 
     io.emit("vendorPosition", {
       vendorId: data.vendorId,
       lat: data.lat,
       lng: data.lng,
-      meta: activeVendors.get(data.vendorId).meta
+      meta: data.profile || {}
     });
   });
 
@@ -130,8 +131,8 @@ io.on("connection", socket => {
     io.emit("vendorGone", { vendorId: data.vendorId });
   });
 
+  // Disconnect
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
     for (const [vendorId, info] of activeVendors.entries()) {
       if (info.socketId === socket.id) {
         activeVendors.delete(vendorId);
@@ -141,4 +142,6 @@ io.on("connection", socket => {
   });
 });
 
-server.listen(process.env.PORT || 3000, () => console.log("Server running"));
+server.listen(process.env.PORT || 3000, () => {
+  console.log("Server running");
+});

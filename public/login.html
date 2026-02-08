@@ -1,41 +1,42 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login - ManaGerobak?</title>
-  <style>
-    body { font-family: sans-serif; padding: 50px; }
-    input, button { display: block; margin-top: 10px; padding: 8px; width: 100%; max-width: 300px; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ManaGerobak - Login</title>
+<style>
+body { font-family: sans-serif; padding: 20px; }
+input { display: block; margin: 10px 0; padding: 8px; width: 100%; max-width: 300px; }
+button { padding: 8px 16px; }
+</style>
 </head>
 <body>
-  <h2>Login Vendor</h2>
-  <input id="vendorId" placeholder="Gerobak ID">
-  <input id="password" type="password" placeholder="Password">
-  <button id="loginBtn">Login</button>
-  <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+<h2>Login Vendor</h2>
+<input id="vendorId" placeholder="Gerobak ID">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p id="msg"></p>
+<p>No account? <a href="signup.html">Sign Up</a></p>
 
-  <script>
-    const vendorIdInput = document.getElementById("vendorId");
-    const passwordInput = document.getElementById("password");
-    document.getElementById("loginBtn").onclick = async () => {
-      const vendorId = vendorIdInput.value.trim();
-      const password = passwordInput.value.trim();
-      if (!vendorId || !password) return alert("Vendor ID and password required");
+<script>
+async function login() {
+  const vendorId = document.getElementById("vendorId").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const msg = document.getElementById("msg");
 
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({vendorId,password})
-      }).then(r=>r.json());
+  if (!vendorId || !password) { msg.innerText = "Please enter ID and password"; return; }
 
-      if(res.success){
-        localStorage.setItem("gerobakId", vendorId);
-        localStorage.setItem("gerobakPassword", password);
-        window.location.href = "index.html?role=vendor";
-      } else alert(res.message);
-    }
-  </script>
+  const res = await fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vendorId, password })
+  });
+  const data = await res.json();
+  if (data.success) {
+    localStorage.setItem("gerobakId", vendorId);
+    window.location.href = "index.html?role=vendor";
+  } else msg.innerText = data.message;
+}
+</script>
 </body>
 </html>
