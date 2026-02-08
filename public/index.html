@@ -37,30 +37,30 @@ const vendorIcon = L.icon({ iconUrl: "image/kiosk.png", iconSize: [32,32], iconA
         iOS Browser Detection + Location Help Popup
     =============================================== */
 
-    function detectBrowser() {
-      const ua = navigator.userAgent;
+function detectBrowser() {
+  const ua = navigator.userAgent;
 
-      if (/GSA/i.test(ua)) return "google_app";
-      if (/CriOS/i.test(ua)) return "chrome_ios";
-      if (/FxiOS/i.test(ua)) return "firefox_ios";
-      if (/EdgiOS/i.test(ua)) return "edge_ios";
-      if (/OPiOS/i.test(ua)) return "opera_ios";
-      if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
-      if (/Brave/i.test(ua)) return "brave_ios";
+  if (/GSA/i.test(ua)) return "google_app";
+  if (/CriOS/i.test(ua)) return "chrome_ios";
+  if (/FxiOS/i.test(ua)) return "firefox_ios";
+  if (/EdgiOS/i.test(ua)) return "edge_ios";
+  if (/OPiOS/i.test(ua)) return "opera_ios";
+  if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
+  if (/Brave/i.test(ua)) return "brave_ios";
 
-      if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
+  if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
 
-      return "other";
-    }
+  return "other";
+}
 
-    function showiOSLocationHelp() {
-      const browser = detectBrowser();
-      let message = "";
+function showiOSLocationHelp() {
+  const browser = detectBrowser();
+  let message = "";
 
-      switch (browser) {
-        case "safari":
-          message = `Location could not be accessed.
-          
+  switch (browser) {
+    case "safari":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -68,11 +68,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        case "chrome_ios":
-          message = `Location could not be accessed.
-          
+    case "chrome_ios":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -80,11 +80,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        case "google_app":
-          message = `Location could not be accessed.
-          
+    case "google_app":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -92,11 +92,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        case "firefox_ios":
-          message = `Location could not be accessed.
-          
+    case "firefox_ios":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -104,11 +104,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        case "edge_ios":
-          message = `Location could not be accessed.
-          
+    case "edge_ios":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -116,11 +116,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        case "opera_ios":
-          message = `Location could not be accessed.
-          
+    case "opera_ios":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -128,11 +128,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        case "duckduckgo_ios":
-          message = `Location could not be accessed.
-          
+    case "duckduckgo_ios":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -140,11 +140,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        case "brave_ios":
-          message = `Location could not be accessed.
-          
+    case "brave_ios":
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -152,11 +152,11 @@ To enable location on iPhone:
 4. Choose "While Using the App"
 
 Then return to this page and try again.`;
-          break;
+      break;
 
-        default:
-          message = `Location could not be accessed.
-          
+    default:
+      message = `Location could not be accessed.
+      
 To enable location on iPhone:
 1. Open Settings
 2. Tap Privacy & Security → Location Services
@@ -164,10 +164,10 @@ To enable location on iPhone:
 4. Set Location to "While Using the App"
 
 Then return to this page and try again.`;
-      }
+  }
 
-      alert(message);
-    }
+  alert(message);
+}
 
 const vendorId = localStorage.getItem("vendorId");
 if (role === "vendor" && !vendorId) location.href = "login.html";
@@ -197,8 +197,16 @@ if (role==="vendor") {
       const {latitude, longitude}=pos.coords;
       statusDiv.innerText = "Berbagi lokasi";
       socket.emit("vendorLocationUpdate", { vendorId, lat:latitude, lng:longitude, profile:{name:vendorId,status:statusDiv.innerText}});
-      if (!myMarker) myMarker=L.marker([latitude,longitude],{icon:vendorIcon}).addTo(map).bindPopup(`${vendorId} (Anda)`);
-      else myMarker.setLatLng([latitude,longitude]).setPopupContent(`${vendorId} (Anda)`);
+
+      if (!myMarker) {
+        myMarker=L.marker([latitude,longitude],{icon:vendorIcon}).addTo(map).bindPopup(`${vendorId} (Anda)`);
+      } else {
+        myMarker.setLatLng([latitude,longitude]).setPopupContent(`${vendorId} (Anda)`);
+      }
+
+      // ⭐⭐⭐ AUTO RECENTER (added)
+      map.setView([latitude, longitude], 17);
+
     }, err=>alert(err.message), {enableHighAccuracy:true});
     toggleBtn.textContent="Berhenti Berbagi Lokasi";
   }
