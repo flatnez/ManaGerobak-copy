@@ -407,5 +407,23 @@ function viewProfile(id){
   });
 }
 </script>
+
+<script>
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const role = localStorage.getItem("role");
+  if (!role) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  console.log("Logged in as:", user.email, "Role:", role);
+});
+</script>
+
 </body>
 </html>
