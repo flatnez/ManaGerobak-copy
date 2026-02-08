@@ -7,25 +7,73 @@
 </head>
 <body>
 <h2>Daftar Gerobak Baru</h2>
+
 <form id="signupForm">
-    <input type="text" id="vendorId" placeholder="ID Gerobak" required><br>
+    <input type="text" id="vendorId" placeholder="ID Gerobak (contoh: gerobak1)" required><br>
     <input type="password" id="password" placeholder="Password" required><br>
     <button type="submit">Daftar</button>
 </form>
+
 <p>Sudah punya akun? <a href="login.html">Login</a></p>
-<div id="msg"></div>
+<div id="msg" style="color:red; margin-top:10px;"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-document.getElementById("signupForm").addEventListener("submit",async e=>{
+  // ====== Konfigurasi Firebase ======
+  const firebaseConfig = {
+    apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
+  authDomain: "managerobak.firebaseapp.com",
+  databaseURL: "https://managerobak-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "managerobak",
+  storageBucket: "managerobak.firebasestorage.app",
+  messagingSenderId: "836881712482",
+  appId: "1:836881712482:web:552f5f5085b1acf6df583b",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  // ====== Sign Up ======
+  document.getElementById("signupForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const vendorId = document.getElementById("vendorId").value.trim();
     const password = document.getElementById("password").value.trim();
-    const res = await fetch("/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vendorId,password})});
-    const data = await res.json();
     const msg = document.getElementById("msg");
-    if(data.success){ msg.innerText="Berhasil daftar!"; localStorage.setItem("vendorId",vendorId); window.location.href="index.html?role=vendor"; }
-    else msg.innerText=data.message;
-});
+
+    if (!vendorId || !password) {
+      msg.innerText = "ID Gerobak dan password wajib diisi!";
+      return;
+    }
+
+    try {
+      // Sign up via Firebase Auth
+      const userCredential = await auth.createUserWithEmailAndPassword(vendorId + "@dummy.com", password);
+      const uid = userCredential.user.uid;
+
+      // Buat profil awal di Realtime Database
+      await db.ref('vendors/' + uid).set({
+        id: vendorId,
+        status: '',
+        menu: [],
+        jamBuka: '',
+        gambar: ''
+      });
+
+      msg.style.color = "green";
+      msg.innerText = "Akun berhasil dibuat!";
+      localStorage.setItem("vendorUid", uid); // simpan uid untuk index.html
+      localStorage.setItem("vendorId", vendorId);
+      window.location.href = "index.html?role=vendor";
+    } catch (error) {
+      msg.innerText = error.message;
+    }
+  });
 </script>
+
 </body>
 </html>

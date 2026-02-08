@@ -7,47 +7,88 @@
 </head>
 <body>
 <h2>Profil Gerobak</h2>
+
 <div id="profileForm">
-    <label>Jam Buka: <input type="text" id="openTime" placeholder="08:00-17:00"></label><br>
-    <label>Status Buka/Tutup: 
-      <select id="openStatus">
-        <option value="buka">Buka</option>
-        <option value="tutup">Tutup</option>
-      </select>
-    </label><br>
-    <label>Menu (pisahkan dengan koma): <input type="text" id="menu"></label><br>
-    <label>Foto Gerobak: <input type="text" id="photo" placeholder="namaFile.jpg"></label><br>
-    <button id="saveBtn">Simpan Profil</button>
-    <button onclick="window.location.href='index.html?role=vendor'">Kembali ke Map</button>
+  <label>Jam Buka: <input type="text" id="jamBuka" placeholder="08:00-17:00"></label><br>
+  
+  <label>Status Gerobak: 
+    <select id="status">
+      <option value="buka">Buka</option>
+      <option value="tutup">Tutup</option>
+    </select>
+  </label><br>
+  
+  <label>Menu (pisahkan dengan koma): <input type="text" id="menu"></label><br>
+  
+  <label>Foto Gerobak: <input type="text" id="gambar" placeholder="namaFile.jpg atau URL"></label><br>
+  
+  <button id="saveBtn">Simpan Profil</button>
+  <button onclick="window.location.href='index.html?role=vendor'">Kembali ke Map</button>
 </div>
-<div id="msg"></div>
+
+<div id="msg" style="color:green; margin-top:10px;"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-const vendorId = urlParams.get("vendorId") || localStorage.getItem("vendorId");
+  // ====== Konfigurasi Firebase ======
+  const firebaseConfig = {
+    apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
+  authDomain: "managerobak.firebaseapp.com",
+  databaseURL: "https://managerobak-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "managerobak",
+  storageBucket: "managerobak.firebasestorage.app",
+  messagingSenderId: "836881712482",
+  appId: "1:836881712482:web:552f5f5085b1acf6df583b",
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
 
-async function loadProfile(){
-    const res = await fetch("/vendorProfiles.json"); // load JSON
-    const data = await res.json();
-    const prof = data[vendorId]?.profile||{};
-    document.getElementById("openTime").value = prof.openTime||"";
-    document.getElementById("openStatus").value = prof.openStatus||"buka";
-    document.getElementById("menu").value = prof.menu?.join(", ")||"";
-    document.getElementById("photo").value = prof.photo||"";
-}
-loadProfile();
+  // ====== Dapatkan UID vendor ======
+  const uid = localStorage.getItem('vendorUid');
+  if (!uid) {
+    alert("Anda harus login terlebih dahulu!");
+    window.location.href = "login.html";
+  }
 
-document.getElementById("saveBtn").onclick = async ()=>{
-    const profile = {
-        openTime: document.getElementById("openTime").value,
-        openStatus: document.getElementById("openStatus").value,
-        menu: document.getElementById("menu").value.split(",").map(x=>x.trim()),
-        photo: document.getElementById("photo").value
-    };
-    const res = await fetch("/updateProfile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vendorId,profile})});
-    const data = await res.json();
-    document.getElementById("msg").innerText = data.success?"Berhasil disimpan":"Gagal menyimpan";
-};
+  // ====== Load Profil ======
+  function loadProfile() {
+    db.ref('vendors/' + uid).get().then(snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        document.getElementById('jamBuka').value = data.jamBuka || "";
+        document.getElementById('status').value = data.status || "buka";
+        document.getElementById('menu').value = (data.menu || []).join(", ");
+        document.getElementById('gambar').value = data.gambar || "";
+      }
+    });
+  }
+
+  loadProfile();
+
+  // ====== Simpan Profil ======
+  document.getElementById('saveBtn').onclick = () => {
+    const jamBuka = document.getElementById('jamBuka').value;
+    const status = document.getElementById('status').value;
+    const menu = document.getElementById('menu').value.split(",").map(x=>x.trim());
+    const gambar = document.getElementById('gambar').value;
+
+    db.ref('vendors/' + uid).update({
+      jamBuka,
+      status,
+      menu,
+      gambar
+    }).then(() => {
+      document.getElementById('msg').innerText = "Profil tersimpan!";
+    }).catch(err => {
+      document.getElementById('msg').innerText = "Gagal menyimpan: " + err.message;
+    });
+  }
 </script>
+
 </body>
 </html>

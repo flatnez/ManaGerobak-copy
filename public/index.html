@@ -15,6 +15,51 @@ button { display: block; margin: 6px 0; padding: 6px 10px; width: 100%; }
 #profilePage input, #profilePage textarea, #profilePage select { width:100%; padding:6px; margin-top:4px; }
 #profilePage img { max-width:100%; margin-top:10px; }
 </style>
+
+<!-- Firebase App -->
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<!-- Firebase Authentication -->
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+<!-- Firebase Realtime Database -->
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+
+<script>
+  // TODO: ganti config dengan project Firebase-mu
+  const firebaseConfig = {
+    apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
+    authDomain: "managerobak.firebaseapp.com",
+    databaseURL: "https://managerobak-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "managerobak",
+   storageBucket: "managerobak.firebasestorage.app",
+   messagingSenderId: "836881712482",
+   appId: "1:836881712482:web:552f5f5085b1acf6df583b",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  db.ref('vendors').on('value', snapshot => {
+    const vendors = snapshot.val();
+    Object.keys(vendors || {}).forEach(uid => {
+      const v = vendors[uid];
+
+      if (v.lat !== undefined && v.lng !== undefined) {
+        const marker = L.marker([v.lat, v.lng], { icon: vendorIcon }).addTo(map);
+
+        marker.bindPopup(`
+          <b>${v.id}</b><br>
+          Status: ${v.status}<br>
+          Jam buka: ${v.jamBuka}<br>
+          Menu: ${v.menu.join(', ')}<br>
+          <img src="${v.gambar}" width="100"/>
+        `);
+      }
+    });
+  });
+
+</script>
+
 </head>
 <body>
 <div id="map"></div>
