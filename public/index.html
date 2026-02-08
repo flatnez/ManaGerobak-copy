@@ -3,426 +3,307 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ManaGerobak?</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<title>Peta Gerobak</title>
+
+<!-- Leaflet MAP -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <style>
-html, body, #map { height: 100%; margin: 0; }
-.topbar { position: absolute; top: 10px; left: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; font-size: 14px; }
-button { display: block; margin: 6px 0; padding: 6px 10px; width: 100%; }
-#profilePage { position:absolute; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; display:none; overflow:auto; padding:20px; box-sizing:border-box; }
-#profilePage h2 { margin-top:0; }
-#profilePage label { display:block; margin-top:10px; }
-#profilePage input, #profilePage textarea, #profilePage select { width:100%; padding:6px; margin-top:4px; }
-#profilePage img { max-width:100%; margin-top:10px; }
+  #map { height: 400px; width: 100%; }
+  .panel { padding: 10px; background: #f8f8f8; margin-top: 10px; border-radius: 6px;}
 </style>
-
-<!-- Firebase App -->
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
-<!-- Firebase Authentication -->
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
-<!-- Firebase Realtime Database -->
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
-
-<script>
-  // TODO: ganti config dengan project Firebase-mu
-  const firebaseConfig = {
-    apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
-    authDomain: "managerobak.firebaseapp.com",
-    databaseURL: "https://managerobak-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "managerobak",
-   storageBucket: "managerobak.firebasestorage.app",
-   messagingSenderId: "836881712482",
-   appId: "1:836881712482:web:552f5f5085b1acf6df583b",
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
-
-db.ref('vendors').on('value', snapshot => {
-  const vendors = snapshot.val();
-  if (!vendors) return;
-
-  Object.keys(vendors).forEach(uid => {
-    const v = vendors[uid];
-
-    const marker = L.marker([v.lat, v.lng], { icon: vendorIcon }).addTo(map);
-
-    marker.bindPopup(`
-      <b>${v.idGerobak}</b><br>
-      Status: ${v.status}<br>
-      Jam buka: ${v.jamBuka}<br>
-      Menu: ${v.menu.join(', ')}<br>
-      <img src="${v.gambar}" width="100">
-    `);
-  });
-});
-</script>
-
-<script>
-// === FIX REDIRECT LOOP ===
-setTimeout(() => {
-    const uid = localStorage.getItem("vendorUid");
-    const role = new URLSearchParams(window.location.search).get("role");
-
-    if (role === "vendor" && !uid) {
-        console.log("Vendor not logged in → redirect");
-        window.location.href = "login.html";
-    }
-}, 300);
-
-// Logging saja, tidak redirect apa pun
-auth.onAuthStateChanged(user => {
-    console.log("Auth state changed:", user ? "Logged-in" : "Logged-out");
-});
-</script>
-
 </head>
 <body>
+
+<h2>Map Gerobak</h2>
+
 <div id="map"></div>
-<div class="topbar">
-  <div id="role"></div>
-  <div id="status">Tidak berbagi lokasi</div>
-  <div id="controls"></div>
+
+<!-- ===================== -->
+<!-- PANEL VENDOR          -->
+<!-- ===================== -->
+<div id="vendorPanel" class="panel" style="display:none;">
+
+  <h3>Kontrol Lokasi Vendor</h3>
+
+  <button id="shareBtn">Mulai Bagikan Lokasi</button>
+  <button id="stopBtn">Berhenti Bagikan Lokasi</button>
+
+  <hr>
+
+  <h3>Profil Gerobak</h3>
+
+  <label>Status:</label><br>
+  <select id="status">
+    <option value="buka">Buka</option>
+    <option value="tutup">Tutup</option>
+  </select><br><br>
+
+  <label>Jam Buka:</label><br>
+  <input id="jamBuka" placeholder="contoh: 08:00"><br><br>
+
+  <label>Jam Tutup:</label><br>
+  <input id="jamTutup" placeholder="contoh: 17:00"><br><br>
+
+  <label>Menu (comma separated):</label><br>
+  <input id="menu" placeholder="bakso, mie ayam, es teh"><br><br>
+
+  <label>Foto URL:</label><br>
+  <input id="gambar" placeholder="https://..."><br><br>
+
+  <button onclick="updateProfil()">Update Profil</button>
 </div>
 
-<!-- Vendor Profile Page -->
-<div id="profilePage">
-  <h2>Profil Gerobak</h2>
-  <label>Jam Buka</label>
-  <input type="text" id="openTime" placeholder="Contoh: 08:00">
-  <label>Jam Tutup</label>
-  <input type="text" id="closeTime" placeholder="Contoh: 17:00">
-  <label>Status Gerobak</label>
-  <select id="openStatus">
-    <option value="Buka">Buka</option>
-    <option value="Tutup">Tutup</option>
-  </select>
-  <label>Menu Gerobak</label>
-  <textarea id="menuList" rows="4" placeholder="Tulis menu, satu per baris"></textarea>
-  <label>Foto Utama</label>
-  <input type="file" id="mainPhoto">
-  <img id="photoPreview" src="" alt="Preview Foto">
-  <button id="saveProfile">Simpan Profil</button>
-  <button id="backToMap">Kembali ke Peta</button>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/socket.io/socket.io.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-const params = new URLSearchParams(window.location.search);
-const role = params.get("role") || "customer";
-const socket = io();
-const map = L.map("map").setView([-6.2, 106.8166], 13);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
-
-let myMarker = null;
-const vendorMarkers = new Map();
-const vendorIcon = L.icon({ iconUrl: "image/kiosk.png", iconSize: [32,32], iconAnchor: [16,32] });
-
-/* ===============================================
-        iOS Browser Detection + Location Help Popup
-    =============================================== */
-
-    function detectBrowser() {
-      const ua = navigator.userAgent;
-
-      if (/GSA/i.test(ua)) return "google_app";
-      if (/CriOS/i.test(ua)) return "chrome_ios";
-      if (/FxiOS/i.test(ua)) return "firefox_ios";
-      if (/EdgiOS/i.test(ua)) return "edge_ios";
-      if (/OPiOS/i.test(ua)) return "opera_ios";
-      if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
-      if (/Brave/i.test(ua)) return "brave_ios";
-
-      if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
-
-      return "other";
-    }
-
-    function showiOSLocationHelp() {
-      const browser = detectBrowser();
-      let message = "";
-
-      switch (browser) {
-        case "safari":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Safari Websites
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        case "chrome_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Chrome
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        case "google_app":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Google
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        case "firefox_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Firefox
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        case "edge_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Microsoft Edge
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        case "opera_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Opera
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        case "duckduckgo_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap DuckDuckGo
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        case "brave_ios":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Brave
-4. Choose "While Using the App"
-
-Then return to this page and try again.`;
-          break;
-
-        default:
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Find your browser in the list
-4. Set Location to "While Using the App"
-
-Then return to this page and try again.`;
-      }
-
-      alert(message);
-    }
-
-// Role handling
-
-const controlsDiv = document.getElementById("controls");
-const statusDiv = document.getElementById("status");
-const roleDiv = document.getElementById("role");
-roleDiv.innerText = role==="vendor"?`Gerobak: ${vendorId}`:"Pelanggan";
-
-// Logout button for vendors only
-if(role==="vendor"){
-  const logoutBtn = document.createElement("button");
-  logoutBtn.textContent = "Logout";
-  logoutBtn.onclick = ()=>{localStorage.removeItem("vendorId"); location.href="login.html";};
-  controlsDiv.appendChild(logoutBtn);
-
-  // Profile button
-  const profileBtn = document.createElement("button");
-  profileBtn.textContent="Profil Gerobak";
-  profileBtn.onclick=()=>{document.getElementById("profilePage").style.display="block";}
-  controlsDiv.appendChild(profileBtn);
-}
-
-// Vendor location toggle
-let watchId = null;
-if (role==="vendor") {
-  const toggleBtn = document.createElement("button");
-  toggleBtn.textContent = "Mulai Berbagi Lokasi";
-  toggleBtn.onclick = () => { if(!watchId) startSharing(); else stopSharing(); };
-  controlsDiv.appendChild(toggleBtn);
-
-  function startSharing() {
-    if(!navigator.geolocation) return alert("Geolocation not supported");
-    watchId = navigator.geolocation.watchPosition(pos=>{
-      const {latitude, longitude}=pos.coords;
-      statusDiv.innerText = "Berbagi lokasi";
-      socket.emit("vendorLocationUpdate",{vendorId, lat:latitude, lng:longitude, profile:{name:vendorId,status:statusDiv.innerText}});
-      if(!myMarker) myMarker=L.marker([latitude,longitude],{icon:vendorIcon}).addTo(map).bindPopup(`${vendorId} (Anda)`);
-      else myMarker.setLatLng([latitude,longitude]).setPopupContent(`${vendorId} (Anda)`);
-      // Recenter map
-      map.setView([latitude,longitude],16);
-    }, err=>alert(err.message), {enableHighAccuracy:true});
-    toggleBtn.textContent="Berhenti Berbagi Lokasi";
-  }
-
-  function stopSharing() {
-    if(watchId) navigator.geolocation.clearWatch(watchId);
-    watchId=null;
-    statusDiv.innerText="Tidak berbagi lokasi";
-    socket.emit("vendorStop",{vendorId});
-    if(myMarker){ map.removeLayer(myMarker); myMarker=null; }
-    toggleBtn.textContent="Mulai Berbagi Lokasi";
-  }
-}
-
-// Customer location button
-if(role==="customer"){
-  const btn = document.createElement("button");
-  btn.textContent="Lihat Lokasi Saya";
-  btn.onclick=()=>{navigator.geolocation.getCurrentPosition(pos=>{
-    const {latitude,longitude}=pos.coords;
-    if(!myMarker) myMarker=L.circleMarker([latitude,longitude],{radius:8,color:"#007AFF",fillColor:"#007AFF",fillOpacity:0.9}).addTo(map).bindPopup('Anda');
-    else myMarker.setLatLng([latitude,longitude]);
-    map.setView([latitude,longitude],16);
-  }, err=>alert(err.message));};
-  controlsDiv.appendChild(btn);
-}
-
-// Socket events
-socket.emit(role==="vendor"?"registerVendor":"registerCustomer",{vendorId});
-socket.on("activeVendors", vendors=>{
-  vendors.forEach(data=>{
-    let marker=vendorMarkers.get(data.vendorId);
-    const name=data.meta?.name||data.vendorId;
-    const status=data.meta?.status||"Tidak ada status";
-    const profile=data.meta?.profile||{};
-    if(!marker){
-      marker=L.marker([data.lat,data.lng],{icon:vendorIcon}).addTo(map)
-        .bindPopup(`<b>${name}</b><br><i>${status}</i><br><button onclick="viewProfile('${data.vendorId}')">Lihat Profil</button>`);
-      vendorMarkers.set(data.vendorId,marker);
-    } else {
-      marker.setLatLng([data.lat,data.lng])
-        .setPopupContent(`<b>${name}</b><br><i>${status}</i><br><button onclick="viewProfile('${data.vendorId}')">Lihat Profil</button>`);
-    }
-  });
-});
-
-socket.on("vendorPosition",data=>{
-  let marker=vendorMarkers.get(data.vendorId);
-  const name=data.meta?.name||data.vendorId;
-  const status=data.meta?.status||"Tidak ada status";
-  if(!marker){
-    marker=L.marker([data.lat,data.lng],{icon:vendorIcon}).addTo(map)
-      .bindPopup(`<b>${name}</b><br><i>${status}</i><br><button onclick="viewProfile('${data.vendorId}')">Lihat Profil</button>`);
-    vendorMarkers.set(data.vendorId,marker);
-  } else {
-    marker.setLatLng([data.lat,data.lng])
-      .setPopupContent(`<b>${name}</b><br><i>${status}</i><br><button onclick="viewProfile('${data.vendorId}')">Lihat Profil</button>`);
-  }
-});
-
-socket.on("vendorGone",data=>{
-  const marker=vendorMarkers.get(data.vendorId);
-  if(marker){ map.removeLayer(marker); vendorMarkers.delete(data.vendorId); }
-});
-
-// ================== Vendor Profile UI ==================
-const profilePage = document.getElementById("profilePage");
-const backBtn = document.getElementById("backToMap");
-backBtn.onclick=()=>{ profilePage.style.display="none"; };
-
-// Save profile
-document.getElementById("saveProfile").onclick=()=>{
-  const profile = {
-    openTime: document.getElementById("openTime").value,
-    closeTime: document.getElementById("closeTime").value,
-    status: document.getElementById("openStatus").value,
-    menu: document.getElementById("menuList").value.split("\n"),
-    photo: document.getElementById("photoPreview").src
-  };
-  fetch("/updateProfile",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({vendorId, profile})
-  }).then(r=>r.json()).then(res=>{
-    if(res.success) alert("Profil berhasil disimpan");
-    else alert("Gagal menyimpan profil");
-  });
+/* ===============================
+   FIREBASE INIT
+================================*/
+const firebaseConfig = {
+  apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
+  authDomain: "managerobak.firebaseapp.com",
+  databaseURL: "https://managerobak-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "managerobak",
+  storageBucket: "managerobak.firebasestorage.app",
+  messagingSenderId: "836881712482",
+  appId: "1:836881712482:web:552f5f5085b1acf6df583b",
 };
+firebase.initializeApp(firebaseConfig);
 
-// Preview uploaded photo
-document.getElementById("mainPhoto").onchange=(e)=>{
-  const reader=new FileReader();
-  reader.onload=function(ev){ document.getElementById("photoPreview").src=ev.target.result; };
-  reader.readAsDataURL(e.target.files[0]);
-};
+const auth = firebase.auth();
+const db = firebase.database();
 
-// View profile from marker popup
-function viewProfile(id){
-  fetch(`/getProfile?vendorId=${id}`).then(r=>r.json()).then(data=>{
-    if(data.success){
-      const p=data.profile;
-      document.getElementById("openTime").value=p.openTime||"";
-      document.getElementById("closeTime").value=p.closeTime||"";
-      document.getElementById("openStatus").value=p.status||"Tutup";
-      document.getElementById("menuList").value=(p.menu||[]).join("\n");
-      document.getElementById("photoPreview").src=p.photo||"";
-      profilePage.style.display="block";
-    } else alert("Profil tidak ditemukan");
-  });
-}
-</script>
-
-<script>
-firebase.auth().onAuthStateChanged(user => {
+/* ===============================
+   AUTH GUARD
+================================*/
+auth.onAuthStateChanged(user => {
   if (!user) {
     window.location.href = "login.html";
     return;
   }
 
-  const role = localStorage.getItem("role");
-  if (!role) {
-    window.location.href = "login.html";
-    return;
+  window.uid = user.uid;
+  window.role = localStorage.getItem("role");
+
+  if (window.role === "vendor") {
+    document.getElementById("vendorPanel").style.display = "block";
   }
 
-  console.log("Logged in as:", user.email, "Role:", role);
+  loadVendorsOnMap();
 });
+
+/* ===============================================
+        iOS Browser Detection + Location Help Popup
+===============================================*/
+function detectBrowser() {
+  const ua = navigator.userAgent;
+
+  if (/GSA/i.test(ua)) return "google_app";
+  if (/CriOS/i.test(ua)) return "chrome_ios";
+  if (/FxiOS/i.test(ua)) return "firefox_ios";
+  if (/EdgiOS/i.test(ua)) return "edge_ios";
+  if (/OPiOS/i.test(ua)) return "opera_ios";
+  if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
+  if (/Brave/i.test(ua)) return "brave_ios";
+
+  if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
+
+  return "other";
+}
+
+function showiOSLocationHelp() {
+  const browser = detectBrowser();
+  let message = "";
+
+  switch (browser) {
+    case "safari":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Safari Websites
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "chrome_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Chrome
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "google_app":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Google
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "firefox_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Firefox
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "edge_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Microsoft Edge
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "opera_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Opera
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "duckduckgo_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap DuckDuckGo
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "brave_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Brave
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    default:
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Find your browser in the list
+4. Set Location to "While Using the App"
+Then return to this page and try again.`;
+  }
+
+  alert(message);
+}
+</script>
+
+<script>
+/* ===============================
+   MAP SETUP
+================================*/
+let map = L.map('map').setView([-6.200, 106.816], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19
+}).addTo(map);
+
+const vendorIcon = L.icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448337.png",
+  iconSize: [40, 40]
+});
+
+let vendorMarker = null;
+let watchID = null;
+
+/* ===============================
+   SHARE LOCATION
+================================*/
+document.getElementById("shareBtn").onclick = () => {
+  if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
+
+  // cek iOS dulu
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    showiOSLocationHelp();
+  }
+
+  watchID = navigator.geolocation.watchPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    db.ref("vendors/" + uid).update({
+      lat: lat,
+      lng: lng
+    });
+
+    if (vendorMarker) {
+      vendorMarker.setLatLng([lat, lng]);
+    } else {
+      vendorMarker = L.marker([lat, lng], {icon: vendorIcon}).addTo(map);
+    }
+
+  }, err => alert(err.message));
+};
+
+document.getElementById("stopBtn").onclick = () => {
+  if (watchID) navigator.geolocation.clearWatch(watchID);
+  watchID = null;
+};
+
+/* ===============================
+   UPDATE PROFIL
+================================*/
+function updateProfil() {
+  const status = document.getElementById("status").value;
+  const jamBuka = document.getElementById("jamBuka").value;
+  const jamTutup = document.getElementById("jamTutup").value;
+  const menuList = document.getElementById("menu").value.split(",").map(s => s.trim());
+  const gambar = document.getElementById("gambar").value;
+
+  db.ref("vendors/" + uid).update({
+    status,
+    jamBuka,
+    jamTutup,
+    menu: menuList,
+    gambar
+  });
+
+  alert("Profil berhasil diupdate!");
+}
+
+/* ===============================
+   LOAD SEMUA VENDOR ke MAP
+================================*/
+function loadVendorsOnMap() {
+  db.ref("vendors").on("value", snap => {
+    const data = snap.val();
+    if (!data) return;
+
+    Object.keys(data).forEach(id => {
+      const v = data[id];
+      if (!v.lat || !v.lng) return;
+
+      const marker = L.marker([v.lat, v.lng], {icon: vendorIcon}).addTo(map);
+
+      marker.bindPopup(`
+        <b>${id}</b><br>
+        Status: ${v.status || "-"}<br>
+        Jam: ${v.jamBuka || "-"} - ${v.jamTutup || "-"}<br>
+        Menu: ${(v.menu || []).join(", ")}<br>
+        <img src="${v.gambar || ""}" width="120">
+      `);
+    });
+  });
+}
 </script>
 
 </body>
