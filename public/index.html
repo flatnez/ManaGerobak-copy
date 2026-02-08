@@ -39,24 +39,24 @@ button { display: block; margin: 6px 0; padding: 6px 10px; width: 100%; }
   const auth = firebase.auth();
   const db = firebase.database();
 
-  db.ref('vendors').on('value', snapshot => {
-    const vendors = snapshot.val();
-    Object.keys(vendors || {}).forEach(uid => {
-      const v = vendors[uid];
+db.ref('vendors').on('value', snapshot => {
+  const vendors = snapshot.val();
+  if (!vendors) return;
 
-      if (v.lat !== undefined && v.lng !== undefined) {
-        const marker = L.marker([v.lat, v.lng], { icon: vendorIcon }).addTo(map);
+  Object.keys(vendors).forEach(uid => {
+    const v = vendors[uid];
 
-        marker.bindPopup(`
-          <b>${v.id}</b><br>
-          Status: ${v.status}<br>
-          Jam buka: ${v.jamBuka}<br>
-          Menu: ${v.menu.join(', ')}<br>
-          <img src="${v.gambar}" width="100"/>
-        `);
-      }
-    });
+    const marker = L.marker([v.lat, v.lng], { icon: vendorIcon }).addTo(map);
+
+    marker.bindPopup(`
+      <b>${v.idGerobak}</b><br>
+      Status: ${v.status}<br>
+      Jam buka: ${v.jamBuka}<br>
+      Menu: ${v.menu.join(', ')}<br>
+      <img src="${v.gambar}" width="100">
+    `);
   });
+});
 
 </script>
 
