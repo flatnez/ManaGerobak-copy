@@ -213,7 +213,7 @@ if (role === "vendor") {
         vendorId: gerobakId,
         lat: latitude,
         lng: longitude,
-        profile: { name: gerobakId, status: statusInput.value || "" }
+        meta: { name: gerobakId, status: statusInput.value || "" }
       });
 
       if (!myMarker) {
@@ -291,26 +291,7 @@ else {
 
   socket.emit("registerCustomer");
 
-  socket.on("activeVendors", vendors => {
-    vendors.forEach(data => {
-      let marker = gerobakMarkers.get(data.vendorId);
-      const profile = data.meta || {};
-      const name = profile.name || data.vendorId;
-      const status = profile.status || "Tidak ada status";
-
-      if (!marker) {
-        marker = L.marker([data.lat, data.lng], { icon: gerobakIcon })
-          .addTo(map)
-          .bindPopup(`<b>${name}</b><br><i>${status}</i>`);
-        gerobakMarkers.set(data.vendorId, marker);
-      } else {
-        marker.setLatLng([data.lat, data.lng])
-              .setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
-      }
-    });
-  });
-
-  socket.on("vendorPosition", data => {
+  function updateGerobakMarker(data) {
     let marker = gerobakMarkers.get(data.vendorId);
     const profile = data.meta || {};
     const name = profile.name || data.vendorId;
@@ -325,7 +306,13 @@ else {
       marker.setLatLng([data.lat, data.lng])
             .setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
     }
+  }
+
+  socket.on("activeVendors", vendors => {
+    vendors.forEach(updateGerobakMarker);
   });
+
+  socket.on("vendorPosition", updateGerobakMarker);
 
   socket.on("vendorGone", data => {
     const marker = gerobakMarkers.get(data.vendorId);
