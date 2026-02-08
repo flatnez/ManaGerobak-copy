@@ -94,6 +94,25 @@ db.ref('vendors').on('value', snapshot => {
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
+// PERBAIKAN REDIRECT LOOP
+setTimeout(() => {
+    const uid = localStorage.getItem("vendorUid");
+    const role = new URLSearchParams(window.location.search).get("role");
+
+    // Vendor harus login → jika tidak ada UID, arahkan ke login
+    if (role === "vendor" && !uid) {
+        console.log("Vendor not logged in -> redirect");
+        window.location.href = "login.html";
+    }
+}, 300);
+
+// Jangan redirect lewat authState lagi (bahaya)
+auth.onAuthStateChanged(user => {
+    console.log("Auth state changed:", user ? "Logged-in" : "Logged-out");
+});
+</script>
+
+<script>
 const params = new URLSearchParams(window.location.search);
 const role = params.get("role") || "customer";
 const socket = io();
