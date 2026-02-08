@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profil Gerobak</title>
+</head>
+<body>
+<h2>Profil Gerobak</h2>
+<div id="profileForm">
+    <label>Jam Buka: <input type="text" id="openTime" placeholder="08:00-17:00"></label><br>
+    <label>Status Buka/Tutup: 
+      <select id="openStatus">
+        <option value="buka">Buka</option>
+        <option value="tutup">Tutup</option>
+      </select>
+    </label><br>
+    <label>Menu (pisahkan dengan koma): <input type="text" id="menu"></label><br>
+    <label>Foto Gerobak: <input type="text" id="photo" placeholder="namaFile.jpg"></label><br>
+    <button id="saveBtn">Simpan Profil</button>
+    <button onclick="window.location.href='index.html?role=vendor'">Kembali ke Map</button>
+</div>
+<div id="msg"></div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const vendorId = urlParams.get("vendorId") || localStorage.getItem("vendorId");
+
+async function loadProfile(){
+    const res = await fetch("/vendorProfiles.json"); // load JSON
+    const data = await res.json();
+    const prof = data[vendorId]?.profile||{};
+    document.getElementById("openTime").value = prof.openTime||"";
+    document.getElementById("openStatus").value = prof.openStatus||"buka";
+    document.getElementById("menu").value = prof.menu?.join(", ")||"";
+    document.getElementById("photo").value = prof.photo||"";
+}
+loadProfile();
+
+document.getElementById("saveBtn").onclick = async ()=>{
+    const profile = {
+        openTime: document.getElementById("openTime").value,
+        openStatus: document.getElementById("openStatus").value,
+        menu: document.getElementById("menu").value.split(",").map(x=>x.trim()),
+        photo: document.getElementById("photo").value
+    };
+    const res = await fetch("/updateProfile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vendorId,profile})});
+    const data = await res.json();
+    document.getElementById("msg").innerText = data.success?"Berhasil disimpan":"Gagal menyimpan";
+};
+</script>
+</body>
+</html>
