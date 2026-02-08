@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mana Gerobak?</title>
+  <title>ManaGerobak?</title>
 
   <link
     rel="stylesheet"
@@ -53,8 +53,6 @@
     let vendorId = params.get("vendorId");
     const socket = io();
 
-    document.getElementById("role").innerText = "Role: " + role;
-
     const map = L.map("map").setView([-6.2, 106.8166], 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap"
@@ -70,10 +68,9 @@
       iconAnchor: [16, 32]
     });
 
-    /* ===============================================
-        iOS Browser Detection + Location Help Popup
-    =============================================== */
-
+    /* ===============================
+       iOS Helper
+    =============================== */
     function detectBrowser() {
       const ua = navigator.userAgent;
 
@@ -98,59 +95,19 @@
           message = `Location could not be accessed.
           
 To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Safari Websites
-4. Choose "While Using the App"`;
+Settings → Privacy & Security → Location Services → Safari Websites → "While Using the App"`;
           break;
 
         case "chrome_ios":
           message = `Location could not be accessed.
           
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Chrome
-4. Choose "While Using the App"`;
-          break;
-
-        case "google_app":
-          message = `Location could not be accessed.
-          
 To enable location:
-1. Open Settings → Privacy & Security → Location Services
-2. Tap Google
-3. Choose "While Using the App"`;
-          break;
-
-        case "firefox_ios":
-          message = `Enable location:
-Settings → Privacy & Security → Location Services → Firefox → "While Using the App"`;
-          break;
-
-        case "edge_ios":
-          message = `Enable location:
-Settings → Privacy & Security → Location Services → Microsoft Edge → "While Using the App"`;
-          break;
-
-        case "opera_ios":
-          message = `Enable location:
-Settings → Privacy & Security → Location Services → Opera → "While Using the App"`;
-          break;
-
-        case "duckduckgo_ios":
-          message = `Enable location:
-Settings → Privacy & Security → Location Services → DuckDuckGo → "While Using the App"`;
-          break;
-
-        case "brave_ios":
-          message = `Enable location:
-Settings → Privacy & Security → Location Services → Brave → "While Using the App"`;
+Settings → Privacy & Security → Location Services → Chrome → "While Using the App"`;
           break;
 
         default:
-          message = `Enable location on iPhone:
-Settings → Privacy & Security → Location Services → choose your browser → "While Using the App"`;
+          message = `Enable location:
+Settings → Privacy & Security → Location Services → your browser → "While Using the App"`;
       }
 
       alert(message);
@@ -158,8 +115,6 @@ Settings → Privacy & Security → Location Services → choose your browser �
 
     function handleLocationError(err) {
       console.warn("Geolocation error:", err);
-
-      // Show iOS help only on iPhone/iPad
       if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         showiOSLocationHelp();
       } else {
@@ -168,15 +123,19 @@ Settings → Privacy & Security → Location Services → choose your browser �
     }
 
     /* ===============================
-       VENDOR LOGIC
+       GER OBAK (Vendor) LOGIC
     =============================== */
     if (role === "vendor") {
+
       if (!vendorId) {
-        vendorId = prompt("Enter your Vendor ID:", "gerobak1");
+        vendorId = prompt("Masukkan ID Gerobak Anda:", "gerobak1");
         if (!vendorId || vendorId.trim() === "") {
-          vendorId = "vendor_" + Math.random().toString(36).slice(2, 8);
+          vendorId = "gerobak_" + Math.random().toString(36).slice(2, 8);
         }
       }
+
+      // Show vendor name in top-left
+      document.getElementById("role").innerText = "Gerobak: " + vendorId;
 
       const controlsDiv = document.getElementById("controls");
       const statusDiv = document.getElementById("status");
@@ -184,13 +143,8 @@ Settings → Privacy & Security → Location Services → choose your browser �
       function updateButton() {
         controlsDiv.innerHTML = "";
         const btn = document.createElement("button");
-        if (watchId === null) {
-          btn.textContent = "Start Sharing Location";
-          btn.onclick = startSharing;
-        } else {
-          btn.textContent = "Stop Sharing Location";
-          btn.onclick = stopSharing;
-        }
+        btn.textContent = watchId === null ? "Start Sharing Location" : "Stop Sharing Location";
+        btn.onclick = watchId === null ? startSharing : stopSharing;
         controlsDiv.appendChild(btn);
       }
 
@@ -221,11 +175,11 @@ Settings → Privacy & Security → Location Services → choose your browser �
             if (!myMarker) {
               myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
                 .addTo(map)
-                .bindPopup(`${vendorId} (you)`);
+                .bindPopup(`${vendorId} (Anda)`);
               map.setView([latitude, longitude], 16);
             } else {
               myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent(`${vendorId} (you)`);
+                      .setPopupContent(`${vendorId} (Anda)`);
             }
           },
           handleLocationError,
@@ -258,6 +212,8 @@ Settings → Privacy & Security → Location Services → choose your browser �
        CUSTOMER LOGIC
     =============================== */
     else {
+      document.getElementById("role").innerText = "Customer";
+
       const controlsDiv = document.getElementById("controls");
       const statusDiv = document.getElementById("status");
 
