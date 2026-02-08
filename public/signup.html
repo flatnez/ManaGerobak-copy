@@ -1,36 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Vendor Signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signup - ManaGerobak?</title>
+  <style>
+    body { font-family: sans-serif; padding: 50px; }
+    input, button { display: block; margin-top: 10px; padding: 8px; width: 100%; max-width: 300px; }
+  </style>
 </head>
 <body>
-  <h2>Signup</h2>
-  <input id="vendorId" placeholder="Gerobak ID" /><br>
-  <input id="password" type="password" placeholder="Password" /><br>
-  <button onclick="signup()">Sign Up</button>
-  <p>Already have an account? <a href="login.html">Login here</a></p>
+  <h2>Signup Vendor</h2>
+  <input id="vendorId" placeholder="Gerobak ID">
+  <input id="password" type="password" placeholder="Password">
+  <button id="signupBtn">Sign Up</button>
+  <p>Already have an account? <a href="login.html">Login</a></p>
 
   <script>
-    async function signup() {
-      const vendorId = document.getElementById("vendorId").value.trim();
-      const password = document.getElementById("password").value.trim();
-
-      if (!vendorId || !password) return alert("Please fill both fields");
+    const vendorIdInput = document.getElementById("vendorId");
+    const passwordInput = document.getElementById("password");
+    document.getElementById("signupBtn").onclick = async () => {
+      const vendorId = vendorIdInput.value.trim();
+      const password = passwordInput.value.trim();
+      if (!vendorId || !password) return alert("Vendor ID and password required");
 
       const res = await fetch("/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vendorId, password })
-      });
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({vendorId,password})
+      }).then(r=>r.json());
 
-      const data = await res.json();
-      if (data.success) {
+      if(res.success){
+        localStorage.setItem("gerobakId", vendorId);
+        localStorage.setItem("gerobakPassword", password);
         alert("Signup successful!");
-        window.location.href = "/login.html";
-      } else {
-        alert(data.message);
-      }
+        window.location.href = "index.html?role=vendor";
+      } else alert(res.message);
     }
   </script>
 </body>
