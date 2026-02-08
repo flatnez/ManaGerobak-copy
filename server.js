@@ -1,13 +1,42 @@
+// ==============================
+// server.js
+// ==============================
+
 const fs = require("fs");
-const vendorProfiles = JSON.parse(fs.readFileSync("./data/vendorProfiles.json"));
+const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
+const path = require("path");
+
+// ------------------------------
+// Ensure data folder and JSON exist
+// ------------------------------
+const dataDir = path.join(__dirname, "data");
+const profilesPath = path.join(dataDir, "vendorProfiles.json");
+
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+if (!fs.existsSync(profilesPath)) fs.writeFileSync(profilesPath, "{}");
+
+const vendorProfiles = JSON.parse(fs.readFileSync(profilesPath, "utf-8"));
 
 function saveProfiles() {
-  fs.writeFileSync("./data/vendorProfiles.json", JSON.stringify(vendorProfiles, null, 2));
+  fs.writeFileSync(profilesPath, JSON.stringify(vendorProfiles, null, 2));
 }
 
-  /* -----------------------------
-     Vendor Profile
-  ----------------------------- */
+// ------------------------------
+// Express + HTTP + Socket.IO setup
+// ------------------------------
+const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
+
+// Middleware
+app.use(express.json()); // for parsing JSON from client
+app.use(express.static(path.join(__dirname, "public"))); // serve index.html and images
+
+// ------------------------------
+// Vendor Profile Route
+// ------------------------------
 app.post("/updateProfile", (req, res) => {
   const { vendorId, name, status } = req.body;
 
@@ -19,57 +48,48 @@ app.post("/updateProfile", (req, res) => {
 
   saveProfiles();
 
+  console.log("Profile updated:", vendorId, name, status);
   res.json({ success: true });
 });
 
-const express = require("express");
-const http = require("http");
-const socketIO = require("socket.io");
-const path = require("path");
-
-const app = express();
-const server = http.createServer(app);
-const io = socketIO(server);
-
-app.use(express.static(path.join(__dirname, "public")));
-
+// ------------------------------
+// Active Vendors Map
+// ------------------------------
 const activeVendors = new Map(); 
-// Structure:
-// vendorId → { lat, lng, meta, socketId }
+// Structure: vendorId → { lat, lng, meta, socketId }
 
-io.on("connection", socket => {
+// ------------------------------
+// Socket.IO logic
+// ------------------------------
+io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  /* -----------------------------
-     Register Vendor
-  ----------------------------- */
-  socket.on("registerVendor", data => {
+  // Register Vendor
+  socket.on("registerVendor", (data) => {
     activeVendors.set(data.vendorId, {
       lat: null,
       lng: null,
-      meta: data.meta || {},
+      meta: vendorProfiles[data.vendorId] || data.meta || {},
       socketId: socket.id
     });
     console.log("Vendor registered:", data.vendorId);
   });
 
-  /* -----------------------------
-     Register Customer
-  ----------------------------- */
+  // Register Customer
   socket.on("registerCustomer", () => {
-    // Immediately send all active vendors
-    socket.emit("activeVendors", Array.from(activeVendors.entries()).map(([vendorId, info]) => ({
-      vendorId,
-      lat: info.lat,
-      lng: info.lng,
-      meta: info.meta
-    })));
+    socket.emit(
+      "activeVendors",
+      Array.from(activeVendors.entries()).map(([vendorId, info]) => ({
+        vendorId,
+        lat: info.lat,
+        lng: info.lng,
+        meta: info.meta
+      }))
+    );
   });
 
-  /* -----------------------------
-     Vendor Updates Location
-  ----------------------------- */
-  socket.on("vendorLocationUpdate", data => {
+  // Vendor updates location
+  socket.on("vendorLocationUpdate", (data) => {
     if (activeVendors.has(data.vendorId)) {
       activeVendors.get(data.vendorId).lat = data.lat;
       activeVendors.get(data.vendorId).lng = data.lng;
@@ -83,17 +103,13 @@ io.on("connection", socket => {
     });
   });
 
-  /* -----------------------------
-     Vendor Stops Sharing
-  ----------------------------- */
-  socket.on("vendorStop", data => {
+  // Vendor stops sharing
+  socket.on("vendorStop", (data) => {
     activeVendors.delete(data.vendorId);
     io.emit("vendorGone", { vendorId: data.vendorId });
   });
 
-  /* -----------------------------
-     Handle Disconnect
-  ----------------------------- */
+  // Handle disconnect
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
 
@@ -106,6 +122,10 @@ io.on("connection", socket => {
   });
 });
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log("Server running");
+// ------------------------------
+// Start Server
+// ------------------------------
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
