@@ -1,3 +1,27 @@
+const fs = require("fs");
+const vendorProfiles = JSON.parse(fs.readFileSync("./data/vendorProfiles.json"));
+
+function saveProfiles() {
+  fs.writeFileSync("./data/vendorProfiles.json", JSON.stringify(vendorProfiles, null, 2));
+}
+
+  /* -----------------------------
+     Vendor Profile
+  ----------------------------- */
+app.post("/updateProfile", (req, res) => {
+  const { vendorId, name, status } = req.body;
+
+  vendorProfiles[vendorId] = {
+    name,
+    status,
+    lastUpdated: new Date().toISOString()
+  };
+
+  saveProfiles();
+
+  res.json({ success: true });
+});
+
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");

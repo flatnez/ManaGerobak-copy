@@ -27,6 +27,13 @@
       font-size: 14px;
     }
 
+    .topbar input {
+      width: 100%;
+      margin-top: 4px;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+
     button {
       margin-top: 6px;
       padding: 6px 10px;
@@ -40,7 +47,7 @@
 
   <div class="topbar">
     <div id="role"></div>
-    <div id="status">Not sharing</div>
+    <div id="status">Tidak berbagi lokasi</div>
     <div id="controls"></div>
   </div>
 
@@ -50,7 +57,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const role = params.get("role") || "customer";
-    let vendorId = params.get("vendorId");
+    let gerobakId = params.get("vendorId") || localStorage.getItem("gerobakId");
     const socket = io();
 
     const map = L.map("map").setView([-6.2, 106.8166], 13);
@@ -60,20 +67,19 @@
 
     let watchId = null;
     let myMarker = null;
-    const vendorMarkers = new Map();
+    const gerobakMarkers = new Map();
 
-    const vendorIcon = L.icon({
+    const gerobakIcon = L.icon({
       iconUrl: "image/kiosk.png",
       iconSize: [32, 32],
       iconAnchor: [16, 32]
     });
 
-    /* ===============================
-       iOS Helper
-    =============================== */
+    // ===============================
+    // iOS Helper
+    // ===============================
     function detectBrowser() {
       const ua = navigator.userAgent;
-
       if (/GSA/i.test(ua)) return "google_app";
       if (/CriOS/i.test(ua)) return "chrome_ios";
       if (/FxiOS/i.test(ua)) return "firefox_ios";
@@ -82,34 +88,22 @@
       if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
       if (/Brave/i.test(ua)) return "brave_ios";
       if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
-
       return "other";
     }
 
     function showiOSLocationHelp() {
       const browser = detectBrowser();
       let message = "";
-
       switch (browser) {
         case "safari":
-          message = `Location could not be accessed.
-          
-To enable location on iPhone:
-Settings → Privacy & Security → Location Services → Safari Websites → "While Using the App"`;
+          message = `Location could not be accessed.\nSettings → Privacy & Security → Location Services → Safari Websites → "While Using the App"`;
           break;
-
         case "chrome_ios":
-          message = `Location could not be accessed.
-          
-To enable location:
-Settings → Privacy & Security → Location Services → Chrome → "While Using the App"`;
+          message = `Location could not be accessed.\nSettings → Privacy & Security → Location Services → Chrome → "While Using the App"`;
           break;
-
         default:
-          message = `Enable location:
-Settings → Privacy & Security → Location Services → your browser → "While Using the App"`;
+          message = `Enable location: Settings → Privacy & Security → Location Services → your browser → "While Using the App"`;
       }
-
       alert(message);
     }
 
@@ -122,43 +116,57 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
       }
     }
 
-    /* ===============================
-       GEROBAK (Vendor) LOGIC
-    =============================== */
+    // ===============================
+    // GEROBAK LOGIC
+    // ===============================
     if (role === "vendor") {
-
-      if (!vendorId) {
-        vendorId = prompt("Masukkan ID Gerobak Anda:", "gerobak1");
-        if (!vendorId || vendorId.trim() === "") {
-          vendorId = "gerobak_" + Math.random().toString(36).slice(2, 8);
+      if (!gerobakId) {
+        gerobakId = prompt("Masukkan ID Gerobak Anda:", "gerobak1");
+        if (!gerobakId) {
+          gerobakId = "gerobak_" + Math.random().toString(36).slice(2, 8);
         }
+        localStorage.setItem("gerobakId", gerobakId);
       }
 
-      // Show vendor name in top-left
-      document.getElementById("role").innerText = "Nama: " + vendorId;
+      // Show gerobak name in top-left
+      document.getElementById("role").innerText = "Nama: " + gerobakId;
 
       const controlsDiv = document.getElementById("controls");
       const statusDiv = document.getElementById("status");
 
+      // Add input for custom status
+      const statusInput = document.createElement("input");
+      statusInput.id = "statusInput";
+      statusInput.placeholder = "Tulis status gerobak...";
+      controlsDiv.appendChild(statusInput);
+
       function updateButton() {
-        controlsDiv.innerHTML = "";
         const btn = document.createElement("button");
         btn.textContent = watchId === null ? "Mulai Berbagi Lokasi" : "Berhenti Berbagi Lokasi";
         btn.onclick = watchId === null ? startSharing : stopSharing;
         controlsDiv.appendChild(btn);
       }
 
-      socket.emit("registerVendor", {
-        vendorId,
-        meta: { name: vendorId }
-      });
+      // Edit profile button
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Simpan Status";
+      editBtn.onclick = () => {
+        const status = statusInput.value || "";
+        fetch("/updateProfile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gerobakId, status })
+        });
+        alert("Status diperbarui!");
+      };
+      controlsDiv.appendChild(editBtn);
+
+      updateButton();
+
+      socket.emit("registerGerobak", { gerobakId });
 
       function startSharing() {
-        if (!navigator.geolocation) {
-          alert("Geolocation not supported");
-          return;
-        }
-
+        if (!navigator.geolocation) return alert("Geolocation not supported");
         if (watchId !== null) return;
 
         watchId = navigator.geolocation.watchPosition(
@@ -166,20 +174,21 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
             const { latitude, longitude } = pos.coords;
             statusDiv.innerText = "Berbagi lokasi";
 
-            socket.emit("vendorLocationUpdate", {
-              vendorId,
+            socket.emit("gerobakLocationUpdate", {
+              gerobakId,
               lat: latitude,
-              lng: longitude
+              lng: longitude,
+              profile: { name: gerobakId, status: statusInput.value || "" }
             });
 
             if (!myMarker) {
-              myMarker = L.marker([latitude, longitude], { icon: vendorIcon })
+              myMarker = L.marker([latitude, longitude], { icon: gerobakIcon })
                 .addTo(map)
-                .bindPopup(`${vendorId} (Anda)`);
+                .bindPopup(`${gerobakId} (Anda)`);
               map.setView([latitude, longitude], 16);
             } else {
               myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent(`${vendorId} (Anda)`);
+                      .setPopupContent(`${gerobakId} (Anda)`);
             }
           },
           handleLocationError,
@@ -194,8 +203,9 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
           navigator.geolocation.clearWatch(watchId);
           watchId = null;
         }
-        statusDiv.innerText = "Berhenti berbagi";
-        socket.emit("vendorStop", { vendorId });
+        statusDiv.innerText = "Tidak berbagi lokasi";
+
+        socket.emit("gerobakStop", { gerobakId });
 
         if (myMarker) {
           map.removeLayer(myMarker);
@@ -204,16 +214,13 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
 
         updateButton();
       }
-
-      updateButton();
     }
 
-    /* ===============================
-       CUSTOMER LOGIC
-    =============================== */
+    // ===============================
+    // CUSTOMER LOGIC
+    // ===============================
     else {
       document.getElementById("role").innerText = "Customer";
-
       const controlsDiv = document.getElementById("controls");
       const statusDiv = document.getElementById("status");
 
@@ -223,15 +230,11 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
       controlsDiv.appendChild(btn);
 
       function shareLocation() {
-        if (!navigator.geolocation) {
-          alert("Geolocation not supported");
-          return;
-        }
-
+        if (!navigator.geolocation) return alert("Geolocation not supported");
         navigator.geolocation.getCurrentPosition(
           pos => {
             const { latitude, longitude } = pos.coords;
-            statusDiv.innerText = "You";
+            statusDiv.innerText = "Anda";
 
             if (!myMarker) {
               myMarker = L.circleMarker([latitude, longitude], {
@@ -239,12 +242,11 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
                 color: "#007AFF",
                 fillColor: "#007AFF",
                 fillOpacity: 0.9
-              }).addTo(map).bindPopup('<div style="text-align:center">You</div>');
+              }).addTo(map).bindPopup('<div style="text-align:center">Anda</div>');
             } else {
               myMarker.setLatLng([latitude, longitude])
-                      .setPopupContent('<div style="text-align:center">You</div>');
+                      .setPopupContent('<div style="text-align:center">Anda</div>');
             }
-
             map.setView([latitude, longitude], 16);
           },
           handleLocationError
@@ -253,39 +255,47 @@ Settings → Privacy & Security → Location Services → your browser → "Whil
 
       socket.emit("registerCustomer");
 
-      socket.on("activeVendors", vendors => {
-        vendors.forEach(data => {
-          let marker = vendorMarkers.get(data.vendorId);
+      socket.on("activeGerobaks", gerobaks => {
+        gerobaks.forEach(data => {
+          let marker = gerobakMarkers.get(data.gerobakId);
+          const profile = data.profile || {};
+          const name = profile.name || data.gerobakId;
+          const status = profile.status || "Tidak ada status";
+
           if (!marker) {
-            marker = L.marker([data.lat, data.lng], { icon: vendorIcon })
+            marker = L.marker([data.lat, data.lng], { icon: gerobakIcon })
               .addTo(map)
-              .bindPopup(data.vendorId);
-            vendorMarkers.set(data.vendorId, marker);
+              .bindPopup(`<b>${name}</b><br><i>${status}</i>`);
+            gerobakMarkers.set(data.gerobakId, marker);
           } else {
             marker.setLatLng([data.lat, data.lng])
-                  .setPopupContent(data.vendorId);
+                  .setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
           }
         });
       });
 
-      socket.on("vendorPosition", data => {
-        let marker = vendorMarkers.get(data.vendorId);
+      socket.on("gerobakPosition", data => {
+        let marker = gerobakMarkers.get(data.gerobakId);
+        const profile = data.profile || {};
+        const name = profile.name || data.gerobakId;
+        const status = profile.status || "Tidak ada status";
+
         if (!marker) {
-          marker = L.marker([data.lat, data.lng], { icon: vendorIcon })
+          marker = L.marker([data.lat, data.lng], { icon: gerobakIcon })
             .addTo(map)
-            .bindPopup(data.vendorId);
-          vendorMarkers.set(data.vendorId, marker);
+            .bindPopup(`<b>${name}</b><br><i>${status}</i>`);
+          gerobakMarkers.set(data.gerobakId, marker);
         } else {
           marker.setLatLng([data.lat, data.lng])
-                .setPopupContent(data.vendorId);
+                .setPopupContent(`<b>${name}</b><br><i>${status}</i>`);
         }
       });
 
-      socket.on("vendorGone", data => {
-        const marker = vendorMarkers.get(data.vendorId);
+      socket.on("gerobakGone", data => {
+        const marker = gerobakMarkers.get(data.gerobakId);
         if (marker) {
           map.removeLayer(marker);
-          vendorMarkers.delete(data.vendorId);
+          gerobakMarkers.delete(data.gerobakId);
         }
       });
     }
