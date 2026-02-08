@@ -131,9 +131,12 @@ io.on("connection", socket => {
   });
 });
 
-// ====== Catch-all route for Railway ======
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// ====== Catch-all route for Railway deployment ======
+const publicPath = path.join(__dirname, "public");
+app.use((req, res, next) => {
+  res.sendFile(path.join(publicPath, "index.html"), err => {
+    if (err) next(err);
+  });
 });
 
 // ====== Start server ======
