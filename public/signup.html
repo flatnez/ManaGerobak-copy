@@ -1,43 +1,33 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ManaGerobak - Sign Up</title>
-  <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    form { display: flex; flex-direction: column; width: 300px; }
-    input { margin-bottom: 10px; padding: 8px; }
-    button { padding: 8px; }
-  </style>
+  <title>Vendor Signup</title>
 </head>
 <body>
-  <form id="signupForm">
-    <h2>Sign Up</h2>
-    <input type="text" id="gerobakId" placeholder="Gerobak ID" required>
-    <input type="password" id="password" placeholder="Password" required>
-    <button type="submit">Sign Up</button>
-    <p>Already have an account? <a href="login.html">Login here</a></p>
-  </form>
+  <h2>Signup</h2>
+  <input id="vendorId" placeholder="Gerobak ID" /><br>
+  <input id="password" type="password" placeholder="Password" /><br>
+  <button onclick="signup()">Sign Up</button>
+  <p>Already have an account? <a href="login.html">Login here</a></p>
 
   <script>
-    const form = document.getElementById("signupForm");
-    form.onsubmit = async e => {
-      e.preventDefault();
-      const gerobakId = document.getElementById("gerobakId").value.trim();
-      const password = document.getElementById("password").value;
-      if(!gerobakId || !password) return alert("Fill in all fields");
+    async function signup() {
+      const vendorId = document.getElementById("vendorId").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!vendorId || !password) return alert("Please fill both fields");
 
       const res = await fetch("/signup", {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ gerobakId, password })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorId, password })
       });
+
       const data = await res.json();
-      if(data.success){
-        localStorage.setItem("gerobakId", gerobakId);
+      if (data.success) {
         alert("Signup successful!");
-        window.location.href = "index.html?role=vendor";
+        window.location.href = "/login.html";
       } else {
         alert(data.message);
       }
