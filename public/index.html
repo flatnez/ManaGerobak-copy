@@ -14,7 +14,7 @@
     overflow-x: hidden; overflow-y: auto; 
   }
 
-  /* HEADER BARU DENGAN TOMBOL KANAN */
+  /* HEADER */
   .header-container {
       background: #fff; padding: 10px 15px; 
       border-bottom: 1px solid #ccc;
@@ -22,16 +22,19 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex; justify-content: space-between; align-items: center;
   }
-  .header-container h2 { margin: 0; font-size: 1.2rem; }
+  .header-container h2 { margin: 0; font-size: 1.1rem; flex-grow: 1; }
   
-  /* Tombol Home untuk Vendor */
-  #myGerobakBtn {
-      background: #4CAF50; color: white; border: none;
-      padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;
-      cursor: pointer; display: none; /* Default hide */
-      white-space: nowrap; width: auto; margin: 0;
+  .header-actions { display: flex; gap: 8px; }
+
+  .header-btn {
+      border: none; padding: 8px 12px; border-radius: 6px; 
+      font-size: 0.85rem; cursor: pointer; color: white;
+      font-weight: bold; white-space: nowrap;
   }
   
+  #myGerobakBtn { background: #4CAF50; display: none; }
+  #logoutBtnHeader { background: #555; display: none; }
+
   #map { 
     height: 100vh; width: 100%; z-index: 1; 
     transition: height 0.4s ease-in-out;
@@ -52,7 +55,8 @@
   #shareBtn { background-color: #4CAF50; }
   #stopBtn { background-color: #f44336; }
   #updateBtn { background-color: #2196F3; }
-  #logoutBtn { background-color: #555; margin-top: 10px; }
+  #cancelEditBtn { background-color: #999; margin-top: 10px;}
+  #editProfilBtn { background-color: #FF9800; margin-right: 10px; display: none; width: auto; padding: 8px 16px; }
   
   #customerLocBtn {
     position: fixed; bottom: 25px; right: 15px; z-index: 999;
@@ -66,21 +70,13 @@
   .status-buka { background-color: #2ecc71; }
   .status-tutup { background-color: #e74c3c; }
 
-  /* CUSTOMER DETAIL STYLING - FIXED IMAGE ASPECT RATIO */
+  /* DETAIL STYLING */
   .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-  
   .detail-img { 
-      width: auto;             /* Lebar menyesuaikan rasio */
-      max-width: 100%;         /* Jangan melebihi lebar layar */
-      height: auto;            /* Tinggi menyesuaikan rasio */
-      max-height: 250px;       /* Batas tinggi maksimal */
-      display: block; 
-      margin: 0 auto 20px auto; /* Posisi Center */
-      border-radius: 8px; 
-      object-fit: contain;     /* Pastikan gambar utuh dalam kotak */
-      background: #f9f9f9;     /* Background jika gambar transparan/kecil */
+      width: auto; max-width: 100%; height: auto; max-height: 250px;       
+      display: block; margin: 0 auto 20px auto; border-radius: 8px; 
+      object-fit: contain; background: #f9f9f9;
   }
-
   .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; margin: 0; }
   .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; }
 
@@ -94,7 +90,10 @@
 
 <div class="header-container">
     <h2>ManaGerobak</h2>
-    <button id="myGerobakBtn" onclick="returnToMyPanel()">🏠 Gerobak Saya</button>
+    <div class="header-actions">
+        <button id="myGerobakBtn" class="header-btn" onclick="showMyPublicProfile()">🏠 Gerobak Saya</button>
+        <button id="logoutBtnHeader" class="header-btn" onclick="logout()">🚪 Logout</button>
+    </div>
 </div>
 
 <div id="mapContainer">
@@ -102,19 +101,17 @@
   <button id="customerLocBtn" onclick="enableCustomerLocation()">📍 Lokasi Saya</button>
 </div>
 
-<div id="vendorPanel" class="panel" style="border-top: 5px solid #4CAF50;">
-  <h3>Kontrol Lokasi Vendor</h3>
-  <p style="font-size: small; color: #666;">
-    Lokasi Anda hanya akan muncul di peta saat tombol di bawah aktif.
-  </p>
+<div id="vendorEditPanel" class="panel" style="border-top: 5px solid #FF9800;">
+  <h3>✏️ Edit Profil Gerobak</h3>
   
-  <button id="shareBtn">📡 Mulai Bagikan Lokasi</button>
-  <button id="stopBtn" style="display:none;">🛑 Berhenti Bagikan Lokasi</button>
+  <div style="background: #f0f8ff; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #cceeff;">
+      <h4 style="margin:0 0 10px 0;">Status Lokasi</h4>
+      <button id="shareBtn">📡 Mulai Bagikan Lokasi</button>
+      <button id="stopBtn" style="display:none;">🛑 Berhenti Bagikan Lokasi</button>
+  </div>
   
   <hr>
-  
-  <h3>Profil Gerobak Saya</h3>
-  
+
   <label>Foto Gerobak:</label>
   <div class="image-preview-container">
       <img id="previewGambar" src="https://via.placeholder.com/300x200?text=Belum+Ada+Foto">
@@ -123,28 +120,29 @@
 
   <label>Nama:</label>
   <input id="namaGerobak" placeholder="Nama Gerobak">
-  
   <label>Status:</label>
   <select id="status"><option value="buka">Buka</option><option value="tutup">Tutup</option></select>
-  
   <label>Jam:</label>
   <div style="display: flex; gap: 10px;">
     <input id="jamBuka" placeholder="08:00">
     <input id="jamTutup" placeholder="17:00">
   </div>
-  
   <label>Menu (pisahkan koma):</label>
   <textarea id="menu" rows="3" placeholder="Nasi Goreng, Mie Rebus..."></textarea>
   
-  <button id="updateBtn" onclick="updateProfil()">Update Profil</button>
-  <button id="logoutBtn" onclick="logout()">🚪 Logout Vendor</button>
+  <button id="updateBtn" onclick="updateProfil()">💾 Simpan & Update</button>
+  <button id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
 </div>
 
 <div id="customerDetailPanel" class="panel" style="border-top: none;">
     <div class="detail-header">
-        <h2 id="dNama" style="font-size: 1.2em;">Nama Gerobak</h2>
-        <button class="close-btn" onclick="closeDetailView()">✕ Tutup</button>
+        <h2 id="dNama" style="font-size: 1.2em; text-align: left; padding: 0;">Nama Gerobak</h2>
+        <div style="display: flex; align-items: center;">
+            <button id="editProfilBtn" onclick="openEditMode()">✏️ Edit Profil</button>
+            <button class="close-btn" onclick="closeDetailView()">✕ Tutup</button>
+        </div>
     </div>
+
     <img id="dGambar" class="detail-img" src="" onerror="this.style.display='none'">
     
     <div style="margin-bottom: 20px; font-size: 1.1em;">
@@ -186,53 +184,64 @@ let currentImageBase64 = "";
 let myCurrentLat = null; 
 let myCurrentLng = null; 
 
-// ICONS
 const normalIcon = L.icon({
-  iconUrl: "https://img.icons8.com/fluency/48/street-food.png", 
+  iconUrl: "image/gerobak.png", 
   iconSize: [42, 42], iconAnchor: [21, 42], popupAnchor: [0, -42]
 });
 
 const bigIcon = L.icon({
-  iconUrl: "https://img.icons8.com/fluency/96/street-food.png", 
-  iconSize: [64, 64], iconAnchor: [32, 64], popupAnchor: [0, -64]
+  iconUrl: "image/gerobak.png", 
+  iconSize: [58, 58], iconAnchor: [29, 58], popupAnchor: [0, -58]
 });
 
-
-// === LOGIKA AUTH DAN ROLE (FIXED) ===
-// 1. Cek Role dari URL dulu
+// === 1. DETEKSI ROLE ===
 const urlParams = new URLSearchParams(window.location.search);
 currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
+localStorage.setItem("role", currentRole);
 
-// 2. Setup Tampilan Awal Berdasarkan Role
+// === 2. SETUP AWAL BERDASARKAN ROLE ===
 if (currentRole === 'customer') {
-    // === MODE CUSTOMER (TIDAK BUTUH LOGIN) ===
-    document.getElementById("vendorPanel").style.display = "none";
+    // Tampilan Customer
+    document.getElementById("vendorEditPanel").style.display = "none";
     document.getElementById("myGerobakBtn").style.display = "none";
+    document.getElementById("logoutBtnHeader").style.display = "none"; 
     document.getElementById("map").style.height = "100vh";
     document.getElementById("customerLocBtn").style.display = "block";
     
-    // Langsung Init Map tanpa menunggu Auth
-    initMap();
-} 
+    // CUSTOMER AUTO LOGIN ANONYMOUS
+    // Ini penting agar customer dianggap "user sah" oleh Firebase dan bisa baca data
+    auth.signInAnonymously().catch((error) => {
+        console.error("Gagal login customer anonim:", error);
+    });
 
-// 3. Listener Auth (Hanya penting jika role == vendor, atau customer ingin logout/login)
+} else if (currentRole === 'vendor') {
+    // Tampilan Vendor
+    // Vendor harus login via email/pass di halaman login, jadi di sini kita tunggu auth state
+}
+
+// === 3. LISTENER AUTHENTICATION (JANTUNG KONEKSI) ===
 auth.onAuthStateChanged(user => {
-  currentUser = user; // Simpan state user (bisa null jika customer)
+  currentUser = user; 
 
-  if (currentRole === 'vendor') {
-      // === MODE VENDOR (WAJIB LOGIN) ===
-      if (!user) { 
-          // Jika Vendor tidak login, lempar ke login page
-          window.location.href = "login.html"; 
-          return; 
-      }
+  if (!user && currentRole === 'vendor') {
+      // Jika Vendor tidak login, tendang ke halaman login
+      window.location.href = "login.html";
+      return;
+  }
+  
+  if (user) {
+      console.log("User terhubung. Role:", currentRole, "UID:", user.uid);
       
-      // Jika Login Berhasil:
-      document.getElementById("vendorPanel").style.display = "block";
-      document.getElementById("myGerobakBtn").style.display = "block";
-      document.getElementById("map").style.height = "50vh"; 
-      loadMyProfile(user.uid);
-      initMap(); 
+      // Baik Customer (Anonim) maupun Vendor (Email) akan masuk sini
+      // Inisialisasi Peta setelah koneksi Firebase stabil
+      initMap();
+
+      // Logika Khusus Vendor
+      if (currentRole === 'vendor') {
+          document.getElementById("myGerobakBtn").style.display = "block";
+          document.getElementById("logoutBtnHeader").style.display = "block";
+          loadMyFormData(user.uid);
+      }
   }
 });
 
@@ -240,21 +249,28 @@ function logout() {
   if (confirm("Keluar dari akun Vendor?")) auth.signOut();
 }
 
-// MAP INIT
+// === 4. LOGIKA PETA & DATA ===
 function initMap() {
-    if(map) return;
+    if(map) return; // Jangan init ulang
+    
+    // Default Jakarta, nanti akan update sesuai data
     map = L.map('map', { zoomControl: false }).setView([-6.200, 106.816], 13);
     L.control.zoom({ position: 'topright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+    
+    // Pane khusus agar lingkaran lokasi customer selalu di bawah icon gerobak
     map.createPane('customerPane');
     map.getPane('customerPane').style.zIndex = 650;
     
+    // Panggil data gerobak
     loadVendorsOnMap(); 
 }
 
-// SHARE LOC (HANYA VENDOR)
+// === LIVE LOCATION VENDOR ===
 document.getElementById("shareBtn").onclick = () => {
-  if (!navigator.geolocation) return alert("Geolocation Error");
+  if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
+  
+  // Ambil posisi awal segera
   navigator.geolocation.getCurrentPosition(pos => {
       myCurrentLat = pos.coords.latitude;
       myCurrentLng = pos.coords.longitude;
@@ -264,6 +280,7 @@ document.getElementById("shareBtn").onclick = () => {
   document.getElementById("shareBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "block";
   
+  // Mulai Watch Position
   watchID = navigator.geolocation.watchPosition(pos => {
     myCurrentLat = pos.coords.latitude; 
     myCurrentLng = pos.coords.longitude;
@@ -276,7 +293,14 @@ document.getElementById("shareBtn").onclick = () => {
           lastUpdated: firebase.database.ServerValue.TIMESTAMP
         });
     }
-  }, err => { alert("Gagal GPS: " + err.message); stopSharing(); }, { enableHighAccuracy: true });
+  }, err => { 
+      alert("Gagal mengakses GPS: " + err.message); 
+      stopSharing(); 
+  }, { 
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+  });
 };
 
 document.getElementById("stopBtn").onclick = stopSharing;
@@ -293,24 +317,31 @@ function stopSharing() {
   alert("Lokasi live dimatikan.");
 }
 
-// LOAD VENDORS
+// === MENAMPILKAN VENDOR DI PETA (UNTUK SEMUA USER) ===
 function loadVendorsOnMap() {
   if(!map) return;
+  
+  // Dengar perubahan data 'vendors' secara realtime
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     let activeVendorIds = [];
+    
     if (data) {
         Object.keys(data).forEach(id => {
           const v = data[id];
+          
+          // Syarat tampil: Ada koordinat DAN isLive = true
           if (!v.lat || !v.lng || v.isLive !== true) return;
+          
           activeVendorIds.push(id); 
           let lat = parseFloat(v.lat);
           let lng = parseFloat(v.lng);
           
           let displayName = v.nama || "Gerobak";
           
-          // Cek apakah ini gerobak user sendiri (hanya valid jika login)
-          if (currentUser && id === currentUser.uid) {
+          // Tandai jika ini gerobak sendiri (hanya untuk Vendor login)
+          // Jika customer (anonim), id != currentUser.uid
+          if (currentUser && !currentUser.isAnonymous && id === currentUser.uid) {
              displayName += " (Anda)";
              myCurrentLat = lat;
              myCurrentLng = lng;
@@ -319,28 +350,23 @@ function loadVendorsOnMap() {
           let currentIcon = (id === selectedVendorId) ? bigIcon : normalIcon;
 
           if (vendorMarkers[id]) {
+            // Update posisi marker yang sudah ada
             vendorMarkers[id].setLatLng([lat, lng]);
             vendorMarkers[id].setIcon(currentIcon);
             vendorMarkers[id].options.vendorData = v; 
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
           } else {
+            // Buat marker baru
             const newMarker = L.marker([lat, lng], { icon: currentIcon, vendorData: v }).addTo(map);
             newMarker.bindPopup(`<b>${displayName}</b>`);
             
-            // KLIK LISTENER
+            // Klik Marker
             newMarker.on('click', function(e) {
                 const dataGerobak = this.options.vendorData;
                 const vendorId = id; 
-
-                // Reset icon lama
-                Object.keys(vendorMarkers).forEach(k => vendorMarkers[k].setIcon(normalIcon));
                 
-                // Set icon baru jadi besar
-                this.setIcon(bigIcon);
-                selectedVendorId = vendorId;
-
-                // Tampilkan Detail View
-                showVendorDetail(dataGerobak);
+                highlightVendorIcon(vendorId);
+                showVendorDetail(dataGerobak, vendorId);
                 map.flyTo([lat, lng], 16, { animate: true, duration: 0.5 });
             });
             
@@ -348,6 +374,8 @@ function loadVendorsOnMap() {
           }
         });
     }
+    
+    // Hapus marker yang sudah tidak live / offline
     Object.keys(vendorMarkers).forEach(existingId => {
         if (!activeVendorIds.includes(existingId)) {
             map.removeLayer(vendorMarkers[existingId]);
@@ -357,41 +385,133 @@ function loadVendorsOnMap() {
   });
 }
 
-// === TOMBOL HOME VENDOR ===
-function returnToMyPanel() {
-    if (currentRole !== 'vendor') return;
-
-    document.getElementById("customerDetailPanel").style.display = "none";
-    document.getElementById("vendorPanel").style.display = "block";
-    
-    selectedVendorId = null;
+function highlightVendorIcon(id) {
+    selectedVendorId = id;
     Object.keys(vendorMarkers).forEach(k => vendorMarkers[k].setIcon(normalIcon));
+    if (vendorMarkers[id]) vendorMarkers[id].setIcon(bigIcon);
+}
 
-    if (myCurrentLat && myCurrentLng) {
-        map.flyTo([myCurrentLat, myCurrentLng], 17);
+// === VENDOR: PROFIL SAYA ===
+function showMyPublicProfile() {
+    if (!currentUser || currentUser.isAnonymous) return;
+    
+    db.ref("vendors/" + currentUser.uid).once("value").then(snap => {
+        const v = snap.val();
+        if (v) {
+            highlightVendorIcon(currentUser.uid);
+            if (v.lat && v.lng) {
+                map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
+            }
+            showVendorDetail(v, currentUser.uid);
+        } else {
+            alert("Profil belum ada. Silakan Edit Profil.");
+            openEditMode(); 
+        }
+    });
+}
+
+// === VENDOR: EDIT DATA ===
+function loadMyFormData(uid) {
+    db.ref("vendors/" + uid).once("value").then(snap => {
+        const v = snap.val();
+        if(v) {
+            document.getElementById("namaGerobak").value = v.nama || "";
+            document.getElementById("status").value = v.status || "buka";
+            document.getElementById("jamBuka").value = v.jamBuka || "";
+            document.getElementById("jamTutup").value = v.jamTutup || "";
+            document.getElementById("menu").value = (v.menu || []).join(", ");
+            if (v.gambar) {
+                currentImageBase64 = v.gambar;
+                document.getElementById("previewGambar").src = v.gambar;
+            }
+        }
+    });
+}
+
+function openEditMode() {
+    document.getElementById("customerDetailPanel").style.display = "none"; 
+    document.getElementById("vendorEditPanel").style.display = "block"; 
+    document.getElementById("map").style.height = "50vh";
+    if(currentUser && !currentUser.isAnonymous) highlightVendorIcon(currentUser.uid);
+}
+
+function cancelEdit() {
+    showMyPublicProfile(); 
+}
+
+function updateProfil() {
+  if (!currentUser || currentUser.isAnonymous) return;
+  const updateBtn = document.getElementById("updateBtn");
+  updateBtn.innerText = "Menyimpan..."; updateBtn.disabled = true;
+  
+  db.ref("vendors/" + currentUser.uid).update({
+    nama: document.getElementById("namaGerobak").value,
+    status: document.getElementById("status").value,
+    jamBuka: document.getElementById("jamBuka").value,
+    jamTutup: document.getElementById("jamTutup").value,
+    menu: document.getElementById("menu").value.split(","),
+    gambar: currentImageBase64
+  }).then(() => {
+      alert("Profil berhasil diupdate!");
+      updateBtn.innerText = "💾 Simpan & Update"; updateBtn.disabled = false;
+      showMyPublicProfile();
+  }).catch(err => {
+      alert("Gagal update: " + err.message);
+      updateBtn.innerText = "💾 Simpan & Update"; updateBtn.disabled = false;
+  });
+}
+
+// === TAMPILAN DETAIL (PUBLIC VIEW) ===
+function showVendorDetail(v, vendorId) {
+    document.getElementById("vendorEditPanel").style.display = "none";
+    const panel = document.getElementById("customerDetailPanel");
+    const mapDiv = document.getElementById("map");
+    mapDiv.style.height = "50vh"; 
+    
+    document.getElementById("dNama").innerText = v.nama || "Tanpa Nama";
+    
+    const statusEl = document.getElementById("dStatus");
+    if(v.status === 'buka') { statusEl.innerText = "BUKA"; statusEl.className = "status-badge status-buka"; } 
+    else { statusEl.innerText = "TUTUP"; statusEl.className = "status-badge status-tutup"; }
+    
+    document.getElementById("dJam").innerText = `${v.jamBuka || "--"} - ${v.jamTutup || "--"}`;
+
+    const imgEl = document.getElementById("dGambar");
+    if (v.gambar) { imgEl.src = v.gambar; imgEl.style.display = "block"; } 
+    else { imgEl.style.display = "none"; }
+
+    const menuDiv = document.getElementById("dMenu");
+    menuDiv.innerHTML = "";
+    let menuItems = Array.isArray(v.menu) ? v.menu : (v.menu ? v.menu.split(",") : []);
+    if (menuItems.length > 0 && menuItems[0] !== "") {
+        menuItems.forEach(m => {
+            const item = document.createElement("div");
+            item.innerText = "• " + m.trim();
+            item.style.padding = "6px 0"; item.style.borderBottom = "1px solid #eee";
+            menuDiv.appendChild(item);
+        });
+    } else { menuDiv.innerText = "Belum ada info menu."; }
+    
+    // Tombol Edit hanya muncul jika Vendor LOGIN dan melihat gerobak SENDIRI
+    const editBtn = document.getElementById("editProfilBtn");
+    if (currentRole === 'vendor' && currentUser && !currentUser.isAnonymous && vendorId === currentUser.uid) {
+        editBtn.style.display = "block";
     } else {
-        alert("Lokasi Anda belum tersedia. Silakan 'Mulai Bagikan Lokasi'.");
+        editBtn.style.display = "none";
     }
+
+    panel.style.display = "block";
+    setTimeout(() => { map.invalidateSize(); }, 400); 
 }
 
-// CUSTOMER GPS
-function enableCustomerLocation() {
-  if (!navigator.geolocation) return alert("Geolocation Error");
-  if (customerWatchID !== null) { 
-     if(customerMarker) map.setView(customerMarker.getLatLng(), 17);
-     return; 
-  }
-  const customerStyle = { radius: 10, color: "#fff", weight: 3, fillColor: "#007AFF", fillOpacity: 1, pane: 'customerPane' };
-  customerWatchID = navigator.geolocation.watchPosition(pos => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    if (customerMarker) customerMarker.setLatLng([lat, lng]);
-    else customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
-    map.setView([lat, lng], 17);
-  }, err => console.error(err), { enableHighAccuracy: true });
+function closeDetailView() {
+    document.getElementById("customerDetailPanel").style.display = "none";
+    document.getElementById("map").style.height = "100vh";
+    selectedVendorId = null; 
+    Object.keys(vendorMarkers).forEach(k => vendorMarkers[k].setIcon(normalIcon));
+    setTimeout(() => map.invalidateSize(), 400);
 }
 
-// UPLOAD & PROFILE VENDOR
 function handleImageUpload(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
@@ -417,89 +537,21 @@ function handleImageUpload(input) {
     }
 }
 
-function loadMyProfile(uid) {
-    db.ref("vendors/" + uid).once("value").then(snap => {
-        const v = snap.val();
-        if(v) {
-            document.getElementById("namaGerobak").value = v.nama || "";
-            document.getElementById("status").value = v.status || "buka";
-            document.getElementById("jamBuka").value = v.jamBuka || "";
-            document.getElementById("jamTutup").value = v.jamTutup || "";
-            document.getElementById("menu").value = (v.menu || []).join(", ");
-            if (v.gambar) {
-                currentImageBase64 = v.gambar;
-                document.getElementById("previewGambar").src = v.gambar;
-            }
-        }
-    });
-}
-
-function updateProfil() {
-  if (!currentUser) return;
-  const updateBtn = document.getElementById("updateBtn");
-  updateBtn.innerText = "Mengupload..."; updateBtn.disabled = true;
-  db.ref("vendors/" + currentUser.uid).update({
-    nama: document.getElementById("namaGerobak").value,
-    status: document.getElementById("status").value,
-    jamBuka: document.getElementById("jamBuka").value,
-    jamTutup: document.getElementById("jamTutup").value,
-    menu: document.getElementById("menu").value.split(","),
-    gambar: currentImageBase64
-  }).then(() => {
-      alert("Profil berhasil diupdate!");
-      updateBtn.innerText = "Update Profil"; updateBtn.disabled = false;
-  }).catch(err => {
-      alert("Gagal update: " + err.message);
-      updateBtn.innerText = "Update Profil"; updateBtn.disabled = false;
-  });
-}
-
-// SHOW DETAIL
-function showVendorDetail(v) {
-    if (currentRole === 'vendor') {
-        document.getElementById("vendorPanel").style.display = "none";
-    }
-
-    const panel = document.getElementById("customerDetailPanel");
-    const mapDiv = document.getElementById("map");
-    mapDiv.style.height = "50vh"; 
-    
-    document.getElementById("dNama").innerText = v.nama || "Tanpa Nama";
-    const statusEl = document.getElementById("dStatus");
-    if(v.status === 'buka') { statusEl.innerText = "BUKA"; statusEl.className = "status-badge status-buka"; } 
-    else { statusEl.innerText = "TUTUP"; statusEl.className = "status-badge status-tutup"; }
-    document.getElementById("dJam").innerText = `${v.jamBuka || "--"} - ${v.jamTutup || "--"}`;
-
-    const imgEl = document.getElementById("dGambar");
-    if (v.gambar) { imgEl.src = v.gambar; imgEl.style.display = "block"; } 
-    else { imgEl.style.display = "none"; }
-
-    const menuDiv = document.getElementById("dMenu");
-    menuDiv.innerHTML = "";
-    let menuItems = Array.isArray(v.menu) ? v.menu : (v.menu ? v.menu.split(",") : []);
-    if (menuItems.length > 0 && menuItems[0] !== "") {
-        menuItems.forEach(m => {
-            const item = document.createElement("div");
-            item.innerText = "• " + m.trim();
-            item.style.padding = "6px 0"; item.style.borderBottom = "1px solid #eee";
-            menuDiv.appendChild(item);
-        });
-    } else { menuDiv.innerText = "Belum ada info menu."; }
-    
-    panel.style.display = "block";
-    setTimeout(() => { map.invalidateSize(); }, 400); 
-}
-
-function closeDetailView() {
-    if (currentRole === 'vendor') {
-        returnToMyPanel();
-    } else {
-        document.getElementById("customerDetailPanel").style.display = "none";
-        document.getElementById("map").style.height = "100vh";
-        selectedVendorId = null; 
-        Object.keys(vendorMarkers).forEach(k => vendorMarkers[k].setIcon(normalIcon));
-        setTimeout(() => map.invalidateSize(), 400);
-    }
+// CUSTOMER GPS
+function enableCustomerLocation() {
+  if (!navigator.geolocation) return alert("Geolocation Error");
+  if (customerWatchID !== null) { 
+     if(customerMarker) map.setView(customerMarker.getLatLng(), 17);
+     return; 
+  }
+  const customerStyle = { radius: 10, color: "#fff", weight: 3, fillColor: "#007AFF", fillOpacity: 1, pane: 'customerPane' };
+  customerWatchID = navigator.geolocation.watchPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    if (customerMarker) customerMarker.setLatLng([lat, lng]);
+    else customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
+    map.setView([lat, lng], 17);
+  }, err => console.error(err), { enableHighAccuracy: true });
 }
 </script>
 </body>
