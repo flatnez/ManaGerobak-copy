@@ -198,7 +198,6 @@ let currentUser = null;
 let currentRole = null;
 let selectedVendorId = null;
 let currentImageBase64 = ""; 
-// Variable untuk menyimpan status apakah vendor sedang live secara lokal
 let isSharingLocally = false;
 
 const normalIcon = L.icon({
@@ -211,62 +210,73 @@ const bigIcon = L.icon({
  iconSize: [58, 58], iconAnchor: [29, 58], popupAnchor: [0, -58]
 });
 
-// === 1. DETEKSI ROLE ===
+
+// === 1. DETEKSI ROLE & UI PREPARATION ===
 const urlParams = new URLSearchParams(window.location.search);
 currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
 localStorage.setItem("role", currentRole);
 
-// === 2. SETUP AWAL BERDASARKAN ROLE ===
+// Sembunyikan UI Vendor secara default jika role customer
 if (currentRole === 'customer') {
-    // Sembunyikan elemen vendor
     document.getElementById("vendorEditPanel").style.display = "none";
     document.getElementById("myGerobakBtn").style.display = "none";
     document.getElementById("logoutBtnHeader").style.display = "none"; 
     document.getElementById("btnStartShare").style.display = "none";
     document.getElementById("btnStopShare").style.display = "none";
-    
     document.getElementById("map").style.height = "100vh";
     document.getElementById("customerLocBtn").style.display = "block";
-    
-    // Auto-Login Customer (Anonymous)
-    auth.signInAnonymously().catch((error) => console.error("Gagal login anonim:", error));
-
-} else if (currentRole === 'vendor') {
-    // Tampilan Vendor: Menunggu Auth State
 }
 
-// === 3. LISTENER AUTHENTICATION (DENGAN PROTEKSI KETAT) ===
+// === 2. LISTENER AUTHENTICATION (LOGIC UTAMA) ===
 auth.onAuthStateChanged(user => {
   currentUser = user; 
 
-  // --- PROTEKSI HALAMAN VENDOR ---
-  if (currentRole === 'vendor') {
-      // Kondisi Redirect:
-      // 1. User belum login (user == null)
-      // 2. User login tapi sebagai Anonymous/Customer (user.isAnonymous == true)
+  // --- LOGIKA 1: JIKA ROLE = CUSTOMER ---
+  if (currentRole === 'customer') {
+      // Kasus A: Ada user login, TAPI dia bukan Anonymous (Berarti dia Vendor yg nyasar)
+      if (user && !user.isAnonymous) {
+          console.log("Vendor masuk ke link customer. Melakukan logout paksa...");
+          auth.signOut().then(() => {
+              // Setelah logout, reload halaman agar masuk ke logika Kasus B
+              window.location.reload();
+          });
+          return;
+      }
+      
+      // Kasus B: Tidak ada user sama sekali (Belum login)
+      if (!user) {
+          console.log("Customer belum login. Melakukan Anonymous Login...");
+          auth.signInAnonymously().catch((error) => console.error("Gagal login anonim:", error));
+          return; // Tunggu state berubah lagi
+      }
+      
+      // Kasus C: User ada DAN isAnonymous = true (Kondisi Ideal)
+      console.log("Customer terhubung (Anonymous).");
+      initMap();
+  }
+
+  // --- LOGIKA 2: JIKA ROLE = VENDOR ---
+  else if (currentRole === 'vendor') {
+      // Kasus A: User belum login ATAU User login tapi Anonymous (Customer nyasar)
       if (!user || (user && user.isAnonymous)) {
           console.log("Akses ditolak: User bukan vendor resmi.");
           window.location.href = "login.html";
-          return; // Hentikan script di sini
+          return;
       }
-  }
-  
-  if (user) {
-      console.log("User terhubung. Role:", currentRole);
-      initMap();
-
-      if (currentRole === 'vendor') {
+      
+      // Kasus B: Vendor Resmi Terhubung
+      if (user && !user.isAnonymous) {
+          console.log("Vendor terhubung.");
+          initMap();
+          
           // Tampilkan tombol Vendor
           document.getElementById("myGerobakBtn").style.display = "block";
           document.getElementById("logoutBtnHeader").style.display = "block";
           
-          // Reset tombol Live ke kondisi "Start" (Belum Live) saat pertama buka/refresh
           resetLocationButtons(false);
-          
-          // Muat data profil untuk form edit
           loadMyFormData(user.uid);
           
-          // Pastikan DB bersih jika refresh page (set isLive false)
+          // Reset status live saat awal load (safety)
           db.ref("vendors/" + user.uid).update({ isLive: false });
       }
   }
@@ -274,7 +284,6 @@ auth.onAuthStateChanged(user => {
 
 function logout() {
     if (confirm("Keluar dari akun Vendor?")) {
-        // Stop sharing sebelum logout untuk kebersihan data
         if(watchID) navigator.geolocation.clearWatch(watchID);
         if(currentUser) db.ref("vendors/" + currentUser.uid).update({ isLive: false });
         
@@ -284,7 +293,7 @@ function logout() {
     }
 }
 
-// === 4. LOGIKA PETA & DATA ===
+// === 3. LOGIKA PETA & DATA ===
 function initMap() {
     if(map) return; 
     
@@ -306,21 +315,16 @@ function startSharingLocation() {
     if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
     if (!currentUser) return;
 
-    // UI Updates
     document.getElementById("btnStartShare").innerText = "⏳...";
     
-    // Ambil posisi awal segera untuk recenter
     navigator.geolocation.getCurrentPosition(pos => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         
-        // Recenter Map ke User
         map.setView([lat, lng], 17);
         
-        // Mulai Watcher
         watchID = navigator.geolocation.watchPosition(updatePositionToDB, handleError, { enableHighAccuracy: true });
         
-        // Update UI Button
         resetLocationButtons(true);
         isSharingLocally = true;
 
@@ -337,11 +341,11 @@ function updatePositionToDB(pos) {
         lastUpdated: firebase.database.ServerValue.TIMESTAMP
     };
 
-    // Update Data
     const vendorRef = db.ref("vendors/" + currentUser.uid);
     vendorRef.update(updates);
     
     // ON DISCONNECT: Hapus status live jika internet putus/tab tutup
+    // Jika Anda ingin lokasi "Membeku" saat tab tutup, HAPUS baris di bawah ini:
     vendorRef.onDisconnect().update({ isLive: false });
 }
 
@@ -352,7 +356,6 @@ function stopSharingLocation() {
     
     if(currentUser) {
         db.ref("vendors/" + currentUser.uid).update({ isLive: false });
-        // Batalkan onDisconnect
         db.ref("vendors/" + currentUser.uid).onDisconnect().cancel();
     }
 
@@ -369,7 +372,7 @@ function resetLocationButtons(isLive) {
     const btnStart = document.getElementById("btnStartShare");
     const btnStop = document.getElementById("btnStopShare");
     
-    btnStart.innerText = "📡 Live"; // Reset text loading
+    btnStart.innerText = "📡 Live"; 
 
     if (isLive) {
         btnStart.style.display = "none";
@@ -392,8 +395,6 @@ function loadVendorsOnMap() {
         Object.keys(data).forEach(id => {
           const v = data[id];
           
-          // HANYA TAMPILKAN JIKA isLive === true
-          // Jika isLive false, vendor dianggap offline
           if (!v.lat || !v.lng || v.isLive !== true) return;
           
           activeVendorIds.push(id); 
@@ -426,7 +427,6 @@ function loadVendorsOnMap() {
         });
     }
     
-    // Hapus marker yang sudah tidak live (isLive: false)
     Object.keys(vendorMarkers).forEach(existingId => {
         if (!activeVendorIds.includes(existingId)) {
             map.removeLayer(vendorMarkers[existingId]);
@@ -462,8 +462,6 @@ function showMyPublicProfile() {
         if (v) {
             highlightVendorIcon(currentUser.uid);
             
-            // LOGIKA RECENTER:
-            // Hanya flyTo jika vendor SEDANG LIVE location (isLive == true)
             if (v.isLive === true && v.lat && v.lng) {
                 if(map) map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
             } else {
