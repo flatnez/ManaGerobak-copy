@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Peta Gerobak Live (Debug Mode)</title>
+<title>Peta Gerobak Live (Fixed Layout)</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -95,18 +95,14 @@ let currentUser = null;
 let currentRole = null;
 
 /* ICONS */
-// Kita pakai link CDN yang pasti aktif
+// Saya kembalikan ke Online URL agar icon PASTI muncul saat dicoba
 const kioskIcon = L.icon({
   iconUrl: "https://img.icons8.com/fluency/48/street-food.png",
-  iconSize: [48, 48],
-  iconAnchor: [24, 48],
-  popupAnchor: [0, -48],
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40],
   shadowUrl: null
 });
-
-const customerStyle = {
-  radius: 8, color: "#007AFF", fillColor: "#007AFF", fillOpacity: 0.9, weight: 2
-};
 
 /* AUTH */
 auth.onAuthStateChanged(user => {
@@ -140,6 +136,14 @@ function initMap() {
       maxZoom: 19, attribution: '© OpenStreetMap'
     }).addTo(map);
 
+    /* --- PERBAIKAN PENTING UNTUK LAYERING ---
+       Kita membuat 'Pane' khusus untuk Customer.
+       Secara default Marker Gerobak ada di z-index 600.
+       Kita set Customer di z-index 650 agar selalu di ATAS Gerobak.
+    */
+    map.createPane('customerPane');
+    map.getPane('customerPane').style.zIndex = 650;
+
     console.log("Peta Siap. Memuat data vendor...");
     loadVendorsOnMap();
 }
@@ -147,18 +151,41 @@ function initMap() {
 /* CUSTOMER LOCATION */
 function enableCustomerLocation() {
   if (!navigator.geolocation) return alert("Geolocation Error");
-  if (customerWatchID !== null) { alert("Sedang mencari lokasi..."); return; }
+  
+  // Jika sudah tracking, beri tahu
+  if (customerWatchID !== null) { 
+     // Hanya recenter jika tombol ditekan lagi
+     if(customerMarker) {
+         const latlng = customerMarker.getLatLng();
+         map.setView(latlng, 17);
+     }
+     return; 
+  }
+
+  // Style Customer dengan Pane Khusus (Agar selalu di atas)
+  const customerStyle = {
+    radius: 10, 
+    color: "#fff", 
+    weight: 3,
+    fillColor: "#007AFF", 
+    fillOpacity: 1, 
+    pane: 'customerPane' // <--- INI KUNCINYA (Memakai Pane z-index 650)
+  };
 
   customerWatchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     
-    if (customerMarker) customerMarker.setLatLng([lat, lng]);
-    else {
+    if (customerMarker) {
+      customerMarker.setLatLng([lat, lng]);
+    } else {
       customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
-      customerMarker.bindPopup("Lokasi Anda");
+      // POPUP DIHAPUS SESUAI PERMINTAAN
     }
-    map.setView([lat, lng], 16);
+    
+    // Auto Recenter ke Customer
+    map.setView([lat, lng], 17);
+
   }, err => console.error(err), { enableHighAccuracy: true });
 }
 
@@ -168,19 +195,16 @@ document.getElementById("shareBtn").onclick = () => {
   
   document.getElementById("shareBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "block";
-  console.log("Mulai membagikan lokasi...");
-
+  
   watchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     
-    console.log("Lokasi Sendiri Terdeteksi:", lat, lng);
-
     db.ref("vendors/" + currentUser.uid).update({
       lat: lat,
       lng: lng,
       lastUpdated: firebase.database.ServerValue.TIMESTAMP
-    }).catch(e => console.error("Gagal update DB:", e));
+    });
 
     if(map) map.setView([lat, lng], 17);
   }, err => {
@@ -224,35 +248,21 @@ function updateProfil() {
   alert("Profil berhasil diupdate!");
 }
 
-/* ====================================================
-   LOGIKA UTAMA: MENAMPILKAN VENDOR (DEBUG MODE)
-==================================================== */
+/* LOAD VENDORS */
 function loadVendorsOnMap() {
   if(!map) return;
 
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
-    
-    // DEBUG 1: Cek apakah data masuk
-    console.log("Data Firebase Masuk:", data);
-
     if (!data) return;
 
     Object.keys(data).forEach(id => {
       const v = data[id];
-      
-      // DEBUG 2: Pastikan koordinat ada dan berupa ANGKA
       let lat = parseFloat(v.lat);
       let lng = parseFloat(v.lng);
 
-      if (isNaN(lat) || isNaN(lng)) {
-        console.warn(`Vendor ${v.nama} punya koordinat invalid:`, v.lat, v.lng);
-        return; // Skip jika koordinat error
-      }
+      if (isNaN(lat) || isNaN(lng)) return;
 
-      console.log(`Render Vendor: ${v.nama} di [${lat}, ${lng}]`);
-
-      // Buat Popup HTML
       const statusClass = v.status === 'buka' ? 'status-buka' : 'status-tutup';
       const popupContent = `
         <div style="text-align:center;">
@@ -263,18 +273,14 @@ function loadVendorsOnMap() {
       `;
 
       if (vendorMarkers[id]) {
-        // Update marker yang sudah ada
         vendorMarkers[id].setLatLng([lat, lng]);
         vendorMarkers[id].getPopup().setContent(popupContent);
       } else {
-        // Buat marker baru
         try {
           const newMarker = L.marker([lat, lng], {icon: kioskIcon}).addTo(map);
           newMarker.bindPopup(popupContent);
           vendorMarkers[id] = newMarker;
         } catch (e) {
-          console.error("Gagal render icon, mencoba marker biasa:", e);
-          // Fallback ke marker biru biasa jika icon gagal
           const fallbackMarker = L.marker([lat, lng]).addTo(map);
           fallbackMarker.bindPopup(popupContent);
           vendorMarkers[id] = fallbackMarker;
