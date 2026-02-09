@@ -66,15 +66,27 @@
   .status-buka { background-color: #2ecc71; }
   .status-tutup { background-color: #e74c3c; }
 
-  /* CUSTOMER DETAIL STYLING */
+  /* CUSTOMER DETAIL STYLING - FIXED IMAGE ASPECT RATIO */
   .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-  .detail-img { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 20px; background: #eee; }
+  
+  .detail-img { 
+      width: auto;             /* Lebar menyesuaikan rasio */
+      max-width: 100%;         /* Jangan melebihi lebar layar */
+      height: auto;            /* Tinggi menyesuaikan rasio */
+      max-height: 250px;       /* Batas tinggi maksimal */
+      display: block; 
+      margin: 0 auto 20px auto; /* Posisi Center */
+      border-radius: 8px; 
+      object-fit: contain;     /* Pastikan gambar utuh dalam kotak */
+      background: #f9f9f9;     /* Background jika gambar transparan/kecil */
+  }
+
   .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; margin: 0; }
   .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; }
 
   /* UPLOAD FOTO */
   .image-preview-container { text-align: center; margin-bottom: 15px; }
-  #previewGambar { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; border: 2px dashed #ccc; display: block; margin-bottom: 10px; }
+  #previewGambar { width: 100%; height: 200px; object-fit: contain; border-radius: 8px; border: 2px dashed #ccc; display: block; margin-bottom: 10px; background: #eee;}
   input[type="file"] { border: none; padding: 0; }
 </style>
 </head>
@@ -134,6 +146,7 @@
         <button class="close-btn" onclick="closeDetailView()">✕ Tutup</button>
     </div>
     <img id="dGambar" class="detail-img" src="" onerror="this.style.display='none'">
+    
     <div style="margin-bottom: 20px; font-size: 1.1em;">
         <span id="dStatus" class="status-badge">STATUS</span>
         <span style="margin: 0 10px; color:#ccc;">|</span>
@@ -170,40 +183,57 @@ let currentUser = null;
 let currentRole = null;
 let selectedVendorId = null;
 let currentImageBase64 = ""; 
-let myCurrentLat = null; // Menyimpan lokasi vendor sendiri
+let myCurrentLat = null; 
 let myCurrentLng = null; 
 
 // ICONS
 const normalIcon = L.icon({
-  iconUrl: "image/gerobak.png", 
+  iconUrl: "https://img.icons8.com/fluency/48/street-food.png", 
   iconSize: [42, 42], iconAnchor: [21, 42], popupAnchor: [0, -42]
 });
 
 const bigIcon = L.icon({
-  iconUrl: "image/gerobak.png", 
+  iconUrl: "https://img.icons8.com/fluency/96/street-food.png", 
   iconSize: [64, 64], iconAnchor: [32, 64], popupAnchor: [0, -64]
 });
 
 
-// AUTH
-auth.onAuthStateChanged(user => {
-  if (!user) { window.location.href = "login.html"; return; }
-  currentUser = user;
-  const urlParams = new URLSearchParams(window.location.search);
-  currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
+// === LOGIKA AUTH DAN ROLE (FIXED) ===
+// 1. Cek Role dari URL dulu
+const urlParams = new URLSearchParams(window.location.search);
+currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
 
-  if (currentRole === 'vendor') {
-    document.getElementById("vendorPanel").style.display = "block";
-    document.getElementById("myGerobakBtn").style.display = "block"; // Tampilkan tombol Home
-    document.getElementById("map").style.height = "50vh"; 
-    loadMyProfile(user.uid);
-  } else {
+// 2. Setup Tampilan Awal Berdasarkan Role
+if (currentRole === 'customer') {
+    // === MODE CUSTOMER (TIDAK BUTUH LOGIN) ===
     document.getElementById("vendorPanel").style.display = "none";
     document.getElementById("myGerobakBtn").style.display = "none";
     document.getElementById("map").style.height = "100vh";
     document.getElementById("customerLocBtn").style.display = "block";
+    
+    // Langsung Init Map tanpa menunggu Auth
+    initMap();
+} 
+
+// 3. Listener Auth (Hanya penting jika role == vendor, atau customer ingin logout/login)
+auth.onAuthStateChanged(user => {
+  currentUser = user; // Simpan state user (bisa null jika customer)
+
+  if (currentRole === 'vendor') {
+      // === MODE VENDOR (WAJIB LOGIN) ===
+      if (!user) { 
+          // Jika Vendor tidak login, lempar ke login page
+          window.location.href = "login.html"; 
+          return; 
+      }
+      
+      // Jika Login Berhasil:
+      document.getElementById("vendorPanel").style.display = "block";
+      document.getElementById("myGerobakBtn").style.display = "block";
+      document.getElementById("map").style.height = "50vh"; 
+      loadMyProfile(user.uid);
+      initMap(); 
   }
-  initMap(); 
 });
 
 function logout() {
@@ -222,11 +252,10 @@ function initMap() {
     loadVendorsOnMap(); 
 }
 
-// SHARE LOC
+// SHARE LOC (HANYA VENDOR)
 document.getElementById("shareBtn").onclick = () => {
   if (!navigator.geolocation) return alert("Geolocation Error");
   navigator.geolocation.getCurrentPosition(pos => {
-      // Simpan lokasi saat ini
       myCurrentLat = pos.coords.latitude;
       myCurrentLng = pos.coords.longitude;
       map.setView([myCurrentLat, myCurrentLng], 17);
@@ -236,15 +265,17 @@ document.getElementById("shareBtn").onclick = () => {
   document.getElementById("stopBtn").style.display = "block";
   
   watchID = navigator.geolocation.watchPosition(pos => {
-    myCurrentLat = pos.coords.latitude; // Update var lokal
+    myCurrentLat = pos.coords.latitude; 
     myCurrentLng = pos.coords.longitude;
 
-    db.ref("vendors/" + currentUser.uid).update({
-      lat: pos.coords.latitude, 
-      lng: pos.coords.longitude,
-      isLive: true,
-      lastUpdated: firebase.database.ServerValue.TIMESTAMP
-    });
+    if (currentUser) {
+        db.ref("vendors/" + currentUser.uid).update({
+          lat: pos.coords.latitude, 
+          lng: pos.coords.longitude,
+          isLive: true,
+          lastUpdated: firebase.database.ServerValue.TIMESTAMP
+        });
+    }
   }, err => { alert("Gagal GPS: " + err.message); stopSharing(); }, { enableHighAccuracy: true });
 };
 
@@ -253,7 +284,9 @@ document.getElementById("stopBtn").onclick = stopSharing;
 function stopSharing() {
   if (watchID) navigator.geolocation.clearWatch(watchID);
   watchID = null;
-  db.ref("vendors/" + currentUser.uid).update({ isLive: false });
+  if(currentUser) {
+      db.ref("vendors/" + currentUser.uid).update({ isLive: false });
+  }
 
   document.getElementById("shareBtn").style.display = "block";
   document.getElementById("stopBtn").style.display = "none";
@@ -275,9 +308,10 @@ function loadVendorsOnMap() {
           let lng = parseFloat(v.lng);
           
           let displayName = v.nama || "Gerobak";
+          
+          // Cek apakah ini gerobak user sendiri (hanya valid jika login)
           if (currentUser && id === currentUser.uid) {
              displayName += " (Anda)";
-             // Simpan lokasi sendiri jika data berasal dari DB
              myCurrentLat = lat;
              myCurrentLng = lng;
           }
@@ -288,13 +322,12 @@ function loadVendorsOnMap() {
             vendorMarkers[id].setLatLng([lat, lng]);
             vendorMarkers[id].setIcon(currentIcon);
             vendorMarkers[id].options.vendorData = v; 
-            // Popup untuk hover nama tetap ada, tapi klik akan membuka detail
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
           } else {
             const newMarker = L.marker([lat, lng], { icon: currentIcon, vendorData: v }).addTo(map);
             newMarker.bindPopup(`<b>${displayName}</b>`);
             
-            // KLIK LISTENER (Untuk Customer & Vendor)
+            // KLIK LISTENER
             newMarker.on('click', function(e) {
                 const dataGerobak = this.options.vendorData;
                 const vendorId = id; 
@@ -324,19 +357,16 @@ function loadVendorsOnMap() {
   });
 }
 
-// === FITUR BARU: TOMBOL HOME VENDOR ===
+// === TOMBOL HOME VENDOR ===
 function returnToMyPanel() {
-    // 1. Tutup Detail Panel Orang Lain
+    if (currentRole !== 'vendor') return;
+
     document.getElementById("customerDetailPanel").style.display = "none";
-    
-    // 2. Buka Kembali Panel Vendor Sendiri
     document.getElementById("vendorPanel").style.display = "block";
     
-    // 3. Reset Ukuran Icon Peta
     selectedVendorId = null;
     Object.keys(vendorMarkers).forEach(k => vendorMarkers[k].setIcon(normalIcon));
 
-    // 4. Center Peta ke Lokasi Sendiri
     if (myCurrentLat && myCurrentLng) {
         map.flyTo([myCurrentLat, myCurrentLng], 17);
     } else {
@@ -405,6 +435,7 @@ function loadMyProfile(uid) {
 }
 
 function updateProfil() {
+  if (!currentUser) return;
   const updateBtn = document.getElementById("updateBtn");
   updateBtn.innerText = "Mengupload..."; updateBtn.disabled = true;
   db.ref("vendors/" + currentUser.uid).update({
@@ -423,9 +454,8 @@ function updateProfil() {
   });
 }
 
-// MENAMPILKAN DETAIL (Digunakan Customer & Vendor)
+// SHOW DETAIL
 function showVendorDetail(v) {
-    // Jika user adalah Vendor, sembunyikan Panel Vendor mereka dulu
     if (currentRole === 'vendor') {
         document.getElementById("vendorPanel").style.display = "none";
     }
@@ -460,13 +490,10 @@ function showVendorDetail(v) {
     setTimeout(() => { map.invalidateSize(); }, 400); 
 }
 
-// Menutup Detail View (Logic berbeda tergantung Role)
 function closeDetailView() {
     if (currentRole === 'vendor') {
-        // Jika vendor menutup detail orang lain, sama saja dengan kembali ke "Home"
         returnToMyPanel();
     } else {
-        // Logic Customer
         document.getElementById("customerDetailPanel").style.display = "none";
         document.getElementById("map").style.height = "100vh";
         selectedVendorId = null; 
