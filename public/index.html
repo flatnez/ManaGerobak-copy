@@ -143,15 +143,15 @@ let currentUser = null;
 let currentRole = null;
 
 /* ===============================
-   ICONS CONFIGURATION
+   ICONS CONFIGURATION (UPDATED)
 ================================*/
-// 1. ICON GEROBAK (Saya ganti ke URL Online agar pasti muncul)
+// 1. ICON GEROBAK (Menggunakan link Icons8 yang lebih stabil untuk hotlinking)
 const kioskIcon = L.icon({
-  // URL icon kios/toko online yang stabil
-  iconUrl: "image/kiosk.png", 
-  iconSize: [40, 40],
-  iconAnchor: [20, 40], // Ujung bawah tengah
-  popupAnchor: [0, -40]
+  iconUrl: "image/kiosk.png", // Gambar Gerobak Makanan
+  iconSize: [32, 32],    // Ukuran gambar (sesuai file aslinya)
+  iconAnchor: [16, 32],  // Titik tumpu: [Setengah Lebar, Tinggi Penuh] -> Kaki gerobak di titik koordinat
+  popupAnchor: [0, -48], // Popup muncul tepat di atas icon
+  shadowUrl: null        // PENTING: Mematikan shadow default agar tidak error render
 });
 
 // 2. STYLE CUSTOMER (Titik Biru)
