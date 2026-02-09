@@ -3,59 +3,91 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Peta Gerobak</title>
+<title>Peta Gerobak Live</title>
 
-<!-- Leaflet MAP -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
-  #map { height: 400px; width: 100%; }
-  .panel { padding: 10px; background: #f8f8f8; margin-top: 10px; border-radius: 6px;}
+  body { font-family: sans-serif; margin: 0; padding: 0; }
+  h2 { padding: 10px; margin: 0; background: #fff; text-align: center; border-bottom: 1px solid #ccc; }
+  
+  /* Map Fullscreen adjustments */
+  #map { height: 60vh; width: 100%; }
+  
+  .panel { 
+    padding: 20px; 
+    background: #fff; 
+    border-top: 4px solid #4CAF50;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  }
+
+  input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+
+  button { cursor: pointer; font-weight: bold; }
+  #shareBtn { background-color: #4CAF50; color: white; border: none; }
+  #stopBtn { background-color: #f44336; color: white; border: none; }
+  
+  /* Status styles in popup */
+  .status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+  }
+  .status-buka { background-color: green; }
+  .status-tutup { background-color: red; }
 </style>
 </head>
 <body>
 
-<h2>Map Gerobak</h2>
+<h2>Peta Gerobak Live</h2>
 
 <div id="map"></div>
 
-<!-- ===================== -->
-<!-- PANEL VENDOR          -->
-<!-- ===================== -->
 <div id="vendorPanel" class="panel" style="display:none;">
 
   <h3>Kontrol Lokasi Vendor</h3>
+  <p style="font-size: small; color: #666;">Klik tombol di bawah untuk live location.</p>
 
   <button id="shareBtn">Mulai Bagikan Lokasi</button>
-  <button id="stopBtn">Berhenti Bagikan Lokasi</button>
+  <button id="stopBtn" style="display:none;">Berhenti Bagikan Lokasi</button>
 
   <hr>
 
-  <h3>Profil Gerobak</h3>
+  <h3>Profil Gerobak Saya</h3>
+
+  <label>Nama Gerobak:</label><br>
+  <input id="namaGerobak" placeholder="Contoh: Bakso Pak Kumis"><br>
 
   <label>Status:</label><br>
   <select id="status">
     <option value="buka">Buka</option>
     <option value="tutup">Tutup</option>
-  </select><br><br>
+  </select><br>
 
-  <label>Jam Buka:</label><br>
-  <input id="jamBuka" placeholder="contoh: 08:00"><br><br>
+  <label>Jam Operasional:</label><br>
+  <div style="display: flex; gap: 5px;">
+    <input id="jamBuka" placeholder="08:00">
+    <input id="jamTutup" placeholder="17:00">
+  </div>
 
-  <label>Jam Tutup:</label><br>
-  <input id="jamTutup" placeholder="contoh: 17:00"><br><br>
-
-  <label>Menu (comma separated):</label><br>
-  <input id="menu" placeholder="bakso, mie ayam, es teh"><br><br>
+  <label>Menu (pisahkan dengan koma):</label><br>
+  <input id="menu" placeholder="bakso, mie ayam, es teh"><br>
 
   <label>Foto URL:</label><br>
-  <input id="gambar" placeholder="https://..."><br><br>
+  <input id="gambar" placeholder="https://..."><br>
 
-  <button onclick="updateProfil()">Update Profil</button>
+  <button onclick="updateProfil()" style="background:#2196F3; color:white; border:none;">Update Profil</button>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -79,21 +111,49 @@ const auth = firebase.auth();
 const db = firebase.database();
 
 /* ===============================
-   AUTH GUARD
+   GLOBAL VARS
+================================*/
+let map;
+let markers = {}; // Menyimpan marker berdasarkan UID { uid: L.marker }
+let watchID = null;
+let currentUser = null;
+let currentRole = null;
+
+/* ===============================
+   AUTH & ROLE LOGIC
 ================================*/
 auth.onAuthStateChanged(user => {
   if (!user) {
+    // Jika belum login, arahkan ke login page
     window.location.href = "login.html";
     return;
   }
 
-  window.uid = user.uid;
-  window.role = localStorage.getItem("role");
+  currentUser = user;
+  
+  // 1. Ambil Role dari URL (?role=vendor atau ?role=customer)
+  const urlParams = new URLSearchParams(window.location.search);
+  currentRole = urlParams.get('role');
 
-  if (window.role === "vendor") {
-    document.getElementById("vendorPanel").style.display = "block";
+  // Fallback: jika tidak ada di URL, cek localStorage (opsional)
+  if (!currentRole) {
+    currentRole = localStorage.getItem("role") || "customer"; 
   }
 
+  console.log("Logged in as:", user.uid, "Role:", currentRole);
+
+  // 2. Tampilkan UI sesuai Role
+  if (currentRole === 'vendor') {
+    document.getElementById("vendorPanel").style.display = "block";
+    document.getElementById("map").style.height = "40vh"; // Perkecil map biar panel muat
+    loadMyProfile(user.uid); // Isi form dengan data lama
+  } else {
+    document.getElementById("vendorPanel").style.display = "none";
+    document.getElementById("map").style.height = "90vh"; // Customer map full
+  }
+
+  // 3. Load Map & Vendors
+  initMap();
   loadVendorsOnMap();
 });
 
@@ -211,65 +271,97 @@ Then return to this page and try again.`;
 /* ===============================
    MAP SETUP
 ================================*/
-let map = L.map('map').setView([-6.200, 106.816], 13);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19
-}).addTo(map);
+function initMap() {
+    map = L.map('map').setView([-6.200, 106.816], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+}
 
 const vendorIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448337.png",
-  iconSize: [40, 40]
+  iconSize: [40, 40],
+  popupAnchor: [0, -20]
 });
 
-let vendorMarker = null;
-let watchID = null;
-
 /* ===============================
-   SHARE LOCATION
+   SHARE LOCATION (VENDOR ONLY)
 ================================*/
 document.getElementById("shareBtn").onclick = () => {
   if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
 
-  // cek iOS dulu
+  // Cek iOS sesuai request user (Kode asli)
   if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     showiOSLocationHelp();
   }
 
+  document.getElementById("shareBtn").style.display = "none";
+  document.getElementById("stopBtn").style.display = "block";
+
+  // Mulai tracking
   watchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
+    const uid = currentUser.uid;
 
+    // 1. Update DB Firebase
     db.ref("vendors/" + uid).update({
       lat: lat,
-      lng: lng
+      lng: lng,
+      lastUpdated: firebase.database.ServerValue.TIMESTAMP
     });
 
-    if (vendorMarker) {
-      vendorMarker.setLatLng([lat, lng]);
-    } else {
-      vendorMarker = L.marker([lat, lng], {icon: vendorIcon}).addTo(map);
-    }
+    // 2. RECENTER MAP ke lokasi vendor
+    // Agar vendor bisa melihat pergerakan dirinya sendiri
+    map.setView([lat, lng], 17);
 
-  }, err => alert(err.message));
+  }, err => {
+    alert("Gagal mengambil lokasi: " + err.message);
+    stopSharing();
+  }, {
+    enableHighAccuracy: true
+  });
 };
 
-document.getElementById("stopBtn").onclick = () => {
+document.getElementById("stopBtn").onclick = stopSharing;
+
+function stopSharing() {
   if (watchID) navigator.geolocation.clearWatch(watchID);
   watchID = null;
-};
+  document.getElementById("shareBtn").style.display = "block";
+  document.getElementById("stopBtn").style.display = "none";
+  alert("Berhenti membagikan lokasi.");
+}
 
 /* ===============================
    UPDATE PROFIL
 ================================*/
+function loadMyProfile(uid) {
+    db.ref("vendors/" + uid).once("value").then(snap => {
+        const v = snap.val();
+        if(v) {
+            document.getElementById("namaGerobak").value = v.nama || "";
+            document.getElementById("status").value = v.status || "buka";
+            document.getElementById("jamBuka").value = v.jamBuka || "";
+            document.getElementById("jamTutup").value = v.jamTutup || "";
+            document.getElementById("menu").value = (v.menu || []).join(", ");
+            document.getElementById("gambar").value = v.gambar || "";
+        }
+    });
+}
+
 function updateProfil() {
+  const nama = document.getElementById("namaGerobak").value;
   const status = document.getElementById("status").value;
   const jamBuka = document.getElementById("jamBuka").value;
   const jamTutup = document.getElementById("jamTutup").value;
   const menuList = document.getElementById("menu").value.split(",").map(s => s.trim());
   const gambar = document.getElementById("gambar").value;
 
-  db.ref("vendors/" + uid).update({
+  db.ref("vendors/" + currentUser.uid).update({
+    nama,
     status,
     jamBuka,
     jamTutup,
@@ -281,26 +373,47 @@ function updateProfil() {
 }
 
 /* ===============================
-   LOAD SEMUA VENDOR ke MAP
+   LOAD SEMUA VENDOR (REALTIME)
 ================================*/
 function loadVendorsOnMap() {
+  // Listener 'value' akan trigger setiap ada perubahan data di node 'vendors'
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     if (!data) return;
 
+    // Loop semua vendor di database
     Object.keys(data).forEach(id => {
       const v = data[id];
+      
+      // Validasi: Vendor harus punya koordinat
       if (!v.lat || !v.lng) return;
 
-      const marker = L.marker([v.lat, v.lng], {icon: vendorIcon}).addTo(map);
+      // Siapkan konten Popup
+      const statusClass = v.status === 'buka' ? 'status-buka' : 'status-tutup';
+      const popupContent = `
+        <div style="text-align:center; min-width:150px;">
+          <h3 style="margin:0 0 5px 0;">${v.nama || "Gerobak Tanpa Nama"}</h3>
+          <span class="status-badge ${statusClass}">${(v.status || "Tutup").toUpperCase()}</span>
+          <hr style="margin: 5px 0;">
+          <div style="text-align:left; font-size:13px;">
+            <strong>Jam:</strong> ${v.jamBuka || "-"} s/d ${v.jamTutup || "-"}<br>
+            <strong>Menu:</strong> ${(v.menu || []).join(", ")}
+          </div>
+          ${v.gambar ? `<img src="${v.gambar}" style="width:100%; margin-top:5px; border-radius:4px;">` : ''}
+        </div>
+      `;
 
-      marker.bindPopup(`
-        <b>${id}</b><br>
-        Status: ${v.status || "-"}<br>
-        Jam: ${v.jamBuka || "-"} - ${v.jamTutup || "-"}<br>
-        Menu: ${(v.menu || []).join(", ")}<br>
-        <img src="${v.gambar || ""}" width="120">
-      `);
+      // Cek apakah marker untuk ID ini sudah ada di map?
+      if (markers[id]) {
+        // UPDATE POSISI & POPUP (Animasi gerak)
+        markers[id].setLatLng([v.lat, v.lng]);
+        markers[id].getPopup().setContent(popupContent);
+      } else {
+        // BUAT MARKER BARU
+        const newMarker = L.marker([v.lat, v.lng], {icon: vendorIcon}).addTo(map);
+        newMarker.bindPopup(popupContent);
+        markers[id] = newMarker; // Simpan ke object global
+      }
     });
   });
 }
