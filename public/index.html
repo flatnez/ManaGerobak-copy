@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Peta Gerobak Live</title>
+<title>Peta Gerobak Live (Debug Mode)</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -12,10 +12,8 @@
   body { font-family: sans-serif; margin: 0; padding: 0; }
   h2 { padding: 10px; margin: 0; background: #fff; text-align: center; border-bottom: 1px solid #ccc; z-index: 1000; position: relative;}
   
-  /* Map Container */
   #map { height: 60vh; width: 100%; z-index: 1; }
   
-  /* Panel Styles */
   .panel { 
     padding: 20px; 
     background: #fff; 
@@ -23,43 +21,20 @@
     box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
   }
 
-  input, select, button {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-  }
-
+  input, select, button { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
   button { cursor: pointer; font-weight: bold; border-radius: 4px; }
   #shareBtn { background-color: #4CAF50; color: white; border: none; }
   #stopBtn { background-color: #f44336; color: white; border: none; }
   
-  /* Tombol Khusus Customer (Floating) */
   #customerLocBtn {
-    position: absolute;
-    bottom: 20px;
-    right: 10px;
-    z-index: 999; /* Di atas map */
-    background-color: #007AFF;
-    color: white;
-    border: none;
-    padding: 12px 15px;
-    border-radius: 50px;
+    position: absolute; bottom: 20px; right: 10px; z-index: 999;
+    background-color: #007AFF; color: white; border: none;
+    padding: 12px 15px; border-radius: 50px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    width: auto;
-    font-size: 14px;
-    display: none; /* Default hidden, muncul via JS jika role=customer */
+    font-size: 14px; display: none;
   }
 
-  /* Status Badge di Popup */
-  .status-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 0.8em;
-    font-weight: bold;
-    color: white;
-  }
+  .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; color: white; }
   .status-buka { background-color: green; }
   .status-tutup { background-color: red; }
 </style>
@@ -74,38 +49,20 @@
 </div>
 
 <div id="vendorPanel" class="panel" style="display:none;">
-
   <h3>Kontrol Lokasi Vendor</h3>
   <p style="font-size: small; color: #666;">Klik tombol untuk memunculkan gerobak Anda di peta.</p>
-
   <button id="shareBtn">Mulai Bagikan Lokasi</button>
   <button id="stopBtn" style="display:none;">Berhenti Bagikan Lokasi</button>
-
   <hr>
-
   <h3>Profil Gerobak Saya</h3>
-
-  <label>Nama Gerobak:</label><br>
-  <input id="namaGerobak" placeholder="Contoh: Bakso Pak Kumis"><br>
-
-  <label>Status:</label><br>
-  <select id="status">
-    <option value="buka">Buka</option>
-    <option value="tutup">Tutup</option>
-  </select><br>
-
-  <label>Jam Operasional:</label><br>
+  <input id="namaGerobak" placeholder="Nama Gerobak"><br>
+  <select id="status"><option value="buka">Buka</option><option value="tutup">Tutup</option></select><br>
   <div style="display: flex; gap: 5px;">
     <input id="jamBuka" placeholder="08:00">
     <input id="jamTutup" placeholder="17:00">
   </div>
-
-  <label>Menu (pisahkan dengan koma):</label><br>
-  <input id="menu" placeholder="bakso, mie ayam, es teh"><br>
-
-  <label>Foto URL:</label><br>
-  <input id="gambar" placeholder="https://..."><br>
-
+  <input id="menu" placeholder="Menu..."><br>
+  <input id="gambar" placeholder="URL Foto..."><br>
   <button onclick="updateProfil()" style="background:#2196F3; color:white; border:none;">Update Profil</button>
 </div>
 
@@ -114,9 +71,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-/* ===============================
-   FIREBASE INIT
-================================*/
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
   authDomain: "managerobak.firebaseapp.com",
@@ -127,54 +82,41 @@ const firebaseConfig = {
   appId: "1:836881712482:web:552f5f5085b1acf6df583b",
 };
 firebase.initializeApp(firebaseConfig);
-
 const auth = firebase.auth();
 const db = firebase.database();
 
-/* ===============================
-   GLOBAL VARS
-================================*/
+/* GLOBAL VARS */
 let map;
-let vendorMarkers = {}; // Object untuk menyimpan marker VENDOR
-let customerMarker = null; // Variable untuk marker CUSTOMER
+let vendorMarkers = {};
+let customerMarker = null;
 let watchID = null;
 let customerWatchID = null;
 let currentUser = null;
 let currentRole = null;
 
-/* ===============================
-   ICONS CONFIGURATION (UPDATED)
-================================*/
-// 1. ICON GEROBAK (Menggunakan link Icons8 yang lebih stabil untuk hotlinking)
+/* ICONS */
+// Kita pakai link CDN yang pasti aktif
 const kioskIcon = L.icon({
-    iconUrl: "https://managerobak.up.railway.app/image/kiosk.png",
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -40]
+  iconUrl: "https://img.icons8.com/fluency/48/street-food.png",
+  iconSize: [48, 48],
+  iconAnchor: [24, 48],
+  popupAnchor: [0, -48],
+  shadowUrl: null
 });
 
-// 2. STYLE CUSTOMER (Titik Biru)
 const customerStyle = {
-  radius: 8,
-  color: "#007AFF",
-  fillColor: "#007AFF",
-  fillOpacity: 0.9,
-  weight: 2
+  radius: 8, color: "#007AFF", fillColor: "#007AFF", fillOpacity: 0.9, weight: 2
 };
 
-/* ===============================
-   AUTH & ROLE LOGIC
-================================*/
+/* AUTH */
 auth.onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
-
+  if (!user) { window.location.href = "login.html"; return; }
   currentUser = user;
-
+  
   const urlParams = new URLSearchParams(window.location.search);
-  currentRole = urlParams.get("role") || localStorage.getItem("role") || "customer";
+  currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
+
+  console.log("LOGIN SUKSES:", user.uid, "ROLE:", currentRole);
 
   if (currentRole === 'vendor') {
     document.getElementById("vendorPanel").style.display = "block";
@@ -186,215 +128,68 @@ auth.onAuthStateChanged(user => {
     document.getElementById("customerLocBtn").style.display = "block";
   }
 
-  initMap();            // Map dibuat dulu
+  initMap(); 
 });
 
-/* ===============================================
-        iOS Browser Detection + Location Help Popup
-===============================================*/
-function detectBrowser() {
-  const ua = navigator.userAgent;
-
-  if (/GSA/i.test(ua)) return "google_app";
-  if (/CriOS/i.test(ua)) return "chrome_ios";
-  if (/FxiOS/i.test(ua)) return "firefox_ios";
-  if (/EdgiOS/i.test(ua)) return "edge_ios";
-  if (/OPiOS/i.test(ua)) return "opera_ios";
-  if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
-  if (/Brave/i.test(ua)) return "brave_ios";
-
-  if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
-
-  return "other";
-}
-
-function showiOSLocationHelp() {
-  const browser = detectBrowser();
-  let message = "";
-
-  switch (browser) {
-    case "safari":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Safari Websites
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    case "chrome_ios":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Chrome
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    case "google_app":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Google
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    case "firefox_ios":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Firefox
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    case "edge_ios":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Microsoft Edge
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    case "opera_ios":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Opera
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    case "duckduckgo_ios":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap DuckDuckGo
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    case "brave_ios":
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Scroll down and tap Brave
-4. Choose "While Using the App"
-Then return to this page and try again.`;
-      break;
-    default:
-      message = `Location could not be accessed.
-To enable location on iPhone:
-1. Open Settings
-2. Tap Privacy & Security → Location Services
-3. Find your browser in the list
-4. Set Location to "While Using the App"
-Then return to this page and try again.`;
-  }
-
-  alert(message);
-}
-</script>
-
-<script>
-/* ===============================
-   MAP SETUP
-================================*/
+/* MAP INIT */
 function initMap() {
+    console.log("Menginisialisasi Peta...");
     map = L.map('map').setView([-6.200, 106.816], 13);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
+      maxZoom: 19, attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Now DB listener works properly
+    console.log("Peta Siap. Memuat data vendor...");
     loadVendorsOnMap();
 }
 
-
-/* ====================================================
-   1. CUSTOMER LOGIC (Lihat Lokasi Saya - Lingkaran Biru)
-==================================================== */
+/* CUSTOMER LOCATION */
 function enableCustomerLocation() {
-  if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
-
-  // Cek iOS (Menggunakan fungsi yang sudah ada)
-  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    // showiOSLocationHelp(); 
-  }
-
-  // Jika sudah tracking, cukup recenter
-  if (customerWatchID !== null) {
-     alert("Sedang mencari lokasi...");
-     return;
-  }
+  if (!navigator.geolocation) return alert("Geolocation Error");
+  if (customerWatchID !== null) { alert("Sedang mencari lokasi..."); return; }
 
   customerWatchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-
-    // Buat atau Update Marker Biru Customer
-    if (customerMarker) {
-      customerMarker.setLatLng([lat, lng]);
-    } else {
+    
+    if (customerMarker) customerMarker.setLatLng([lat, lng]);
+    else {
       customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
       customerMarker.bindPopup("Lokasi Anda");
     }
-
-    // Recenter map ke customer
     map.setView([lat, lng], 16);
-
-  }, err => {
-    console.error(err);
-    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) showiOSLocationHelp();
-    else alert("Gagal mengambil lokasi.");
-  }, {
-    enableHighAccuracy: true
-  });
+  }, err => console.error(err), { enableHighAccuracy: true });
 }
 
-/* ====================================================
-   2. VENDOR LOGIC (Share Live Location - Icon Kiosk)
-==================================================== */
+/* VENDOR SHARE LOCATION */
 document.getElementById("shareBtn").onclick = () => {
-  if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
-
-  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    showiOSLocationHelp();
-  }
-
+  if (!navigator.geolocation) return alert("Geolocation Error");
+  
   document.getElementById("shareBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "block";
+  console.log("Mulai membagikan lokasi...");
 
   watchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-    const uid = currentUser.uid;
+    
+    console.log("Lokasi Sendiri Terdeteksi:", lat, lng);
 
-    // Update DB
-    db.ref("vendors/" + uid).update({
+    db.ref("vendors/" + currentUser.uid).update({
       lat: lat,
       lng: lng,
       lastUpdated: firebase.database.ServerValue.TIMESTAMP
-    });
+    }).catch(e => console.error("Gagal update DB:", e));
 
-    // Auto Recenter untuk Vendor
-    map.setView([lat, lng], 17);
-
+    if(map) map.setView([lat, lng], 17);
   }, err => {
-    alert("Gagal share lokasi: " + err.message);
+    alert("Gagal GPS: " + err.message);
     stopSharing();
-  }, {
-    enableHighAccuracy: true
-  });
+  }, { enableHighAccuracy: true });
 };
 
 document.getElementById("stopBtn").onclick = stopSharing;
-
 function stopSharing() {
   if (watchID) navigator.geolocation.clearWatch(watchID);
   watchID = null;
@@ -403,9 +198,7 @@ function stopSharing() {
   alert("Lokasi live dimatikan.");
 }
 
-/* ===============================
-   UPDATE PROFIL (VENDOR)
-================================*/
+/* PROFIL VENDOR */
 function loadMyProfile(uid) {
     db.ref("vendors/" + uid).once("value").then(snap => {
         const v = snap.val();
@@ -419,65 +212,73 @@ function loadMyProfile(uid) {
         }
     });
 }
-
 function updateProfil() {
-  const nama = document.getElementById("namaGerobak").value;
-  const status = document.getElementById("status").value;
-  const jamBuka = document.getElementById("jamBuka").value;
-  const jamTutup = document.getElementById("jamTutup").value;
-  const menuList = document.getElementById("menu").value.split(",").map(s => s.trim());
-  const gambar = document.getElementById("gambar").value;
-
   db.ref("vendors/" + currentUser.uid).update({
-    nama,
-    status,
-    jamBuka,
-    jamTutup,
-    menu: menuList,
-    gambar
+    nama: document.getElementById("namaGerobak").value,
+    status: document.getElementById("status").value,
+    jamBuka: document.getElementById("jamBuka").value,
+    jamTutup: document.getElementById("jamTutup").value,
+    menu: document.getElementById("menu").value.split(","),
+    gambar: document.getElementById("gambar").value
   });
-
   alert("Profil berhasil diupdate!");
 }
 
 /* ====================================================
-   3. RENDER SEMUA GEROBAK DI MAP (Vendor & Customer)
+   LOGIKA UTAMA: MENAMPILKAN VENDOR (DEBUG MODE)
 ==================================================== */
 function loadVendorsOnMap() {
+  if(!map) return;
+
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
+    
+    // DEBUG 1: Cek apakah data masuk
+    console.log("Data Firebase Masuk:", data);
+
     if (!data) return;
 
     Object.keys(data).forEach(id => {
       const v = data[id];
       
-      // Skip jika tidak ada koordinat
-      if (!v.lat || !v.lng) return;
+      // DEBUG 2: Pastikan koordinat ada dan berupa ANGKA
+      let lat = parseFloat(v.lat);
+      let lng = parseFloat(v.lng);
 
-      // HTML Popup
+      if (isNaN(lat) || isNaN(lng)) {
+        console.warn(`Vendor ${v.nama} punya koordinat invalid:`, v.lat, v.lng);
+        return; // Skip jika koordinat error
+      }
+
+      console.log(`Render Vendor: ${v.nama} di [${lat}, ${lng}]`);
+
+      // Buat Popup HTML
       const statusClass = v.status === 'buka' ? 'status-buka' : 'status-tutup';
       const popupContent = `
-        <div style="text-align:center; min-width:160px;">
-          <h3 style="margin:0 0 5px 0;">${v.nama || "Gerobak"}</h3>
-          <span class="status-badge ${statusClass}">${(v.status || "Tutup").toUpperCase()}</span>
-          <hr style="margin: 5px 0;">
-          <div style="text-align:left; font-size:13px; line-height:1.4em;">
-            <strong>Jam:</strong> ${v.jamBuka || "-"} - ${v.jamTutup || "-"}<br>
-            <strong>Menu:</strong> ${(v.menu || []).join(", ")}
-          </div>
-          ${v.gambar ? `<img src="${v.gambar}" style="width:100%; margin-top:8px; border-radius:4px;">` : ''}
+        <div style="text-align:center;">
+          <b>${v.nama || "Gerobak"}</b><br>
+          <span class="status-badge ${statusClass}">${(v.status || "Tutup").toUpperCase()}</span><br>
+          <small>${v.menu ? v.menu : ""}</small>
         </div>
       `;
 
-      // Update Marker atau Buat Baru
       if (vendorMarkers[id]) {
-        vendorMarkers[id].setLatLng([v.lat, v.lng]);
+        // Update marker yang sudah ada
+        vendorMarkers[id].setLatLng([lat, lng]);
         vendorMarkers[id].getPopup().setContent(popupContent);
       } else {
-        // Pake Icon KIOSK
-        const newMarker = L.marker([v.lat, v.lng], {icon: kioskIcon}).addTo(map);
-        newMarker.bindPopup(popupContent);
-        vendorMarkers[id] = newMarker;
+        // Buat marker baru
+        try {
+          const newMarker = L.marker([lat, lng], {icon: kioskIcon}).addTo(map);
+          newMarker.bindPopup(popupContent);
+          vendorMarkers[id] = newMarker;
+        } catch (e) {
+          console.error("Gagal render icon, mencoba marker biasa:", e);
+          // Fallback ke marker biru biasa jika icon gagal
+          const fallbackMarker = L.marker([lat, lng]).addTo(map);
+          fallbackMarker.bindPopup(popupContent);
+          vendorMarkers[id] = fallbackMarker;
+        }
       }
     });
   });
