@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -21,19 +21,30 @@
       position: sticky; top: 0; z-index: 1000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; /* Agar responsif di HP kecil */
   }
-  .header-container h2 { margin: 0; font-size: 1.1rem; flex-grow: 1; }
+  .header-container h2 { margin: 0; font-size: 1.1rem; margin-right: auto; }
   
-  .header-actions { display: flex; gap: 8px; }
+  .header-actions { display: flex; gap: 5px; align-items: center; }
 
   .header-btn {
-      border: none; padding: 8px 12px; border-radius: 6px; 
-      font-size: 0.85rem; cursor: pointer; color: white;
+      border: none; padding: 8px 10px; border-radius: 6px; 
+      font-size: 0.8rem; cursor: pointer; color: white;
       font-weight: bold; white-space: nowrap;
+      display: flex; align-items: center; justify-content: center;
   }
   
-  #myGerobakBtn { background: #4CAF50; display: none; }
+  /* Tombol Header Spesifik */
+  #btnStartShare { background-color: #2196F3; display: none; } /* Biru */
+  #btnStopShare { background-color: #f44336; display: none; animation: pulse 2s infinite; } /* Merah */
+  #myGerobakBtn { background: #4CAF50; display: none; } /* Hijau */
   #logoutBtnHeader { background: #555; display: none; }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+  }
 
   #map { 
     height: 100vh; width: 100%; z-index: 1; 
@@ -49,23 +60,23 @@
   }
 
   input, select, button, textarea { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;}
-  button { cursor: pointer; font-weight: bold; border: none; color: white; transition: 0.2s; }
-  button:active { transform: scale(0.98); }
   
-  /* TOMBOL KONTROL */
-  #shareBtn { background-color: #4CAF50; }
-  #stopBtn { background-color: #f44336; }
-  #updateBtn { background-color: #2196F3; margin-top: 10px; }
+  /* Tombol Form */
+  .form-btn { cursor: pointer; font-weight: bold; border: none; color: white; transition: 0.2s; }
+  .form-btn:active { transform: scale(0.98); }
+  
+  #updateBtn { background-color: #2196F3; }
   #cancelEditBtn { background-color: #999; margin-top: 10px;}
   
   /* Posisi Tombol Edit Profil di Panel Publik */
   #editProfilBtn { 
-      background-color: #FF9800; /* Warna Orange */
-      margin-right: 8px; /* Jarak ke tombol tutup */
-      display: none; /* Default sembunyi */
+      background-color: #FF9800; 
+      margin-right: 8px; 
+      display: none; 
       width: auto; 
       padding: 8px 16px; 
       font-size: 0.9rem;
+      border: none; color: white; border-radius: 6px; cursor: pointer;
   }
   
   #customerLocBtn {
@@ -73,7 +84,7 @@
     background-color: #007AFF; 
     width: auto; padding: 12px 20px; border-radius: 50px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    font-size: 14px; display: none; color: white; border: none;
+    font-size: 14px; display: none; color: white; border: none; font-weight: bold;
   }
 
   .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; color: white; }
@@ -87,7 +98,7 @@
       display: block; margin: 0 auto 20px auto; border-radius: 8px; 
       object-fit: contain; background: #f9f9f9;
   }
-  .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; margin: 0; }
+  .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; margin: 0; border: none; cursor: pointer; }
   .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; }
 
   /* UPLOAD FOTO */
@@ -101,6 +112,9 @@
 <div class="header-container">
     <h2>ManaGerobak</h2>
     <div class="header-actions">
+        <button id="btnStartShare" class="header-btn" onclick="startSharingLocation()">📡 Live</button>
+        <button id="btnStopShare" class="header-btn" onclick="stopSharingLocation()">🛑 Stop</button>
+
         <button id="myGerobakBtn" class="header-btn" onclick="showMyPublicProfile()">🏠 Gerobak Saya</button>
         <button id="logoutBtnHeader" class="header-btn" onclick="logout()">🚪 Logout</button>
     </div>
@@ -114,14 +128,6 @@
 <div id="vendorEditPanel" class="panel" style="border-top: 5px solid #FF9800;">
   <h3>✏️ Edit Profil Gerobak</h3>
   
-  <div style="background: #f0f8ff; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #cceeff;">
-      <h4 style="margin:0 0 10px 0;">Status Lokasi</h4>
-      <button id="shareBtn">📡 Mulai Bagikan Lokasi</button>
-      <button id="stopBtn" style="display:none;">🛑 Berhenti Bagikan Lokasi</button>
-  </div>
-  
-  <hr>
-
   <label>Foto Gerobak:</label>
   <div class="image-preview-container">
       <img id="previewGambar" src="https://via.placeholder.com/300x200?text=Belum+Ada+Foto">
@@ -140,8 +146,8 @@
   <label>Menu (pisahkan koma):</label>
   <textarea id="menu" rows="3" placeholder="Nasi Goreng, Mie Rebus..."></textarea>
   
-  <button id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
-  <button id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
+  <button class="form-btn" id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
+  <button class="form-btn" id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
 </div>
 
 <div id="customerDetailPanel" class="panel" style="border-top: none;">
@@ -192,8 +198,8 @@ let currentUser = null;
 let currentRole = null;
 let selectedVendorId = null;
 let currentImageBase64 = ""; 
-let myCurrentLat = null; 
-let myCurrentLng = null; 
+// Variable untuk menyimpan status apakah vendor sedang live secara lokal
+let isSharingLocally = false;
 
 const normalIcon = L.icon({
  iconUrl: "image/gerobak.png",
@@ -205,6 +211,7 @@ const bigIcon = L.icon({
  iconSize: [58, 58], iconAnchor: [29, 58], popupAnchor: [0, -58]
 });
 
+
 // === 1. DETEKSI ROLE ===
 const urlParams = new URLSearchParams(window.location.search);
 currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
@@ -212,23 +219,29 @@ localStorage.setItem("role", currentRole);
 
 // === 2. SETUP AWAL BERDASARKAN ROLE ===
 if (currentRole === 'customer') {
+    // Sembunyikan elemen vendor
     document.getElementById("vendorEditPanel").style.display = "none";
     document.getElementById("myGerobakBtn").style.display = "none";
     document.getElementById("logoutBtnHeader").style.display = "none"; 
+    document.getElementById("btnStartShare").style.display = "none";
+    document.getElementById("btnStopShare").style.display = "none";
+    
     document.getElementById("map").style.height = "100vh";
     document.getElementById("customerLocBtn").style.display = "block";
     
-    // Auto-Login Customer
+    // Auto-Login Customer (Anonymous)
     auth.signInAnonymously().catch((error) => console.error("Gagal login anonim:", error));
 
 } else if (currentRole === 'vendor') {
-    // Vendor menunggu auth state
+    // Tampilan Vendor: Menunggu Auth State
 }
 
 // === 3. LISTENER AUTHENTICATION ===
 auth.onAuthStateChanged(user => {
   currentUser = user; 
 
+  // --- PROTEKSI HALAMAN VENDOR ---
+  // Jika role vendor tapi user null, tendang ke login
   if (!user && currentRole === 'vendor') {
       window.location.href = "login.html";
       return;
@@ -239,15 +252,33 @@ auth.onAuthStateChanged(user => {
       initMap();
 
       if (currentRole === 'vendor') {
+          // Tampilkan tombol Vendor
           document.getElementById("myGerobakBtn").style.display = "block";
           document.getElementById("logoutBtnHeader").style.display = "block";
+          
+          // Reset tombol Live ke kondisi "Start" (Belum Live) saat pertama buka/refresh
+          resetLocationButtons(false);
+          
+          // Muat data profil untuk form edit
           loadMyFormData(user.uid);
+          
+          // Pastikan DB bersih jika refresh page (set isLive false)
+          // Kecuali kita mau persistence, tapi sesuai request "kondisi awal tidak membagikan"
+          db.ref("vendors/" + user.uid).update({ isLive: false });
       }
   }
 });
 
 function logout() {
-  if (confirm("Keluar dari akun Vendor?")) auth.signOut();
+    if (confirm("Keluar dari akun Vendor?")) {
+        // Stop sharing sebelum logout untuk kebersihan data
+        if(watchID) navigator.geolocation.clearWatch(watchID);
+        if(currentUser) db.ref("vendors/" + currentUser.uid).update({ isLive: false });
+        
+        auth.signOut().then(() => {
+            window.location.href = "login.html";
+        });
+    }
 }
 
 // === 4. LOGIKA PETA & DATA ===
@@ -264,48 +295,86 @@ function initMap() {
     loadVendorsOnMap(); 
 }
 
-// === LIVE LOCATION VENDOR ===
-document.getElementById("shareBtn").onclick = () => {
-  if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
-  
-  navigator.geolocation.getCurrentPosition(pos => {
-      myCurrentLat = pos.coords.latitude;
-      myCurrentLng = pos.coords.longitude;
-      map.setView([myCurrentLat, myCurrentLng], 17);
-  });
+// ===============================================
+// === FITUR LIVE LOCATION (HEADER BUTTONS) ===
+// ===============================================
 
-  document.getElementById("shareBtn").style.display = "none";
-  document.getElementById("stopBtn").style.display = "block";
-  
-  watchID = navigator.geolocation.watchPosition(pos => {
-    myCurrentLat = pos.coords.latitude; 
-    myCurrentLng = pos.coords.longitude;
+function startSharingLocation() {
+    if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
+    if (!currentUser) return;
 
-    if (currentUser) {
-        db.ref("vendors/" + currentUser.uid).update({
-          lat: pos.coords.latitude, 
-          lng: pos.coords.longitude,
-          isLive: true,
-          lastUpdated: firebase.database.ServerValue.TIMESTAMP
-        });
+    // UI Updates
+    document.getElementById("btnStartShare").innerText = "⏳...";
+    
+    // Ambil posisi awal segera untuk recenter
+    navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        
+        // Recenter Map ke User
+        map.setView([lat, lng], 17);
+        
+        // Mulai Watcher
+        watchID = navigator.geolocation.watchPosition(updatePositionToDB, handleError, { enableHighAccuracy: true });
+        
+        // Update UI Button
+        resetLocationButtons(true);
+        isSharingLocally = true;
+
+    }, handleError);
+}
+
+function updatePositionToDB(pos) {
+    if (!currentUser) return;
+    
+    const updates = {
+        lat: pos.coords.latitude, 
+        lng: pos.coords.longitude,
+        isLive: true,
+        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    // Update Data
+    const vendorRef = db.ref("vendors/" + currentUser.uid);
+    vendorRef.update(updates);
+    
+    // ON DISCONNECT: Hapus status live jika internet putus/tab tutup
+    vendorRef.onDisconnect().update({ isLive: false });
+}
+
+function stopSharingLocation() {
+    if (watchID) navigator.geolocation.clearWatch(watchID);
+    watchID = null;
+    isSharingLocally = false;
+    
+    if(currentUser) {
+        db.ref("vendors/" + currentUser.uid).update({ isLive: false });
+        // Batalkan onDisconnect
+        db.ref("vendors/" + currentUser.uid).onDisconnect().cancel();
     }
-  }, err => { 
-      alert("Gagal mengakses GPS: " + err.message); 
-      stopSharing(); 
-  }, { enableHighAccuracy: true });
-};
 
-document.getElementById("stopBtn").onclick = stopSharing;
+    resetLocationButtons(false);
+    alert("Berhenti membagikan lokasi. Icon gerobak Anda hilang dari peta.");
+}
 
-function stopSharing() {
-  if (watchID) navigator.geolocation.clearWatch(watchID);
-  watchID = null;
-  if(currentUser) {
-      db.ref("vendors/" + currentUser.uid).update({ isLive: false });
-  }
-  document.getElementById("shareBtn").style.display = "block";
-  document.getElementById("stopBtn").style.display = "none";
-  alert("Lokasi live dimatikan.");
+function handleError(err) {
+    alert("Gagal mengakses GPS: " + err.message);
+    stopSharingLocation();
+}
+
+function resetLocationButtons(isLive) {
+    const btnStart = document.getElementById("btnStartShare");
+    const btnStop = document.getElementById("btnStopShare");
+    
+    btnStart.innerText = "📡 Live"; // Reset text loading
+
+    if (isLive) {
+        btnStart.style.display = "none";
+        btnStop.style.display = "block";
+    } else {
+        btnStart.style.display = "block";
+        btnStop.style.display = "none";
+    }
 }
 
 // === MENAMPILKAN VENDOR DI PETA ===
@@ -320,6 +389,8 @@ function loadVendorsOnMap() {
         Object.keys(data).forEach(id => {
           const v = data[id];
           
+          // HANYA TAMPILKAN JIKA isLive === true
+          // Jika isLive false, vendor dianggap offline
           if (!v.lat || !v.lng || v.isLive !== true) return;
           
           activeVendorIds.push(id); 
@@ -330,8 +401,6 @@ function loadVendorsOnMap() {
           
           if (currentUser && !currentUser.isAnonymous && id === currentUser.uid) {
              displayName += " (Anda)";
-             myCurrentLat = lat;
-             myCurrentLng = lng;
           }
 
           let currentIcon = (id === selectedVendorId) ? bigIcon : normalIcon;
@@ -354,6 +423,7 @@ function loadVendorsOnMap() {
         });
     }
     
+    // Hapus marker yang sudah tidak live (isLive: false)
     Object.keys(vendorMarkers).forEach(existingId => {
         if (!activeVendorIds.includes(existingId)) {
             map.removeLayer(vendorMarkers[existingId]);
@@ -370,52 +440,43 @@ function highlightVendorIcon(id) {
 }
 
 // ============================================
-// === PERBAIKAN FUNGSI: GEROBAK SAYA ===
+// === FUNGSI: GEROBAK SAYA ===
 // ============================================
 
 function showMyPublicProfile() {
-    // 1. Cek User
     if (!currentUser) return alert("Anda belum login!");
     if (currentUser.isAnonymous) return alert("Menu ini khusus Vendor.");
 
-    // 2. Beri Feedback Visual (Loading)
     const btn = document.getElementById("myGerobakBtn");
     const originalText = btn.innerText;
-    btn.innerText = "⏳ Memuat...";
-    btn.disabled = true;
+    btn.innerText = "⏳..."; btn.disabled = true;
 
-    // 3. Ambil Data
     db.ref("vendors/" + currentUser.uid).once("value")
     .then(snap => {
         const v = snap.val();
-        
-        // Kembalikan Tombol
-        btn.innerText = originalText;
-        btn.disabled = false;
+        btn.innerText = originalText; btn.disabled = false;
 
         if (v) {
-            // Data ada
             highlightVendorIcon(currentUser.uid);
             
-            // Cek Koordinat (Penting! Jika belum live, map jangan dipaksa flyTo null)
-            if (v.lat && v.lng) {
+            // LOGIKA RECENTER:
+            // Hanya flyTo jika vendor SEDANG LIVE location (isLive == true)
+            if (v.isLive === true && v.lat && v.lng) {
                 if(map) map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
             } else {
-                console.log("Lokasi belum live, membuka profil saja.");
+                // Jika tidak live, jangan gerakkan peta, cukup buka profil
+                console.log("Status Offline, membuka profil tanpa recenter map.");
             }
             
-            // Buka Panel
             showVendorDetail(v, currentUser.uid);
         } else {
-            // Data kosong -> Buka Mode Edit
             alert("Profil belum diatur. Silakan isi data dulu.");
             openEditMode();
         }
     })
     .catch(err => {
         console.error("Error:", err);
-        btn.innerText = originalText;
-        btn.disabled = false;
+        btn.innerText = originalText; btn.disabled = false;
         alert("Gagal memuat profil: " + err.message);
     });
 }
@@ -428,12 +489,10 @@ function openEditMode() {
     document.getElementById("vendorEditPanel").style.display = "block"; 
     document.getElementById("map").style.height = "50vh";
     
-    // Resize map agar tidak abu-abu
     setTimeout(() => { if(map) map.invalidateSize(); }, 300);
 }
 
 function cancelEdit() {
-    // Kembali ke profil publik
     showMyPublicProfile(); 
 }
 
@@ -459,7 +518,6 @@ function updateProfil() {
   });
 }
 
-// Helper: Muat Data ke Input Form
 function loadMyFormData(uid) {
     db.ref("vendors/" + uid).once("value").then(snap => {
         const v = snap.val();
