@@ -236,15 +236,20 @@ if (currentRole === 'customer') {
     // Tampilan Vendor: Menunggu Auth State
 }
 
-// === 3. LISTENER AUTHENTICATION ===
+// === 3. LISTENER AUTHENTICATION (DENGAN PROTEKSI KETAT) ===
 auth.onAuthStateChanged(user => {
   currentUser = user; 
 
   // --- PROTEKSI HALAMAN VENDOR ---
-  // Jika role vendor tapi user null, tendang ke login
-  if (!user && currentRole === 'vendor') {
-      window.location.href = "login.html";
-      return;
+  if (currentRole === 'vendor') {
+      // Kondisi Redirect:
+      // 1. User belum login (user == null)
+      // 2. User login tapi sebagai Anonymous/Customer (user.isAnonymous == true)
+      if (!user || (user && user.isAnonymous)) {
+          console.log("Akses ditolak: User bukan vendor resmi.");
+          window.location.href = "login.html";
+          return; // Hentikan script di sini
+      }
   }
   
   if (user) {
@@ -263,7 +268,6 @@ auth.onAuthStateChanged(user => {
           loadMyFormData(user.uid);
           
           // Pastikan DB bersih jika refresh page (set isLive false)
-          // Kecuali kita mau persistence, tapi sesuai request "kondisi awal tidak membagikan"
           db.ref("vendors/" + user.uid).update({ isLive: false });
       }
   }
@@ -464,7 +468,6 @@ function showMyPublicProfile() {
             if (v.isLive === true && v.lat && v.lng) {
                 if(map) map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
             } else {
-                // Jika tidak live, jangan gerakkan peta, cukup buka profil
                 console.log("Status Offline, membuka profil tanpa recenter map.");
             }
             
