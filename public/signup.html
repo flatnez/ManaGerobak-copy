@@ -4,18 +4,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Daftar Gerobak</title>
+<style>
+    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f4; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    h2 { margin-top: 0; color: #333; }
+    input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    button:hover { background-color: #45a049; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
+    a { text-decoration: none; color: #007AFF; }
+    p { font-size: small; color: #666; margin-top: 15px; }
+</style>
 </head>
 <body>
-<h2>Daftar Gerobak Baru</h2>
 
-<form onsubmit="signUp(event)">
-    <input type="text" id="gerobakId" placeholder="Nama Gerobak (ID Gerobak)" required><br>
-    <input type="email" id="email" placeholder="Email" required><br>
-    <input type="password" id="password" placeholder="Password" required><br>
-    <button type="submit">Daftar</button>
-</form>
+<div class="container">
+    <h2>Daftar Gerobak Baru</h2>
 
-<p>Sudah punya akun? <a href="login.html">Login</a></p>
+    <form onsubmit="signUp(event)">
+        <input type="text" id="gerobakId" placeholder="Nama Gerobak" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password (Min. 6 karakter)" required>
+        
+        <button type="submit" id="regBtn">Daftar Sekarang</button>
+    </form>
+
+    <p id="errorText" class="error-msg"></p>
+
+    <p>Sudah punya akun? <a href="login.html">Login disini</a></p>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -24,45 +42,88 @@
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
-    authDomain: "managerobak.firebaseapp.com",
-    databaseURL: "https://managerobak-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "managerobak",
-    storageBucket: "managerobak.firebasestorage.app",
-    messagingSenderId: "836881712482",
-    appId: "1:836881712482:web:552f5f5085b1acf6df583b",
+  authDomain: "managerobak.firebaseapp.com",
+  databaseURL: "https://managerobak-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "managerobak",
+  storageBucket: "managerobak.firebasestorage.app",
+  messagingSenderId: "836881712482",
+  appId: "1:836881712482:web:552f5f5085b1acf6df583b",
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// SIGN UP
+// SIGN UP FUNCTION
 function signUp(e) {
-  e.preventDefault();
+  e.preventDefault(); // Mencegah reload halaman
 
   const gerobakId = document.getElementById("gerobakId").value.trim();
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
+  
+  const regBtn = document.getElementById("regBtn");
+  const errorText = document.getElementById("errorText");
+
+  // Reset Error
+  errorText.style.display = "none";
+  errorText.innerText = "";
+
+  // Validasi sederhana
+  if (password.length < 6) {
+      showError("Password harus minimal 6 karakter.");
+      return;
+  }
+
+  // Loading State
+  regBtn.innerText = "Mendaftarkan...";
+  regBtn.disabled = true;
 
   auth.createUserWithEmailAndPassword(email, password)
     .then(res => {
       const uid = res.user.uid;
 
-      // SIMPAN PROFIL AWAL DI DATABASE
-      db.ref("vendors/" + uid).set({
+      // SIMPAN PROFIL KE DATABASE
+      // Saya menambahkan field 'nama' agar kompatibel dengan Peta
+      return db.ref("vendors/" + uid).set({
         idGerobak: gerobakId,
+        nama: gerobakId, // Penting untuk tampilan di Peta
+        email: email,
         lat: 0,
         lng: 0,
-        jamBuka: "",
+        jamBuka: "08:00",
+        jamTutup: "17:00",
         status: "tutup",
-        menu: [],
+        menu: ["Contoh Menu 1", "Contoh Menu 2"], // Menu default
         gambar: ""
       });
-
-      alert("Pendaftaran berhasil!");
-      window.location.href = "login.html";
     })
-    .catch(err => alert(err.message));
+    .then(() => {
+        alert("Pendaftaran berhasil! Silakan Login.");
+        window.location.href = "login.html";
+    })
+    .catch(err => {
+        regBtn.innerText = "Daftar Sekarang";
+        regBtn.disabled = false;
+        
+        // Error message handling
+        console.error(err);
+        if (err.code === "auth/email-already-in-use") {
+            showError("Email ini sudah terdaftar.");
+        } else if (err.code === "auth/invalid-email") {
+            showError("Format email tidak valid.");
+        } else if (err.code === "auth/weak-password") {
+            showError("Password terlalu lemah.");
+        } else {
+            showError("Gagal daftar: " + err.message);
+        }
+    });
+}
+
+function showError(msg) {
+    const errorText = document.getElementById("errorText");
+    errorText.innerText = msg;
+    errorText.style.display = "block";
 }
 </script>
 
