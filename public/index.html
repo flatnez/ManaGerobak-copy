@@ -52,11 +52,21 @@
   button { cursor: pointer; font-weight: bold; border: none; color: white; transition: 0.2s; }
   button:active { transform: scale(0.98); }
   
+  /* TOMBOL KONTROL */
   #shareBtn { background-color: #4CAF50; }
   #stopBtn { background-color: #f44336; }
-  #updateBtn { background-color: #2196F3; }
+  #updateBtn { background-color: #2196F3; margin-top: 10px; }
   #cancelEditBtn { background-color: #999; margin-top: 10px;}
-  #editProfilBtn { background-color: #FF9800; margin-right: 10px; display: none; width: auto; padding: 8px 16px; }
+  
+  /* Posisi Tombol Edit Profil di Panel Publik */
+  #editProfilBtn { 
+      background-color: #FF9800; /* Warna Orange */
+      margin-right: 8px; /* Jarak ke tombol tutup */
+      display: none; /* Default sembunyi */
+      width: auto; 
+      padding: 8px 16px; 
+      font-size: 0.9rem;
+  }
   
   #customerLocBtn {
     position: fixed; bottom: 25px; right: 15px; z-index: 999;
@@ -130,13 +140,14 @@
   <label>Menu (pisahkan koma):</label>
   <textarea id="menu" rows="3" placeholder="Nasi Goreng, Mie Rebus..."></textarea>
   
-  <button id="updateBtn" onclick="updateProfil()">💾 Simpan & Update</button>
+  <button id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
   <button id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
 </div>
 
 <div id="customerDetailPanel" class="panel" style="border-top: none;">
     <div class="detail-header">
         <h2 id="dNama" style="font-size: 1.2em; text-align: left; padding: 0;">Nama Gerobak</h2>
+        
         <div style="display: flex; align-items: center;">
             <button id="editProfilBtn" onclick="openEditMode()">✏️ Edit Profil</button>
             <button class="close-btn" onclick="closeDetailView()">✕ Tutup</button>
@@ -184,6 +195,7 @@ let currentImageBase64 = "";
 let myCurrentLat = null; 
 let myCurrentLng = null; 
 
+// Menggunakan icon online agar tidak broken image jika file lokal tidak ada
 const normalIcon = L.icon({
   iconUrl: "image/gerobak.png", 
   iconSize: [42, 42], iconAnchor: [21, 42], popupAnchor: [0, -42]
@@ -209,22 +221,19 @@ if (currentRole === 'customer') {
     document.getElementById("customerLocBtn").style.display = "block";
     
     // CUSTOMER AUTO LOGIN ANONYMOUS
-    // Ini penting agar customer dianggap "user sah" oleh Firebase dan bisa baca data
     auth.signInAnonymously().catch((error) => {
         console.error("Gagal login customer anonim:", error);
     });
 
 } else if (currentRole === 'vendor') {
-    // Tampilan Vendor
-    // Vendor harus login via email/pass di halaman login, jadi di sini kita tunggu auth state
+    // Tampilan Vendor menunggu auth state
 }
 
-// === 3. LISTENER AUTHENTICATION (JANTUNG KONEKSI) ===
+// === 3. LISTENER AUTHENTICATION ===
 auth.onAuthStateChanged(user => {
   currentUser = user; 
 
   if (!user && currentRole === 'vendor') {
-      // Jika Vendor tidak login, tendang ke halaman login
       window.location.href = "login.html";
       return;
   }
@@ -232,14 +241,12 @@ auth.onAuthStateChanged(user => {
   if (user) {
       console.log("User terhubung. Role:", currentRole, "UID:", user.uid);
       
-      // Baik Customer (Anonim) maupun Vendor (Email) akan masuk sini
-      // Inisialisasi Peta setelah koneksi Firebase stabil
       initMap();
 
-      // Logika Khusus Vendor
       if (currentRole === 'vendor') {
           document.getElementById("myGerobakBtn").style.display = "block";
           document.getElementById("logoutBtnHeader").style.display = "block";
+          // Muat data awal untuk form
           loadMyFormData(user.uid);
       }
   }
@@ -251,18 +258,15 @@ function logout() {
 
 // === 4. LOGIKA PETA & DATA ===
 function initMap() {
-    if(map) return; // Jangan init ulang
+    if(map) return; 
     
-    // Default Jakarta, nanti akan update sesuai data
     map = L.map('map', { zoomControl: false }).setView([-6.200, 106.816], 13);
     L.control.zoom({ position: 'topright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
     
-    // Pane khusus agar lingkaran lokasi customer selalu di bawah icon gerobak
     map.createPane('customerPane');
     map.getPane('customerPane').style.zIndex = 650;
     
-    // Panggil data gerobak
     loadVendorsOnMap(); 
 }
 
@@ -270,7 +274,6 @@ function initMap() {
 document.getElementById("shareBtn").onclick = () => {
   if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
   
-  // Ambil posisi awal segera
   navigator.geolocation.getCurrentPosition(pos => {
       myCurrentLat = pos.coords.latitude;
       myCurrentLng = pos.coords.longitude;
@@ -280,7 +283,6 @@ document.getElementById("shareBtn").onclick = () => {
   document.getElementById("shareBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "block";
   
-  // Mulai Watch Position
   watchID = navigator.geolocation.watchPosition(pos => {
     myCurrentLat = pos.coords.latitude; 
     myCurrentLng = pos.coords.longitude;
@@ -296,11 +298,7 @@ document.getElementById("shareBtn").onclick = () => {
   }, err => { 
       alert("Gagal mengakses GPS: " + err.message); 
       stopSharing(); 
-  }, { 
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-  });
+  }, { enableHighAccuracy: true });
 };
 
 document.getElementById("stopBtn").onclick = stopSharing;
@@ -311,17 +309,15 @@ function stopSharing() {
   if(currentUser) {
       db.ref("vendors/" + currentUser.uid).update({ isLive: false });
   }
-
   document.getElementById("shareBtn").style.display = "block";
   document.getElementById("stopBtn").style.display = "none";
   alert("Lokasi live dimatikan.");
 }
 
-// === MENAMPILKAN VENDOR DI PETA (UNTUK SEMUA USER) ===
+// === MENAMPILKAN VENDOR DI PETA ===
 function loadVendorsOnMap() {
   if(!map) return;
   
-  // Dengar perubahan data 'vendors' secara realtime
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     let activeVendorIds = [];
@@ -330,7 +326,6 @@ function loadVendorsOnMap() {
         Object.keys(data).forEach(id => {
           const v = data[id];
           
-          // Syarat tampil: Ada koordinat DAN isLive = true
           if (!v.lat || !v.lng || v.isLive !== true) return;
           
           activeVendorIds.push(id); 
@@ -339,8 +334,6 @@ function loadVendorsOnMap() {
           
           let displayName = v.nama || "Gerobak";
           
-          // Tandai jika ini gerobak sendiri (hanya untuk Vendor login)
-          // Jika customer (anonim), id != currentUser.uid
           if (currentUser && !currentUser.isAnonymous && id === currentUser.uid) {
              displayName += " (Anda)";
              myCurrentLat = lat;
@@ -350,13 +343,11 @@ function loadVendorsOnMap() {
           let currentIcon = (id === selectedVendorId) ? bigIcon : normalIcon;
 
           if (vendorMarkers[id]) {
-            // Update posisi marker yang sudah ada
             vendorMarkers[id].setLatLng([lat, lng]);
             vendorMarkers[id].setIcon(currentIcon);
             vendorMarkers[id].options.vendorData = v; 
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
           } else {
-            // Buat marker baru
             const newMarker = L.marker([lat, lng], { icon: currentIcon, vendorData: v }).addTo(map);
             newMarker.bindPopup(`<b>${displayName}</b>`);
             
@@ -366,6 +357,7 @@ function loadVendorsOnMap() {
                 const vendorId = id; 
                 
                 highlightVendorIcon(vendorId);
+                // Menampilkan profil publik (dan tombol edit jika pemilik)
                 showVendorDetail(dataGerobak, vendorId);
                 map.flyTo([lat, lng], 16, { animate: true, duration: 0.5 });
             });
@@ -375,7 +367,6 @@ function loadVendorsOnMap() {
         });
     }
     
-    // Hapus marker yang sudah tidak live / offline
     Object.keys(vendorMarkers).forEach(existingId => {
         if (!activeVendorIds.includes(existingId)) {
             map.removeLayer(vendorMarkers[existingId]);
@@ -391,17 +382,24 @@ function highlightVendorIcon(id) {
     if (vendorMarkers[id]) vendorMarkers[id].setIcon(bigIcon);
 }
 
-// === VENDOR: PROFIL SAYA ===
+// === VENDOR: FUNGSI UTAMA (HOME & EDIT) ===
+
+// 1. Tampilkan Profil Publik Sendiri (Dipanggil tombol Gerobak Saya / Simpan)
 function showMyPublicProfile() {
     if (!currentUser || currentUser.isAnonymous) return;
     
     db.ref("vendors/" + currentUser.uid).once("value").then(snap => {
         const v = snap.val();
         if (v) {
+            // Icon jadi besar
             highlightVendorIcon(currentUser.uid);
+            
+            // Recenter Map (Jika ada lokasi)
             if (v.lat && v.lng) {
                 map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
             }
+            
+            // Tampilkan Profil Publik (bukan form edit)
             showVendorDetail(v, currentUser.uid);
         } else {
             alert("Profil belum ada. Silakan Edit Profil.");
@@ -410,7 +408,52 @@ function showMyPublicProfile() {
     });
 }
 
-// === VENDOR: EDIT DATA ===
+// 2. Buka Form Edit (Dipanggil tombol Edit Profil)
+function openEditMode() {
+    if (!currentUser) return;
+
+    // Pastikan form terisi data terbaru dari DB sebelum ditampilkan
+    loadMyFormData(currentUser.uid);
+
+    document.getElementById("customerDetailPanel").style.display = "none"; // Tutup publik
+    document.getElementById("vendorEditPanel").style.display = "block"; // Buka edit
+    document.getElementById("map").style.height = "50vh";
+    
+    if(currentUser && !currentUser.isAnonymous) highlightVendorIcon(currentUser.uid);
+}
+
+// 3. Batalkan Edit
+function cancelEdit() {
+    showMyPublicProfile(); // Kembali ke tampilan publik tanpa simpan
+}
+
+// 4. Simpan & Kembali ke Profil Publik
+function updateProfil() {
+  if (!currentUser || currentUser.isAnonymous) return;
+  const updateBtn = document.getElementById("updateBtn");
+  updateBtn.innerText = "Menyimpan..."; updateBtn.disabled = true;
+  
+  db.ref("vendors/" + currentUser.uid).update({
+    nama: document.getElementById("namaGerobak").value,
+    status: document.getElementById("status").value,
+    jamBuka: document.getElementById("jamBuka").value,
+    jamTutup: document.getElementById("jamTutup").value,
+    menu: document.getElementById("menu").value.split(","),
+    gambar: currentImageBase64
+  }).then(() => {
+      alert("Profil berhasil disimpan!");
+      updateBtn.innerText = "💾 Simpan Profil"; updateBtn.disabled = false;
+      
+      // SETELAH SIMPAN, BALIK KE PROFIL PUBLIK YANG TERUPDATE
+      showMyPublicProfile(); 
+      
+  }).catch(err => {
+      alert("Gagal update: " + err.message);
+      updateBtn.innerText = "💾 Simpan Profil"; updateBtn.disabled = false;
+  });
+}
+
+// Helper: Muat Data ke Input Form
 function loadMyFormData(uid) {
     db.ref("vendors/" + uid).once("value").then(snap => {
         const v = snap.val();
@@ -428,46 +471,16 @@ function loadMyFormData(uid) {
     });
 }
 
-function openEditMode() {
-    document.getElementById("customerDetailPanel").style.display = "none"; 
-    document.getElementById("vendorEditPanel").style.display = "block"; 
-    document.getElementById("map").style.height = "50vh";
-    if(currentUser && !currentUser.isAnonymous) highlightVendorIcon(currentUser.uid);
-}
-
-function cancelEdit() {
-    showMyPublicProfile(); 
-}
-
-function updateProfil() {
-  if (!currentUser || currentUser.isAnonymous) return;
-  const updateBtn = document.getElementById("updateBtn");
-  updateBtn.innerText = "Menyimpan..."; updateBtn.disabled = true;
-  
-  db.ref("vendors/" + currentUser.uid).update({
-    nama: document.getElementById("namaGerobak").value,
-    status: document.getElementById("status").value,
-    jamBuka: document.getElementById("jamBuka").value,
-    jamTutup: document.getElementById("jamTutup").value,
-    menu: document.getElementById("menu").value.split(","),
-    gambar: currentImageBase64
-  }).then(() => {
-      alert("Profil berhasil diupdate!");
-      updateBtn.innerText = "💾 Simpan & Update"; updateBtn.disabled = false;
-      showMyPublicProfile();
-  }).catch(err => {
-      alert("Gagal update: " + err.message);
-      updateBtn.innerText = "💾 Simpan & Update"; updateBtn.disabled = false;
-  });
-}
-
-// === TAMPILAN DETAIL (PUBLIC VIEW) ===
+// === TAMPILAN DETAIL PUBLIK ===
 function showVendorDetail(v, vendorId) {
+    // Pastikan panel edit tertutup
     document.getElementById("vendorEditPanel").style.display = "none";
+    
     const panel = document.getElementById("customerDetailPanel");
     const mapDiv = document.getElementById("map");
     mapDiv.style.height = "50vh"; 
     
+    // Isi Data
     document.getElementById("dNama").innerText = v.nama || "Tanpa Nama";
     
     const statusEl = document.getElementById("dStatus");
@@ -492,12 +505,14 @@ function showVendorDetail(v, vendorId) {
         });
     } else { menuDiv.innerText = "Belum ada info menu."; }
     
-    // Tombol Edit hanya muncul jika Vendor LOGIN dan melihat gerobak SENDIRI
+    // LOGIKA TOMBOL EDIT
     const editBtn = document.getElementById("editProfilBtn");
+    
+    // Cek: Apakah user login sebagai vendor DAN melihat profilnya sendiri?
     if (currentRole === 'vendor' && currentUser && !currentUser.isAnonymous && vendorId === currentUser.uid) {
-        editBtn.style.display = "block";
+        editBtn.style.display = "block"; // Munculkan tombol Edit
     } else {
-        editBtn.style.display = "none";
+        editBtn.style.display = "none"; // Sembunyikan tombol Edit (untuk orang lain)
     }
 
     panel.style.display = "block";
@@ -512,6 +527,7 @@ function closeDetailView() {
     setTimeout(() => map.invalidateSize(), 400);
 }
 
+// UPLOAD IMAGE
 function handleImageUpload(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
