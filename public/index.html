@@ -147,11 +147,10 @@ let currentRole = null;
 ================================*/
 // 1. ICON GEROBAK (Menggunakan link Icons8 yang lebih stabil untuk hotlinking)
 const kioskIcon = L.icon({
-  iconUrl: "image/kiosk.png", // Gambar Gerobak Makanan
-  iconSize: [32, 32],    // Ukuran gambar (sesuai file aslinya)
-  iconAnchor: [16, 32],  // Titik tumpu: [Setengah Lebar, Tinggi Penuh] -> Kaki gerobak di titik koordinat
-  popupAnchor: [0, -48], // Popup muncul tepat di atas icon
-  shadowUrl: null        // PENTING: Mematikan shadow default agar tidak error render
+    iconUrl: "https://managerobak.up.railway.app/image/kiosk.png",
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -40]
 });
 
 // 2. STYLE CUSTOMER (Titik Biru)
