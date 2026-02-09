@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Peta Gerobak Live (Final)</title>
+<title>ManaGerobak?</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -47,7 +47,7 @@
 </head>
 <body>
 
-<h2>Peta Gerobak Live</h2>
+<h2>ManaGerobak?</h2>
 
 <div style="position: relative;">
   <div id="map"></div>
@@ -175,7 +175,7 @@ function initMap() {
 
     /* PANE KHUSUS CUSTOMER (AGAR SELALU DI ATAS GEROBAK) */
     map.createPane('customerPane');
-    map.getPane('customerPane').style.zIndex = 650;
+    map.getPane('customerPane').style.zIndex = 400;
 
     loadVendorsOnMap();
 }
@@ -192,7 +192,7 @@ function enableCustomerLocation() {
      return; 
   }
 
-  // Style Customer (Pane z-index 650)
+  // Style Customer (Pane z-index 400)
   const customerStyle = {
     radius: 10, 
     color: "#fff", 
