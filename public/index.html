@@ -143,15 +143,15 @@ let currentUser = null;
 let currentRole = null;
 
 /* ===============================
-   ICONS CONFIGURATION
+   ICONS CONFIGURATION (UPDATED)
 ================================*/
-// 1. ICON GEROBAK (Saya gunakan URL Online agar PASTI muncul)
+// 1. ICON GEROBAK (Menggunakan link Icons8 yang lebih stabil untuk hotlinking)
 const kioskIcon = L.icon({
-  iconUrl: "https://img.icons8.com/fluency/48/street-food.png", 
-  iconSize: [48, 48],
-  iconAnchor: [24, 48], 
-  popupAnchor: [0, -48],
-  shadowUrl: null        
+  iconUrl: "image/kiosk.png", // Gambar Gerobak Makanan
+  iconSize: [32, 32],    // Ukuran gambar (sesuai file aslinya)
+  iconAnchor: [16, 32],  // Titik tumpu: [Setengah Lebar, Tinggi Penuh] -> Kaki gerobak di titik koordinat
+  popupAnchor: [0, -48], // Popup muncul tepat di atas icon
+  shadowUrl: null        // PENTING: Mematikan shadow default agar tidak error render
 });
 
 // 2. STYLE CUSTOMER (Titik Biru)
@@ -173,31 +173,21 @@ auth.onAuthStateChanged(user => {
   }
 
   currentUser = user;
-  
-  // Ambil Role dari URL
+
   const urlParams = new URLSearchParams(window.location.search);
-  currentRole = urlParams.get('role');
+  currentRole = urlParams.get("role") || localStorage.getItem("role") || "customer";
 
-  if (!currentRole) {
-    currentRole = localStorage.getItem("role") || "customer"; 
-  }
-
-  console.log("Logged in as:", user.uid, "Role:", currentRole);
-
-  // Setup UI berdasarkan Role
   if (currentRole === 'vendor') {
     document.getElementById("vendorPanel").style.display = "block";
-    document.getElementById("map").style.height = "45vh"; // Map lebih kecil untuk vendor
+    document.getElementById("map").style.height = "45vh";
     loadMyProfile(user.uid);
   } else {
-    // Customer
     document.getElementById("vendorPanel").style.display = "none";
-    document.getElementById("map").style.height = "90vh"; // Map full
-    document.getElementById("customerLocBtn").style.display = "block"; // Tombol Customer
+    document.getElementById("map").style.height = "90vh";
+    document.getElementById("customerLocBtn").style.display = "block";
   }
 
-  // Panggil initMap (loadVendorsOnMap dipanggil di DALAM initMap)
-  initMap(); 
+  initMap();            // Map dibuat dulu
 });
 
 /* ===============================================
@@ -222,15 +212,99 @@ function detectBrowser() {
 function showiOSLocationHelp() {
   const browser = detectBrowser();
   let message = "";
-  // (Pesan dipersingkat agar kode tidak terlalu panjang, logika sama)
-  alert("Mohon aktifkan lokasi di Pengaturan iPhone Anda untuk browser ini.");
-}
 
+  switch (browser) {
+    case "safari":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Safari Websites
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "chrome_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Chrome
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "google_app":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Google
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "firefox_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Firefox
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "edge_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Microsoft Edge
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "opera_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Opera
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "duckduckgo_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap DuckDuckGo
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    case "brave_ios":
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Brave
+4. Choose "While Using the App"
+Then return to this page and try again.`;
+      break;
+    default:
+      message = `Location could not be accessed.
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Find your browser in the list
+4. Set Location to "While Using the App"
+Then return to this page and try again.`;
+  }
+
+  alert(message);
+}
+</script>
+
+<script>
 /* ===============================
    MAP SETUP
 ================================*/
 function initMap() {
-    // 1. Buat Peta
     map = L.map('map').setView([-6.200, 106.816], 13);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -238,10 +312,10 @@ function initMap() {
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // 2. Panggil Vendor Markers SETELAH peta jadi
-    console.log("Map initialized, loading vendors...");
+    // Now DB listener works properly
     loadVendorsOnMap();
 }
+
 
 /* ====================================================
    1. CUSTOMER LOGIC (Lihat Lokasi Saya - Lingkaran Biru)
@@ -249,10 +323,12 @@ function initMap() {
 function enableCustomerLocation() {
   if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
 
+  // Cek iOS (Menggunakan fungsi yang sudah ada)
   if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     // showiOSLocationHelp(); 
   }
 
+  // Jika sudah tracking, cukup recenter
   if (customerWatchID !== null) {
      alert("Sedang mencari lokasi...");
      return;
@@ -262,6 +338,7 @@ function enableCustomerLocation() {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
 
+    // Buat atau Update Marker Biru Customer
     if (customerMarker) {
       customerMarker.setLatLng([lat, lng]);
     } else {
@@ -269,6 +346,7 @@ function enableCustomerLocation() {
       customerMarker.bindPopup("Lokasi Anda");
     }
 
+    // Recenter map ke customer
     map.setView([lat, lng], 16);
 
   }, err => {
@@ -287,7 +365,7 @@ document.getElementById("shareBtn").onclick = () => {
   if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
 
   if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    // showiOSLocationHelp();
+    showiOSLocationHelp();
   }
 
   document.getElementById("shareBtn").style.display = "none";
@@ -298,14 +376,15 @@ document.getElementById("shareBtn").onclick = () => {
     const lng = pos.coords.longitude;
     const uid = currentUser.uid;
 
+    // Update DB
     db.ref("vendors/" + uid).update({
       lat: lat,
       lng: lng,
       lastUpdated: firebase.database.ServerValue.TIMESTAMP
     });
 
-    // Auto Recenter Vendor
-    if(map) map.setView([lat, lng], 17);
+    // Auto Recenter untuk Vendor
+    map.setView([lat, lng], 17);
 
   }, err => {
     alert("Gagal share lokasi: " + err.message);
@@ -366,17 +445,17 @@ function updateProfil() {
    3. RENDER SEMUA GEROBAK DI MAP (Vendor & Customer)
 ==================================================== */
 function loadVendorsOnMap() {
-  // Pastikan map ada
-  if(!map) return;
-
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     if (!data) return;
 
     Object.keys(data).forEach(id => {
       const v = data[id];
+      
+      // Skip jika tidak ada koordinat
       if (!v.lat || !v.lng) return;
 
+      // HTML Popup
       const statusClass = v.status === 'buka' ? 'status-buka' : 'status-tutup';
       const popupContent = `
         <div style="text-align:center; min-width:160px;">
@@ -391,10 +470,12 @@ function loadVendorsOnMap() {
         </div>
       `;
 
+      // Update Marker atau Buat Baru
       if (vendorMarkers[id]) {
         vendorMarkers[id].setLatLng([v.lat, v.lng]);
         vendorMarkers[id].getPopup().setContent(popupContent);
       } else {
+        // Pake Icon KIOSK
         const newMarker = L.marker([v.lat, v.lng], {icon: kioskIcon}).addTo(map);
         newMarker.bindPopup(popupContent);
         vendorMarkers[id] = newMarker;
