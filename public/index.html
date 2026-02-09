@@ -21,7 +21,7 @@
       position: sticky; top: 0; z-index: 1000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; /* Agar responsif di HP kecil */
+      flex-wrap: wrap; 
   }
   .header-container h2 { margin: 0; font-size: 1.1rem; margin-right: auto; }
   
@@ -35,9 +35,9 @@
   }
   
   /* Tombol Header Spesifik */
-  #btnStartShare { background-color: #2196F3; display: none; } /* Biru */
-  #btnStopShare { background-color: #f44336; display: none; animation: pulse 2s infinite; } /* Merah */
-  #myGerobakBtn { background: #4CAF50; display: none; } /* Hijau */
+  #btnStartShare { background-color: #2196F3; display: none; } 
+  #btnStopShare { background-color: #f44336; display: none; animation: pulse 2s infinite; } 
+  #myGerobakBtn { background: #4CAF50; display: none; } 
   #logoutBtnHeader { background: #555; display: none; }
 
   @keyframes pulse {
@@ -103,7 +103,8 @@
 
   /* UPLOAD FOTO */
   .image-preview-container { text-align: center; margin-bottom: 15px; }
-  #previewGambar { width: 100%; height: 200px; object-fit: contain; border-radius: 8px; border: 2px dashed #ccc; display: block; margin-bottom: 10px; background: #eee;}
+  /* Hapus placeholder image, ganti background abu */
+  #previewGambar { width: 100%; height: 200px; object-fit: contain; border-radius: 8px; border: 2px dashed #ccc; display: block; margin-bottom: 10px; background: #eee; }
   input[type="file"] { border: none; padding: 0; }
 </style>
 </head>
@@ -130,23 +131,20 @@
   
   <label>Foto Gerobak:</label>
   <div class="image-preview-container">
-      <img id="previewGambar" src="https://via.placeholder.com/300x200?text=Belum+Ada+Foto">
-      <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(this)">
+      <img id="previewGambar"> <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(this)">
   </div>
 
   <label>Nama:</label>
-  <input id="namaGerobak" placeholder="Nama Gerobak">
-  <label>Status:</label>
+  <input id="namaGerobak"> <label>Status:</label>
   <select id="status"><option value="buka">Buka</option><option value="tutup">Tutup</option></select>
-  <label>Jam:</label>
-  <div style="display: flex; gap: 10px;">
-    <input id="jamBuka" placeholder="08:00">
-    <input id="jamTutup" placeholder="17:00">
-  </div>
-  <label>Menu (pisahkan koma):</label>
-  <textarea id="menu" rows="3" placeholder="Nasi Goreng, Mie Rebus..."></textarea>
   
-  <button class="form-btn" id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
+  <label>Jam Operasional:</label>
+  <div style="display: flex; gap: 10px;">
+    <input id="jamBuka" type="time"> <input id="jamTutup" type="time">
+  </div>
+  
+  <label>Menu (Tekan Enter untuk baris baru):</label>
+  <textarea id="menu" rows="6"></textarea> <button class="form-btn" id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
   <button class="form-btn" id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
 </div>
 
@@ -210,13 +208,11 @@ const bigIcon = L.icon({
  iconSize: [58, 58], iconAnchor: [29, 58], popupAnchor: [0, -58]
 });
 
-
 // === 1. DETEKSI ROLE & UI PREPARATION ===
 const urlParams = new URLSearchParams(window.location.search);
 currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
 localStorage.setItem("role", currentRole);
 
-// Sembunyikan UI Vendor secara default jika role customer
 if (currentRole === 'customer') {
     document.getElementById("vendorEditPanel").style.display = "none";
     document.getElementById("myGerobakBtn").style.display = "none";
@@ -227,56 +223,35 @@ if (currentRole === 'customer') {
     document.getElementById("customerLocBtn").style.display = "block";
 }
 
-// === 2. LISTENER AUTHENTICATION (LOGIC UTAMA) ===
+// === 2. LISTENER AUTHENTICATION ===
 auth.onAuthStateChanged(user => {
   currentUser = user; 
 
-  // --- LOGIKA 1: JIKA ROLE = CUSTOMER ---
   if (currentRole === 'customer') {
-      // Kasus A: Ada user login, TAPI dia bukan Anonymous (Berarti dia Vendor yg nyasar)
       if (user && !user.isAnonymous) {
-          console.log("Vendor masuk ke link customer. Melakukan logout paksa...");
-          auth.signOut().then(() => {
-              // Setelah logout, reload halaman agar masuk ke logika Kasus B
-              window.location.reload();
-          });
+          auth.signOut().then(() => window.location.reload());
           return;
       }
-      
-      // Kasus B: Tidak ada user sama sekali (Belum login)
       if (!user) {
-          console.log("Customer belum login. Melakukan Anonymous Login...");
           auth.signInAnonymously().catch((error) => console.error("Gagal login anonim:", error));
-          return; // Tunggu state berubah lagi
+          return; 
       }
-      
-      // Kasus C: User ada DAN isAnonymous = true (Kondisi Ideal)
-      console.log("Customer terhubung (Anonymous).");
       initMap();
   }
-
-  // --- LOGIKA 2: JIKA ROLE = VENDOR ---
   else if (currentRole === 'vendor') {
-      // Kasus A: User belum login ATAU User login tapi Anonymous (Customer nyasar)
       if (!user || (user && user.isAnonymous)) {
-          console.log("Akses ditolak: User bukan vendor resmi.");
           window.location.href = "login.html";
           return;
       }
       
-      // Kasus B: Vendor Resmi Terhubung
       if (user && !user.isAnonymous) {
-          console.log("Vendor terhubung.");
           initMap();
-          
-          // Tampilkan tombol Vendor
           document.getElementById("myGerobakBtn").style.display = "block";
           document.getElementById("logoutBtnHeader").style.display = "block";
-          
           resetLocationButtons(false);
           loadMyFormData(user.uid);
           
-          // Reset status live saat awal load (safety)
+          // Safety: Pastikan status live bersih saat awal load
           db.ref("vendors/" + user.uid).update({ isLive: false });
       }
   }
@@ -307,10 +282,7 @@ function initMap() {
     loadVendorsOnMap(); 
 }
 
-// ===============================================
-// === FITUR LIVE LOCATION (HEADER BUTTONS) ===
-// ===============================================
-
+// === FITUR LIVE LOCATION ===
 function startSharingLocation() {
     if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
     if (!currentUser) return;
@@ -344,8 +316,7 @@ function updatePositionToDB(pos) {
     const vendorRef = db.ref("vendors/" + currentUser.uid);
     vendorRef.update(updates);
     
-    // ON DISCONNECT: Hapus status live jika internet putus/tab tutup
-    // Jika Anda ingin lokasi "Membeku" saat tab tutup, HAPUS baris di bawah ini:
+    // MENCEGAH GEROBAK HANTU: Hapus status live jika tab ditutup
     vendorRef.onDisconnect().update({ isLive: false });
 }
 
@@ -360,7 +331,7 @@ function stopSharingLocation() {
     }
 
     resetLocationButtons(false);
-    alert("Berhenti membagikan lokasi. Icon gerobak Anda hilang dari peta.");
+    alert("Berhenti membagikan lokasi.");
 }
 
 function handleError(err) {
@@ -383,7 +354,7 @@ function resetLocationButtons(isLive) {
     }
 }
 
-// === MENAMPILKAN VENDOR DI PETA ===
+// === MENAMPILKAN VENDOR ===
 function loadVendorsOnMap() {
   if(!map) return;
   
@@ -402,7 +373,6 @@ function loadVendorsOnMap() {
           let lng = parseFloat(v.lng);
           
           let displayName = v.nama || "Gerobak";
-          
           if (currentUser && !currentUser.isAnonymous && id === currentUser.uid) {
              displayName += " (Anda)";
           }
@@ -442,42 +412,24 @@ function highlightVendorIcon(id) {
     if (vendorMarkers[id]) vendorMarkers[id].setIcon(bigIcon);
 }
 
-// ============================================
-// === FUNGSI: GEROBAK SAYA ===
-// ============================================
+// === MANAJEMEN PROFIL ===
 
 function showMyPublicProfile() {
     if (!currentUser) return alert("Anda belum login!");
     if (currentUser.isAnonymous) return alert("Menu ini khusus Vendor.");
 
-    const btn = document.getElementById("myGerobakBtn");
-    const originalText = btn.innerText;
-    btn.innerText = "⏳..."; btn.disabled = true;
-
-    db.ref("vendors/" + currentUser.uid).once("value")
-    .then(snap => {
+    db.ref("vendors/" + currentUser.uid).once("value").then(snap => {
         const v = snap.val();
-        btn.innerText = originalText; btn.disabled = false;
-
         if (v) {
             highlightVendorIcon(currentUser.uid);
-            
             if (v.isLive === true && v.lat && v.lng) {
                 if(map) map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
-            } else {
-                console.log("Status Offline, membuka profil tanpa recenter map.");
-            }
-            
+            } 
             showVendorDetail(v, currentUser.uid);
         } else {
-            alert("Profil belum diatur. Silakan isi data dulu.");
+            alert("Profil belum diatur.");
             openEditMode();
         }
-    })
-    .catch(err => {
-        console.error("Error:", err);
-        btn.innerText = originalText; btn.disabled = false;
-        alert("Gagal memuat profil: " + err.message);
     });
 }
 
@@ -501,12 +453,16 @@ function updateProfil() {
   const updateBtn = document.getElementById("updateBtn");
   updateBtn.innerText = "Menyimpan..."; updateBtn.disabled = true;
   
+  // Ambil menu dengan split ENTER (\n)
+  let rawMenu = document.getElementById("menu").value;
+  let menuArray = rawMenu.split("\n").filter(item => item.trim() !== ""); // Filter baris kosong
+
   db.ref("vendors/" + currentUser.uid).update({
     nama: document.getElementById("namaGerobak").value,
     status: document.getElementById("status").value,
     jamBuka: document.getElementById("jamBuka").value,
     jamTutup: document.getElementById("jamTutup").value,
-    menu: document.getElementById("menu").value.split(","),
+    menu: menuArray, // Simpan sebagai array
     gambar: currentImageBase64
   }).then(() => {
       alert("Profil berhasil disimpan!");
@@ -526,7 +482,17 @@ function loadMyFormData(uid) {
             document.getElementById("status").value = v.status || "buka";
             document.getElementById("jamBuka").value = v.jamBuka || "";
             document.getElementById("jamTutup").value = v.jamTutup || "";
-            document.getElementById("menu").value = (v.menu || []).join(", ");
+            
+            // Gabungkan array menu dengan ENTER (\n) untuk ditampilkan di textarea
+            let menuText = "";
+            if (Array.isArray(v.menu)) {
+                menuText = v.menu.join("\n");
+            } else if (v.menu) {
+                // Support legacy data (koma) jika ada
+                menuText = v.menu.replace(/,/g, "\n");
+            }
+            document.getElementById("menu").value = menuText;
+
             if (v.gambar) {
                 currentImageBase64 = v.gambar;
                 document.getElementById("previewGambar").src = v.gambar;
@@ -555,9 +521,18 @@ function showVendorDetail(v, vendorId) {
 
     const menuDiv = document.getElementById("dMenu");
     menuDiv.innerHTML = "";
-    let menuItems = Array.isArray(v.menu) ? v.menu : (v.menu ? v.menu.split(",") : []);
-    if (menuItems.length > 0 && menuItems[0] !== "") {
+    
+    // Tampilkan Menu (Support Array)
+    let menuItems = [];
+    if (Array.isArray(v.menu)) {
+        menuItems = v.menu;
+    } else if (typeof v.menu === 'string') {
+        menuItems = v.menu.split(","); // Fallback jika data lama masih pakai koma
+    }
+
+    if (menuItems.length > 0) {
         menuItems.forEach(m => {
+            if(m.trim() === "") return;
             const item = document.createElement("div");
             item.innerText = "• " + m.trim();
             item.style.padding = "6px 0"; item.style.borderBottom = "1px solid #eee";
@@ -579,6 +554,10 @@ function showVendorDetail(v, vendorId) {
 function closeDetailView() {
     document.getElementById("customerDetailPanel").style.display = "none";
     document.getElementById("map").style.height = "100vh";
+    
+    // CLOSE POPUP MAP JUGA
+    if(map) map.closePopup();
+
     selectedVendorId = null; 
     Object.keys(vendorMarkers).forEach(k => vendorMarkers[k].setIcon(normalIcon));
     setTimeout(() => { if(map) map.invalidateSize(); }, 400);
