@@ -10,11 +10,12 @@
 
 <style>
   body { font-family: sans-serif; margin: 0; padding: 0; }
-  h2 { padding: 10px; margin: 0; background: #fff; text-align: center; border-bottom: 1px solid #ccc; }
+  h2 { padding: 10px; margin: 0; background: #fff; text-align: center; border-bottom: 1px solid #ccc; z-index: 1000; position: relative;}
   
-  /* Map Fullscreen adjustments */
-  #map { height: 60vh; width: 100%; }
+  /* Map Container */
+  #map { height: 60vh; width: 100%; z-index: 1; }
   
+  /* Panel Styles */
   .panel { 
     padding: 20px; 
     background: #fff; 
@@ -29,11 +30,28 @@
     box-sizing: border-box;
   }
 
-  button { cursor: pointer; font-weight: bold; }
+  button { cursor: pointer; font-weight: bold; border-radius: 4px; }
   #shareBtn { background-color: #4CAF50; color: white; border: none; }
   #stopBtn { background-color: #f44336; color: white; border: none; }
   
-  /* Status styles in popup */
+  /* Tombol Khusus Customer (Floating) */
+  #customerLocBtn {
+    position: absolute;
+    bottom: 20px;
+    right: 10px;
+    z-index: 999; /* Di atas map */
+    background-color: #007AFF;
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 50px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    width: auto;
+    font-size: 14px;
+    display: none; /* Default hidden, muncul via JS jika role=customer */
+  }
+
+  /* Status Badge di Popup */
   .status-badge {
     display: inline-block;
     padding: 3px 8px;
@@ -50,12 +68,15 @@
 
 <h2>Peta Gerobak Live</h2>
 
-<div id="map"></div>
+<div style="position: relative;">
+  <div id="map"></div>
+  <button id="customerLocBtn" onclick="enableCustomerLocation()">📍 Lihat Lokasi Saya</button>
+</div>
 
 <div id="vendorPanel" class="panel" style="display:none;">
 
   <h3>Kontrol Lokasi Vendor</h3>
-  <p style="font-size: small; color: #666;">Klik tombol di bawah untuk live location.</p>
+  <p style="font-size: small; color: #666;">Klik tombol untuk memunculkan gerobak Anda di peta.</p>
 
   <button id="shareBtn">Mulai Bagikan Lokasi</button>
   <button id="stopBtn" style="display:none;">Berhenti Bagikan Lokasi</button>
@@ -114,51 +135,73 @@ const db = firebase.database();
    GLOBAL VARS
 ================================*/
 let map;
-let markers = {}; // Menyimpan marker berdasarkan UID { uid: L.marker }
+let vendorMarkers = {}; // Object untuk menyimpan marker VENDOR
+let customerMarker = null; // Variable untuk marker CUSTOMER
 let watchID = null;
+let customerWatchID = null;
 let currentUser = null;
 let currentRole = null;
+
+/* ===============================
+   ICONS CONFIGURATION
+================================*/
+// Icon Gerobak (Vendor)
+const kioskIcon = L.icon({
+  iconUrl: "image/kiosk.png", // Pastikan file ini ada di folder Anda
+  iconSize: [40, 40],
+  iconAnchor: [20, 40], // Titik penunjuk di bawah tengah
+  popupAnchor: [0, -40]
+});
+
+// Style Lingkaran Customer (Biru)
+const customerStyle = {
+  radius: 8,
+  color: "#007AFF",
+  fillColor: "#007AFF",
+  fillOpacity: 0.9,
+  weight: 2
+};
 
 /* ===============================
    AUTH & ROLE LOGIC
 ================================*/
 auth.onAuthStateChanged(user => {
   if (!user) {
-    // Jika belum login, arahkan ke login page
     window.location.href = "login.html";
     return;
   }
 
   currentUser = user;
   
-  // 1. Ambil Role dari URL (?role=vendor atau ?role=customer)
+  // Ambil Role dari URL
   const urlParams = new URLSearchParams(window.location.search);
   currentRole = urlParams.get('role');
 
-  // Fallback: jika tidak ada di URL, cek localStorage (opsional)
   if (!currentRole) {
     currentRole = localStorage.getItem("role") || "customer"; 
   }
 
   console.log("Logged in as:", user.uid, "Role:", currentRole);
 
-  // 2. Tampilkan UI sesuai Role
+  // Setup UI berdasarkan Role
   if (currentRole === 'vendor') {
     document.getElementById("vendorPanel").style.display = "block";
-    document.getElementById("map").style.height = "40vh"; // Perkecil map biar panel muat
-    loadMyProfile(user.uid); // Isi form dengan data lama
+    document.getElementById("map").style.height = "45vh"; // Map lebih kecil untuk vendor
+    loadMyProfile(user.uid);
   } else {
+    // Customer
     document.getElementById("vendorPanel").style.display = "none";
-    document.getElementById("map").style.height = "90vh"; // Customer map full
+    document.getElementById("map").style.height = "90vh"; // Map full
+    document.getElementById("customerLocBtn").style.display = "block"; // Tombol Customer
   }
 
-  // 3. Load Map & Vendors
   initMap();
-  loadVendorsOnMap();
+  loadVendorsOnMap(); // Load semua gerobak dari DB
 });
 
 /* ===============================================
         iOS Browser Detection + Location Help Popup
+        (BAGIAN INI TIDAK DISENTUH SAMA SEKALI)
 ===============================================*/
 function detectBrowser() {
   const ua = navigator.userAgent;
@@ -280,19 +323,56 @@ function initMap() {
     }).addTo(map);
 }
 
-const vendorIcon = L.icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448337.png",
-  iconSize: [40, 40],
-  popupAnchor: [0, -20]
-});
+/* ====================================================
+   1. CUSTOMER LOGIC (Lihat Lokasi Saya - Lingkaran Biru)
+==================================================== */
+function enableCustomerLocation() {
+  if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
 
-/* ===============================
-   SHARE LOCATION (VENDOR ONLY)
-================================*/
+  // Cek iOS (Menggunakan fungsi yang sudah ada)
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // showiOSLocationHelp(); // Opsional: Panggil jika error
+  }
+
+  // Jika sudah tracking, cukup recenter
+  if (customerWatchID !== null) {
+     alert("Sedang mencari lokasi...");
+     // Kita biarkan watchPosition yang meng-handle recenter di update berikutnya
+     return;
+  }
+
+  customerWatchID = navigator.geolocation.watchPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    // Buat atau Update Marker Biru Customer
+    if (customerMarker) {
+      customerMarker.setLatLng([lat, lng]);
+    } else {
+      customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
+      customerMarker.bindPopup("Lokasi Anda");
+    }
+
+    // Recenter map ke customer (Hanya sekali atau setiap update? 
+    // Di sini saya buat setiap kali tombol ditekan atau pertama kali load, 
+    // agar customer tetap bisa geser peta untuk lihat gerobak lain)
+    map.setView([lat, lng], 16);
+
+  }, err => {
+    console.error(err);
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) showiOSLocationHelp();
+    else alert("Gagal mengambil lokasi.");
+  }, {
+    enableHighAccuracy: true
+  });
+}
+
+/* ====================================================
+   2. VENDOR LOGIC (Share Live Location - Icon Kiosk)
+==================================================== */
 document.getElementById("shareBtn").onclick = () => {
   if (!navigator.geolocation) return alert("Geolocation tidak tersedia");
 
-  // Cek iOS sesuai request user (Kode asli)
   if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     showiOSLocationHelp();
   }
@@ -300,25 +380,23 @@ document.getElementById("shareBtn").onclick = () => {
   document.getElementById("shareBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "block";
 
-  // Mulai tracking
   watchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     const uid = currentUser.uid;
 
-    // 1. Update DB Firebase
+    // Update DB (Ini akan men-trigger loadVendorsOnMap untuk menggambar marker kita sendiri juga)
     db.ref("vendors/" + uid).update({
       lat: lat,
       lng: lng,
       lastUpdated: firebase.database.ServerValue.TIMESTAMP
     });
 
-    // 2. RECENTER MAP ke lokasi vendor
-    // Agar vendor bisa melihat pergerakan dirinya sendiri
+    // Auto Recenter untuk Vendor (agar mereka tahu map mengikuti mereka)
     map.setView([lat, lng], 17);
 
   }, err => {
-    alert("Gagal mengambil lokasi: " + err.message);
+    alert("Gagal share lokasi: " + err.message);
     stopSharing();
   }, {
     enableHighAccuracy: true
@@ -332,11 +410,11 @@ function stopSharing() {
   watchID = null;
   document.getElementById("shareBtn").style.display = "block";
   document.getElementById("stopBtn").style.display = "none";
-  alert("Berhenti membagikan lokasi.");
+  alert("Lokasi live dimatikan.");
 }
 
 /* ===============================
-   UPDATE PROFIL
+   UPDATE PROFIL (VENDOR)
 ================================*/
 function loadMyProfile(uid) {
     db.ref("vendors/" + uid).once("value").then(snap => {
@@ -372,47 +450,45 @@ function updateProfil() {
   alert("Profil berhasil diupdate!");
 }
 
-/* ===============================
-   LOAD SEMUA VENDOR (REALTIME)
-================================*/
+/* ====================================================
+   3. RENDER SEMUA GEROBAK DI MAP (Vendor & Customer)
+==================================================== */
 function loadVendorsOnMap() {
-  // Listener 'value' akan trigger setiap ada perubahan data di node 'vendors'
+  // Listen real-time
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     if (!data) return;
 
-    // Loop semua vendor di database
     Object.keys(data).forEach(id => {
       const v = data[id];
       
-      // Validasi: Vendor harus punya koordinat
+      // Skip jika tidak ada koordinat
       if (!v.lat || !v.lng) return;
 
-      // Siapkan konten Popup
+      // HTML Popup
       const statusClass = v.status === 'buka' ? 'status-buka' : 'status-tutup';
       const popupContent = `
-        <div style="text-align:center; min-width:150px;">
-          <h3 style="margin:0 0 5px 0;">${v.nama || "Gerobak Tanpa Nama"}</h3>
+        <div style="text-align:center; min-width:160px;">
+          <h3 style="margin:0 0 5px 0;">${v.nama || "Gerobak"}</h3>
           <span class="status-badge ${statusClass}">${(v.status || "Tutup").toUpperCase()}</span>
           <hr style="margin: 5px 0;">
-          <div style="text-align:left; font-size:13px;">
-            <strong>Jam:</strong> ${v.jamBuka || "-"} s/d ${v.jamTutup || "-"}<br>
+          <div style="text-align:left; font-size:13px; line-height:1.4em;">
+            <strong>Jam:</strong> ${v.jamBuka || "-"} - ${v.jamTutup || "-"}<br>
             <strong>Menu:</strong> ${(v.menu || []).join(", ")}
           </div>
-          ${v.gambar ? `<img src="${v.gambar}" style="width:100%; margin-top:5px; border-radius:4px;">` : ''}
+          ${v.gambar ? `<img src="${v.gambar}" style="width:100%; margin-top:8px; border-radius:4px;">` : ''}
         </div>
       `;
 
-      // Cek apakah marker untuk ID ini sudah ada di map?
-      if (markers[id]) {
-        // UPDATE POSISI & POPUP (Animasi gerak)
-        markers[id].setLatLng([v.lat, v.lng]);
-        markers[id].getPopup().setContent(popupContent);
+      // Update Marker atau Buat Baru
+      if (vendorMarkers[id]) {
+        vendorMarkers[id].setLatLng([v.lat, v.lng]);
+        vendorMarkers[id].getPopup().setContent(popupContent);
       } else {
-        // BUAT MARKER BARU
-        const newMarker = L.marker([v.lat, v.lng], {icon: vendorIcon}).addTo(map);
+        // Pake Icon KIOSK.PNG
+        const newMarker = L.marker([v.lat, v.lng], {icon: kioskIcon}).addTo(map);
         newMarker.bindPopup(popupContent);
-        markers[id] = newMarker; // Simpan ke object global
+        vendorMarkers[id] = newMarker;
       }
     });
   });
