@@ -145,15 +145,16 @@ let currentRole = null;
 /* ===============================
    ICONS CONFIGURATION
 ================================*/
-// Icon Gerobak (Vendor)
+// 1. ICON GEROBAK (Saya ganti ke URL Online agar pasti muncul)
 const kioskIcon = L.icon({
-  iconUrl: "image/kiosk.png", // Pastikan file ini ada di folder Anda
+  // URL icon kios/toko online yang stabil
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png", 
   iconSize: [40, 40],
-  iconAnchor: [20, 40], // Titik penunjuk di bawah tengah
+  iconAnchor: [20, 40], // Ujung bawah tengah
   popupAnchor: [0, -40]
 });
 
-// Style Lingkaran Customer (Biru)
+// 2. STYLE CUSTOMER (Titik Biru)
 const customerStyle = {
   radius: 8,
   color: "#007AFF",
@@ -201,7 +202,6 @@ auth.onAuthStateChanged(user => {
 
 /* ===============================================
         iOS Browser Detection + Location Help Popup
-        (BAGIAN INI TIDAK DISENTUH SAMA SEKALI)
 ===============================================*/
 function detectBrowser() {
   const ua = navigator.userAgent;
@@ -331,13 +331,12 @@ function enableCustomerLocation() {
 
   // Cek iOS (Menggunakan fungsi yang sudah ada)
   if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    // showiOSLocationHelp(); // Opsional: Panggil jika error
+    // showiOSLocationHelp(); 
   }
 
   // Jika sudah tracking, cukup recenter
   if (customerWatchID !== null) {
      alert("Sedang mencari lokasi...");
-     // Kita biarkan watchPosition yang meng-handle recenter di update berikutnya
      return;
   }
 
@@ -353,9 +352,7 @@ function enableCustomerLocation() {
       customerMarker.bindPopup("Lokasi Anda");
     }
 
-    // Recenter map ke customer (Hanya sekali atau setiap update? 
-    // Di sini saya buat setiap kali tombol ditekan atau pertama kali load, 
-    // agar customer tetap bisa geser peta untuk lihat gerobak lain)
+    // Recenter map ke customer
     map.setView([lat, lng], 16);
 
   }, err => {
@@ -385,14 +382,14 @@ document.getElementById("shareBtn").onclick = () => {
     const lng = pos.coords.longitude;
     const uid = currentUser.uid;
 
-    // Update DB (Ini akan men-trigger loadVendorsOnMap untuk menggambar marker kita sendiri juga)
+    // Update DB
     db.ref("vendors/" + uid).update({
       lat: lat,
       lng: lng,
       lastUpdated: firebase.database.ServerValue.TIMESTAMP
     });
 
-    // Auto Recenter untuk Vendor (agar mereka tahu map mengikuti mereka)
+    // Auto Recenter untuk Vendor
     map.setView([lat, lng], 17);
 
   }, err => {
@@ -454,7 +451,6 @@ function updateProfil() {
    3. RENDER SEMUA GEROBAK DI MAP (Vendor & Customer)
 ==================================================== */
 function loadVendorsOnMap() {
-  // Listen real-time
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     if (!data) return;
@@ -485,7 +481,7 @@ function loadVendorsOnMap() {
         vendorMarkers[id].setLatLng([v.lat, v.lng]);
         vendorMarkers[id].getPopup().setContent(popupContent);
       } else {
-        // Pake Icon KIOSK.PNG
+        // Pake Icon KIOSK
         const newMarker = L.marker([v.lat, v.lng], {icon: kioskIcon}).addTo(map);
         newMarker.bindPopup(popupContent);
         vendorMarkers[id] = newMarker;
