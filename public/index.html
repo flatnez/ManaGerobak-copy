@@ -87,7 +87,7 @@
     font-size: 14px; display: none; color: white; border: none; font-weight: bold;
   }
 
-  /* STATUS BADGE UPDATE */
+  /* STATUS BADGE */
   .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; color: white; }
   .status-mangkal { background-color: #2ecc71; } /* Hijau */
   .status-keliling { background-color: #007AFF; } /* Biru */
@@ -123,7 +123,6 @@
   .upload-controls { display: flex; align-items: center; gap: 10px; }
   input[type="file"] { border: none; padding: 0; flex-grow: 1; width: auto; margin-bottom: 0;}
   
-  /* Tombol Hapus Foto */
   #hapusFotoBtn {
       background-color: #e74c3c; color: white;
       border: none; padding: 8px 12px; border-radius: 6px;
@@ -435,6 +434,7 @@ function loadVendorsOnMap() {
             vendorMarkers[id].setLatLng([lat, lng]);
             vendorMarkers[id].setIcon(currentIcon);
             vendorMarkers[id].options.vendorData = v; 
+            // Update popup content on the fly if needed
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
           } else {
             const newMarker = L.marker([lat, lng], { icon: currentIcon, vendorData: v }).addTo(map);
@@ -474,8 +474,14 @@ function showMyPublicProfile() {
         const v = snap.val();
         if (v) {
             highlightVendorIcon(currentUser.uid);
-            if (v.isLive === true && v.lat && v.lng) {
+            
+            if (v.lat && v.lng) {
                 if(map) map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
+                
+                // === UPDATE: Buka POPUP di Map secara otomatis ===
+                if (vendorMarkers[currentUser.uid]) {
+                    vendorMarkers[currentUser.uid].openPopup();
+                }
             } 
             showVendorDetail(v, currentUser.uid);
         } else {
@@ -505,7 +511,6 @@ function clearTime() {
     document.getElementById("jamTutup").value = "";
 }
 
-// FUNGSI BARU: HAPUS FOTO
 function deleteImage() {
     if(confirm("Apakah Anda yakin ingin menghapus foto gerobak?")) {
         currentImageBase64 = ""; 
@@ -548,14 +553,11 @@ function loadMyFormData(uid) {
         if(v) {
             document.getElementById("namaGerobak").value = v.nama || "";
             
-            // LOGIKA DEFAULT STATUS (Mangkal/Keliling)
-            // Jika data lama adalah "buka" atau tidak ada, set ke "mangkal"
             let currentStatus = v.status || "mangkal";
             if (currentStatus === "buka") currentStatus = "mangkal";
             if (currentStatus === "tutup") currentStatus = "mangkal"; 
             document.getElementById("status").value = currentStatus;
             
-            // LOGIKA VENDOR BARU
             let rawMenuStr = JSON.stringify(v.menu || "");
             let isNewAccount = rawMenuStr.includes("Contoh Menu");
 
@@ -604,22 +606,18 @@ function showVendorDetail(v, vendorId) {
     
     document.getElementById("dNama").innerText = v.nama || "Tanpa Nama";
     
-    // === LOGIKA TAMPILAN STATUS BARU ===
     const statusEl = document.getElementById("dStatus");
-    
     let displayStatus = v.status || 'mangkal';
-    // Mapping data lama jika masih ada di DB
     if(displayStatus === 'buka') displayStatus = 'mangkal';
     
     if(displayStatus === 'keliling') { 
         statusEl.innerText = "KELILING"; 
-        statusEl.className = "status-badge status-keliling"; // Biru
+        statusEl.className = "status-badge status-keliling"; 
     } else { 
         statusEl.innerText = "MANGKAL"; 
-        statusEl.className = "status-badge status-mangkal"; // Hijau
+        statusEl.className = "status-badge status-mangkal"; 
     }
     
-    // === JAM OPERASIONAL ===
     let rawMenuStr = JSON.stringify(v.menu || "");
     let isNewAccount = rawMenuStr.includes("Contoh Menu");
 
@@ -635,7 +633,6 @@ function showVendorDetail(v, vendorId) {
         sepJam.style.display = "none";
     }
 
-    // === PENGUMUMAN ===
     const pengumumanBox = document.getElementById("dPengumumanBox");
     const pengumumanText = document.getElementById("dPengumumanText");
 
@@ -646,7 +643,6 @@ function showVendorDetail(v, vendorId) {
         pengumumanBox.style.display = "none";
     }
 
-    // === TAMPIL GAMBAR DETAIL ===
     const imgEl = document.getElementById("dGambar");
     if (v.gambar && v.gambar !== "") { 
         imgEl.src = v.gambar; 
@@ -691,6 +687,7 @@ function closeDetailView() {
     document.getElementById("customerDetailPanel").style.display = "none";
     document.getElementById("map").style.height = "100vh";
     
+    // === UPDATE: Tutup POPUP saat panel ditutup ===
     if(map) map.closePopup();
 
     selectedVendorId = null; 
