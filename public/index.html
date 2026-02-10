@@ -283,6 +283,142 @@ const bigIcon = L.icon({
  iconSize: [58, 58], iconAnchor: [29, 58], popupAnchor: [0, -58]
 });
 
+/* ===============================================
+        iOS Browser Detection + Location Help Popup
+    =============================================== */
+
+    function detectBrowser() {
+      const ua = navigator.userAgent;
+
+      if (/GSA/i.test(ua)) return "google_app";
+      if (/CriOS/i.test(ua)) return "chrome_ios";
+      if (/FxiOS/i.test(ua)) return "firefox_ios";
+      if (/EdgiOS/i.test(ua)) return "edge_ios";
+      if (/OPiOS/i.test(ua)) return "opera_ios";
+      if (/DuckDuckGo/i.test(ua)) return "duckduckgo_ios";
+      if (/Brave/i.test(ua)) return "brave_ios";
+
+      if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "safari";
+
+      return "other";
+    }
+
+    function showiOSLocationHelp() {
+      const browser = detectBrowser();
+      let message = "";
+
+      switch (browser) {
+        case "safari":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Safari Websites
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        case "chrome_ios":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Chrome
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        case "google_app":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Google
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        case "firefox_ios":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Firefox
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        case "edge_ios":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Microsoft Edge
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        case "opera_ios":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Opera
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        case "duckduckgo_ios":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap DuckDuckGo
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        case "brave_ios":
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Scroll down and tap Brave
+4. Choose "While Using the App"
+
+Then return to this page and try again.`;
+          break;
+
+        default:
+          message = `Location could not be accessed.
+          
+To enable location on iPhone:
+1. Open Settings
+2. Tap Privacy & Security → Location Services
+3. Find your browser in the list
+4. Set Location to "While Using the App"
+
+Then return to this page and try again.`;
+      }
+
+      alert(message);
+    }
+
 // === 1. DETEKSI ROLE & UI PREPARATION ===
 const urlParams = new URLSearchParams(window.location.search);
 currentRole = urlParams.get('role') || localStorage.getItem("role") || "customer"; 
@@ -522,7 +658,17 @@ function stopSharingLocation() {
 }
 
 function handleError(err) {
-    alert("Gagal mengakses GPS: " + err.message);
+    // Cek apakah device adalah iPhone/iPad/iPod
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    // Error code 1 = PERMISSION_DENIED (User menolak / Browser memblokir)
+    if (err.code === 1 && isIOS) {
+        showiOSLocationHelp(); // <--- Panggil fungsi custom Anda di sini
+    } else {
+        // Error standar untuk Android atau error selain permission denied
+        alert("Gagal mengakses GPS: " + err.message);
+    }
+    
     stopSharingLocation();
 }
 
@@ -898,10 +1044,16 @@ function enableCustomerLocation() {
     }
   }, err => {
       console.error(err);
-      alert("Gagal mendeteksi lokasi.");
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (err.code === 1 && isIOS) {
+          showiOSLocationHelp(); // Panggil popup bantuan
+      } else {
+          alert("Gagal mendeteksi lokasi. Pastikan GPS aktif.");
+      }
       document.getElementById("customerLocBtn").innerText = "📍 Lokasi Saya";
   }, { enableHighAccuracy: true });
 }
+
 </script>
 </body>
 </html>
