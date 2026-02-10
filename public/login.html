@@ -7,8 +7,39 @@
 <style>
     body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f4; }
     .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    
     input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    
+    /* Container Password */
+    .password-container {
+        position: relative;
+        width: 100%;
+        margin: 10px 0;
+    }
+    .password-container input {
+        margin: 0;
+        padding-right: 40px; /* Ruang untuk ikon */
+    }
+    
+    /* Tombol Mata SVG */
+    .toggle-eye {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777; /* Warna ikon abu-abu */
+    }
+    
+    .toggle-eye svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
     button:hover { background-color: #45a049; }
     .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
     a { text-decoration: none; color: #007AFF; }
@@ -20,7 +51,13 @@
     <h2>Login Gerobak</h2>
 
     <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Password" required>
+    
+    <div class="password-container">
+        <input type="password" id="password" placeholder="Password" required>
+        <span id="togglePassword" class="toggle-eye" onclick="togglePasswordVisibility()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </span>
+    </div>
 
     <button id="loginBtn" onclick="login()">Login</button>
     
@@ -34,7 +71,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-/* KONFIGURASI FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyDsJU5c_tjfJ9mO-xLS6NE_N1gZx-ZmQpk",
   authDomain: "managerobak.firebaseapp.com",
@@ -49,61 +85,55 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-/* FUNGSI LOGIN */
+// SVG ICONS
+const iconEyeOpen = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+const iconEyeClosed = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById("password");
+    const toggleIcon = document.getElementById("togglePassword");
+    
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        toggleIcon.innerHTML = iconEyeClosed; // Ganti icon jadi mata dicoret
+    } else {
+        passwordInput.type = "password";
+        toggleIcon.innerHTML = iconEyeOpen; // Ganti icon jadi mata biasa
+    }
+}
+
 function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
   const errorText = document.getElementById("errorText");
   const loginBtn = document.getElementById("loginBtn");
 
-  // Reset pesan error
-  errorText.style.display = "none";
-  errorText.innerText = "";
+  errorText.style.display = "none"; errorText.innerText = "";
 
-  if (!email || !password) {
-      showError("Harap isi email dan password.");
-      return;
-  }
+  if (!email || !password) { showError("Harap isi email dan password."); return; }
 
-  // Ubah tombol jadi loading
-  loginBtn.innerText = "Loading...";
-  loginBtn.disabled = true;
+  loginBtn.innerText = "Loading..."; loginBtn.disabled = true;
 
   auth.signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const uid = userCredential.user.uid;
-      
-      // LOGIKA OTOMATIS: Cek apakah user ini terdaftar sebagai Vendor di Database?
       db.ref("vendors/" + uid).once("value").then(snapshot => {
-          let role = "customer"; // Default jadi customer
-          
-          if (snapshot.exists()) {
-              role = "vendor"; // Jika datanya ada di folder 'vendors', berarti dia vendor
-          }
-
-          // Simpan role & uid
+          let role = "customer";
+          if (snapshot.exists()) { role = "vendor"; }
           localStorage.setItem("vendorUid", uid);
           localStorage.setItem("role", role);
-
-          // Redirect
           window.location.href = `index.html?role=${role}`;
       });
     })
     .catch((error) => {
-      loginBtn.innerText = "Login";
-      loginBtn.disabled = false;
-      
-      // PENANGANAN ERROR BAHASA INDONESIA
-      console.error("Login Error:", error.code);
-      
+      loginBtn.innerText = "Login"; loginBtn.disabled = false;
+      console.error(error);
       if (error.code === "auth/user-not-found" || error.code === "auth/invalid-email") {
-          showError("Email belum punya akun terregistrasi.");
+          showError("Email belum terdaftar.");
       } else if (error.code === "auth/wrong-password") {
-          showError("Email/password salah.");
-      } else if (error.code === "auth/too-many-requests") {
-          showError("Terlalu banyak percobaan gagal. Coba lagi nanti.");
+          showError("Password salah.");
       } else {
-          showError("Terjadi kesalahan: " + error.message);
+          showError("Error: " + error.message);
       }
     });
 }
