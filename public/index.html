@@ -21,9 +21,9 @@
       position: sticky; top: 0; z-index: 1000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: nowrap; /* Mencegah wrap agar layout stabil */
+      flex-wrap: wrap; /* Mencegah wrap agar layout stabil */
   }
-  .header-container h2 { margin: 0; font-size: 1.1rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+  .header-container h2 { margin: 0; margin-bottom: 0.5rem; font-size: 1.1rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
   
   .header-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
 
@@ -39,7 +39,7 @@
   #btnStopShare { background-color: #f44336; display: none; animation: pulse 2s infinite; } 
   #myGerobakBtn { background: #4CAF50; display: none; } 
   #logoutBtnHeader { background: #555; display: none; }
-  #btnSearch { background-color: #673AB7; color: white; display: block; } /* Ungu untuk search */
+  #btnSearch { background-color: #8d8d8d; color: white; display: block; } /* Ungu untuk search */
 
   @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
@@ -62,7 +62,7 @@
   .search-header { display: flex; gap: 10px; margin-bottom: 20px; }
   #searchInput {
       flex-grow: 1; padding: 12px; font-size: 1.1rem;
-      border: 2px solid #673AB7; border-radius: 8px; outline: none; margin-bottom: 0;
+      border: 2px solid #8d8d8d; border-radius: 8px; outline: none; margin-bottom: 0;
   }
   .close-search-btn {
       background: #ccc; border: none; padding: 0 15px; border-radius: 8px; font-size: 1.2rem; cursor: pointer;
@@ -152,12 +152,12 @@
 <div class="header-container">
     <h2>ManaGerobak</h2>
     <div class="header-actions">
-        <button id="btnStartShare" class="header-btn" onclick="startSharingLocation()">📡 Live</button>
+        <button id="btnStartShare" class="header-btn" onclick="startSharingLocation()">📍 Live</button>
         <button id="btnStopShare" class="header-btn" onclick="stopSharingLocation()">🛑 Stop</button>
 
         <button id="myGerobakBtn" class="header-btn" onclick="showMyPublicProfile()">🏠 Gerobak Saya</button>
         
-        <button id="btnSearch" class="header-btn" onclick="openSearch()">🔍 Cari</button>
+        <button id="btnSearch" class="header-btn" onclick="openSearch()">🔍 Cari Gerobak</button>
 
         <button id="logoutBtnHeader" class="header-btn" onclick="logout()">🚪 Logout</button>
     </div>
