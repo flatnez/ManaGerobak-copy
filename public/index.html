@@ -105,6 +105,17 @@
   .image-preview-container { text-align: center; margin-bottom: 15px; }
   #previewGambar { width: 100%; height: 200px; object-fit: contain; border-radius: 8px; border: 2px dashed #ccc; display: block; margin-bottom: 10px; background: #eee; }
   input[type="file"] { border: none; padding: 0; }
+
+  /* Styling Khusus Input Waktu dengan Tombol Hapus */
+  .time-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+  .time-wrapper input { margin-bottom: 0; flex: 1; }
+  .btn-clear-time {
+      background: #ff5252; color: white; border: none; 
+      width: 40px; height: 40px; border-radius: 8px; 
+      cursor: pointer; font-weight: bold; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0;
+  }
 </style>
 </head>
 <body>
@@ -134,16 +145,23 @@
   </div>
 
   <label>Nama:</label>
-  <input id="namaGerobak"> <label>Status:</label>
+  <input id="namaGerobak"> 
+  
+  <label>Status:</label>
   <select id="status"><option value="buka">Buka</option><option value="tutup">Tutup</option></select>
   
   <label>Jam Operasional:</label>
-  <div style="display: flex; gap: 10px;">
-    <input id="jamBuka" type="time"> <input id="jamTutup" type="time">
+  <div class="time-wrapper">
+    <input id="jamBuka" type="time"> 
+    <span>s/d</span> 
+    <input id="jamTutup" type="time">
+    <button type="button" class="btn-clear-time" onclick="clearTime()" title="Hapus Jam">✕</button>
   </div>
   
   <label>Menu (Tekan Enter untuk baris baru):</label>
-  <textarea id="menu" rows="6" placeholder="Tulis menu di sini..."></textarea> <button class="form-btn" id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
+  <textarea id="menu" rows="6" placeholder="Tulis menu di sini..."></textarea> 
+  
+  <button class="form-btn" id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
   <button class="form-btn" id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
 </div>
 
@@ -164,6 +182,7 @@
         <span id="sepJam" style="margin: 0 10px; color:#ccc; display:none;">|</span>
         <span id="dJam" style="font-weight:bold; color: #555; display:none;"></span>
     </div>
+    
     <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">📋 Daftar Menu</h3>
     <div id="dMenu" class="menu-list"></div>
 </div>
@@ -442,6 +461,12 @@ function cancelEdit() {
     showMyPublicProfile(); 
 }
 
+// FUNGSI BARU: MENGOSONGKAN JAM
+function clearTime() {
+    document.getElementById("jamBuka").value = "";
+    document.getElementById("jamTutup").value = "";
+}
+
 function updateProfil() {
   if (!currentUser || currentUser.isAnonymous) return;
   const updateBtn = document.getElementById("updateBtn");
@@ -453,8 +478,11 @@ function updateProfil() {
   db.ref("vendors/" + currentUser.uid).update({
     nama: document.getElementById("namaGerobak").value,
     status: document.getElementById("status").value,
+    
+    // Simpan nilai apa adanya (bisa kosong string "")
     jamBuka: document.getElementById("jamBuka").value,
     jamTutup: document.getElementById("jamTutup").value,
+    
     menu: menuArray,
     gambar: currentImageBase64
   }).then(() => {
@@ -474,7 +502,7 @@ function loadMyFormData(uid) {
             document.getElementById("namaGerobak").value = v.nama || "";
             document.getElementById("status").value = v.status || "buka";
             
-            // JANGAN KASIH DEFAULT JAM KALAU DB KOSONG
+            // Tampilkan apa adanya dari DB. Jika DB kosong, form jadi kosong.
             document.getElementById("jamBuka").value = v.jamBuka || "";
             document.getElementById("jamTutup").value = v.jamTutup || "";
             
@@ -485,9 +513,7 @@ function loadMyFormData(uid) {
                 cleanMenu = v.menu.replace(/,/g, "\n").split("\n");
             }
             
-            // Hapus "Contoh Menu" jika ada di database (agar form bersih)
             cleanMenu = cleanMenu.filter(m => !m.includes("Contoh Menu"));
-
             document.getElementById("menu").value = cleanMenu.join("\n");
 
             if (v.gambar) {
@@ -510,11 +536,12 @@ function showVendorDetail(v, vendorId) {
     if(v.status === 'buka') { statusEl.innerText = "BUKA"; statusEl.className = "status-badge status-buka"; } 
     else { statusEl.innerText = "TUTUP"; statusEl.className = "status-badge status-tutup"; }
     
-    // === LOGIKA BARU: HANYA TAMPILKAN JAM JIKA SUDAH DISET ===
+    // === LOGIKA TAMPILAN JAM ===
     const jamEl = document.getElementById("dJam");
     const sepJam = document.getElementById("sepJam");
     
-    if (v.jamBuka && v.jamTutup && v.jamBuka !== "" && v.jamTutup !== "") {
+    // Hanya tampil jika jamBuka dan jamTutup TIDAK KOSONG
+    if (v.jamBuka && v.jamTutup) {
         jamEl.innerText = `${v.jamBuka} - ${v.jamTutup}`;
         jamEl.style.display = "inline"; 
         sepJam.style.display = "inline";
@@ -537,7 +564,6 @@ function showVendorDetail(v, vendorId) {
         menuItems = v.menu.split(",");
     }
 
-    // === LOGIKA BARU: FILTER "CONTOH MENU" & EMPTY STRING ===
     const validMenu = menuItems.filter(m => m.trim() !== "" && !m.includes("Contoh Menu"));
 
     if (validMenu.length > 0) {
@@ -547,8 +573,6 @@ function showVendorDetail(v, vendorId) {
             item.style.padding = "6px 0"; item.style.borderBottom = "1px solid #eee";
             menuDiv.appendChild(item);
         });
-    } else { 
-        // BIARKAN KOSONG JIKA TIDAK ADA MENU (Sesuai Request)
     }
     
     const editBtn = document.getElementById("editProfilBtn");
