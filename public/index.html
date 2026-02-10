@@ -436,10 +436,8 @@ function loadVendorsOnMap() {
             vendorMarkers[id].setIcon(currentIcon);
             vendorMarkers[id].options.vendorData = v; 
             
-            // Update isi popup jika nama berubah
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
             
-            // Jika ini marker yang sedang dipilih, buka lagi popupnya (menjaga agar tidak tertutup saat refresh data)
             if (id === selectedVendorId) {
                 vendorMarkers[id].openPopup();
             }
@@ -472,7 +470,6 @@ function highlightVendorIcon(id) {
     
     if (vendorMarkers[id]) {
         vendorMarkers[id].setIcon(bigIcon);
-        // FITUR BARU: Buka popup otomatis saat icon membesar/dipilih
         vendorMarkers[id].openPopup();
     }
 }
@@ -486,7 +483,7 @@ function showMyPublicProfile() {
     db.ref("vendors/" + currentUser.uid).once("value").then(snap => {
         const v = snap.val();
         if (v) {
-            highlightVendorIcon(currentUser.uid); // Ini akan memicu pembesaran icon DAN popup terbuka
+            highlightVendorIcon(currentUser.uid); 
             if (v.isLive === true && v.lat && v.lng) {
                 if(map) map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
             } 
@@ -694,7 +691,6 @@ function closeDetailView() {
     document.getElementById("customerDetailPanel").style.display = "none";
     document.getElementById("map").style.height = "100vh";
     
-    // TUTUP POPUP MAP JUGA
     if(map) map.closePopup();
 
     selectedVendorId = null; 
@@ -733,18 +729,35 @@ function handleImageUpload(input) {
 
 function enableCustomerLocation() {
   if (!navigator.geolocation) return alert("Geolocation Error");
+  
+  // Jika tombol diklik saat sudah aktif, paksa recenter
   if (customerWatchID !== null) { 
      if(customerMarker) map.setView(customerMarker.getLatLng(), 17);
      return; 
   }
+
   const customerStyle = { radius: 10, color: "#fff", weight: 3, fillColor: "#007AFF", fillOpacity: 1, pane: 'customerPane' };
+  
+  document.getElementById("customerLocBtn").innerText = "⏳...";
+
   customerWatchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-    if (customerMarker) customerMarker.setLatLng([lat, lng]);
-    else customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
-    map.setView([lat, lng], 17);
-  }, err => console.error(err), { enableHighAccuracy: true });
+    
+    if (customerMarker) {
+        // HANYA update posisi marker, JANGAN panggil map.setView() di sini agar user bisa swipe map
+        customerMarker.setLatLng([lat, lng]);
+    } else {
+        // Jika ini pertama kali lokasi ditemukan, buat marker dan center map
+        customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
+        map.setView([lat, lng], 17);
+        document.getElementById("customerLocBtn").innerText = "📍 Lokasi Saya";
+    }
+  }, err => {
+      console.error(err);
+      alert("Gagal mendeteksi lokasi.");
+      document.getElementById("customerLocBtn").innerText = "📍 Lokasi Saya";
+  }, { enableHighAccuracy: true });
 }
 </script>
 </body>
