@@ -123,6 +123,7 @@
   .upload-controls { display: flex; align-items: center; gap: 10px; }
   input[type="file"] { border: none; padding: 0; flex-grow: 1; width: auto; margin-bottom: 0;}
   
+  /* Tombol Hapus Foto */
   #hapusFotoBtn {
       background-color: #e74c3c; color: white;
       border: none; padding: 8px 12px; border-radius: 6px;
@@ -434,8 +435,15 @@ function loadVendorsOnMap() {
             vendorMarkers[id].setLatLng([lat, lng]);
             vendorMarkers[id].setIcon(currentIcon);
             vendorMarkers[id].options.vendorData = v; 
-            // Update popup content on the fly if needed
+            
+            // Update isi popup jika nama berubah
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
+            
+            // Jika ini marker yang sedang dipilih, buka lagi popupnya (menjaga agar tidak tertutup saat refresh data)
+            if (id === selectedVendorId) {
+                vendorMarkers[id].openPopup();
+            }
+
           } else {
             const newMarker = L.marker([lat, lng], { icon: currentIcon, vendorData: v }).addTo(map);
             newMarker.bindPopup(`<b>${displayName}</b>`);
@@ -461,7 +469,12 @@ function loadVendorsOnMap() {
 function highlightVendorIcon(id) {
     selectedVendorId = id;
     Object.keys(vendorMarkers).forEach(k => vendorMarkers[k].setIcon(normalIcon));
-    if (vendorMarkers[id]) vendorMarkers[id].setIcon(bigIcon);
+    
+    if (vendorMarkers[id]) {
+        vendorMarkers[id].setIcon(bigIcon);
+        // FITUR BARU: Buka popup otomatis saat icon membesar/dipilih
+        vendorMarkers[id].openPopup();
+    }
 }
 
 // === MANAJEMEN PROFIL ===
@@ -473,15 +486,9 @@ function showMyPublicProfile() {
     db.ref("vendors/" + currentUser.uid).once("value").then(snap => {
         const v = snap.val();
         if (v) {
-            highlightVendorIcon(currentUser.uid);
-            
-            if (v.lat && v.lng) {
+            highlightVendorIcon(currentUser.uid); // Ini akan memicu pembesaran icon DAN popup terbuka
+            if (v.isLive === true && v.lat && v.lng) {
                 if(map) map.flyTo([v.lat, v.lng], 16, { animate: true, duration: 0.5 });
-                
-                // === UPDATE: Buka POPUP di Map secara otomatis ===
-                if (vendorMarkers[currentUser.uid]) {
-                    vendorMarkers[currentUser.uid].openPopup();
-                }
             } 
             showVendorDetail(v, currentUser.uid);
         } else {
@@ -687,7 +694,7 @@ function closeDetailView() {
     document.getElementById("customerDetailPanel").style.display = "none";
     document.getElementById("map").style.height = "100vh";
     
-    // === UPDATE: Tutup POPUP saat panel ditutup ===
+    // TUTUP POPUP MAP JUGA
     if(map) map.closePopup();
 
     selectedVendorId = null; 
