@@ -410,6 +410,7 @@ function resetLocationButtons(isLive) {
 function loadVendorsOnMap() {
   if(!map) return;
   
+  // LIVE LISTENER FIREBASE
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     let activeVendorIds = [];
@@ -432,14 +433,22 @@ function loadVendorsOnMap() {
           let currentIcon = (id === selectedVendorId) ? bigIcon : normalIcon;
 
           if (vendorMarkers[id]) {
+            // Update posisi marker di map
             vendorMarkers[id].setLatLng([lat, lng]);
             vendorMarkers[id].setIcon(currentIcon);
-            vendorMarkers[id].options.vendorData = v; 
+            vendorMarkers[id].options.vendorData = v; // Update data yang tersimpan di marker
             
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
             
+            // FITUR: Jaga Popup tetap terbuka jika marker ini yang sedang dipilih
             if (id === selectedVendorId) {
                 vendorMarkers[id].openPopup();
+                
+                // FITUR UTAMA: UPDATE REALTIME PANEL PROFIL
+                // Jika panel detail sedang terbuka DAN ID-nya sama, refresh tampilan
+                if (document.getElementById("customerDetailPanel").style.display === "block") {
+                    showVendorDetail(v, id);
+                }
             }
 
           } else {
@@ -455,10 +464,17 @@ function loadVendorsOnMap() {
         });
     }
     
+    // Hapus marker yang sudah tidak aktif/offline
     Object.keys(vendorMarkers).forEach(existingId => {
         if (!activeVendorIds.includes(existingId)) {
             map.removeLayer(vendorMarkers[existingId]);
             delete vendorMarkers[existingId];
+            
+            // Jika vendor yang sedang dilihat tiba-tiba offline, tutup panelnya
+            if (existingId === selectedVendorId) {
+                closeDetailView();
+                alert("Gerobak ini baru saja offline/tutup.");
+            }
         }
     });
   });
@@ -684,6 +700,9 @@ function showVendorDetail(v, vendorId) {
     }
 
     panel.style.display = "block";
+    
+    // Kita panggil invalidateSize tapi TIDAK memanggil flyTo di sini
+    // agar map tidak lompat-lompat saat auto-update
     setTimeout(() => { if(map) map.invalidateSize(); }, 400); 
 }
 
@@ -730,7 +749,6 @@ function handleImageUpload(input) {
 function enableCustomerLocation() {
   if (!navigator.geolocation) return alert("Geolocation Error");
   
-  // Jika tombol diklik saat sudah aktif, paksa recenter
   if (customerWatchID !== null) { 
      if(customerMarker) map.setView(customerMarker.getLatLng(), 17);
      return; 
@@ -745,10 +763,8 @@ function enableCustomerLocation() {
     const lng = pos.coords.longitude;
     
     if (customerMarker) {
-        // HANYA update posisi marker, JANGAN panggil map.setView() di sini agar user bisa swipe map
         customerMarker.setLatLng([lat, lng]);
     } else {
-        // Jika ini pertama kali lokasi ditemukan, buat marker dan center map
         customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
         map.setView([lat, lng], 17);
         document.getElementById("customerLocBtn").innerText = "📍 Lokasi Saya";
