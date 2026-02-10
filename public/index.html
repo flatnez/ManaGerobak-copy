@@ -99,11 +99,10 @@
       object-fit: contain; background: #f9f9f9;
   }
   .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; margin: 0; border: none; cursor: pointer; }
-  .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; }
+  .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; min-height: 50px;}
 
   /* UPLOAD FOTO */
   .image-preview-container { text-align: center; margin-bottom: 15px; }
-  /* Hapus placeholder image, ganti background abu */
   #previewGambar { width: 100%; height: 200px; object-fit: contain; border-radius: 8px; border: 2px dashed #ccc; display: block; margin-bottom: 10px; background: #eee; }
   input[type="file"] { border: none; padding: 0; }
 </style>
@@ -144,7 +143,7 @@
   </div>
   
   <label>Menu (Tekan Enter untuk baris baru):</label>
-  <textarea id="menu" rows="6"></textarea> <button class="form-btn" id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
+  <textarea id="menu" rows="6" placeholder="Tulis menu di sini..."></textarea> <button class="form-btn" id="updateBtn" onclick="updateProfil()">💾 Simpan Profil</button>
   <button class="form-btn" id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
 </div>
 
@@ -162,8 +161,8 @@
     
     <div style="margin-bottom: 20px; font-size: 1.1em;">
         <span id="dStatus" class="status-badge">STATUS</span>
-        <span style="margin: 0 10px; color:#ccc;">|</span>
-        <span id="dJam" style="font-weight:bold; color: #555;">00:00 - 00:00</span>
+        <span id="sepJam" style="margin: 0 10px; color:#ccc; display:none;">|</span>
+        <span id="dJam" style="font-weight:bold; color: #555; display:none;"></span>
     </div>
     <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">📋 Daftar Menu</h3>
     <div id="dMenu" class="menu-list"></div>
@@ -251,7 +250,6 @@ auth.onAuthStateChanged(user => {
           resetLocationButtons(false);
           loadMyFormData(user.uid);
           
-          // Safety: Pastikan status live bersih saat awal load
           db.ref("vendors/" + user.uid).update({ isLive: false });
       }
   }
@@ -282,7 +280,6 @@ function initMap() {
     loadVendorsOnMap(); 
 }
 
-// === FITUR LIVE LOCATION ===
 function startSharingLocation() {
     if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
     if (!currentUser) return;
@@ -315,8 +312,6 @@ function updatePositionToDB(pos) {
 
     const vendorRef = db.ref("vendors/" + currentUser.uid);
     vendorRef.update(updates);
-    
-    // MENCEGAH GEROBAK HANTU: Hapus status live jika tab ditutup
     vendorRef.onDisconnect().update({ isLive: false });
 }
 
@@ -354,7 +349,6 @@ function resetLocationButtons(isLive) {
     }
 }
 
-// === MENAMPILKAN VENDOR ===
 function loadVendorsOnMap() {
   if(!map) return;
   
@@ -453,16 +447,15 @@ function updateProfil() {
   const updateBtn = document.getElementById("updateBtn");
   updateBtn.innerText = "Menyimpan..."; updateBtn.disabled = true;
   
-  // Ambil menu dengan split ENTER (\n)
   let rawMenu = document.getElementById("menu").value;
-  let menuArray = rawMenu.split("\n").filter(item => item.trim() !== ""); // Filter baris kosong
+  let menuArray = rawMenu.split("\n").filter(item => item.trim() !== "");
 
   db.ref("vendors/" + currentUser.uid).update({
     nama: document.getElementById("namaGerobak").value,
     status: document.getElementById("status").value,
     jamBuka: document.getElementById("jamBuka").value,
     jamTutup: document.getElementById("jamTutup").value,
-    menu: menuArray, // Simpan sebagai array
+    menu: menuArray,
     gambar: currentImageBase64
   }).then(() => {
       alert("Profil berhasil disimpan!");
@@ -480,18 +473,22 @@ function loadMyFormData(uid) {
         if(v) {
             document.getElementById("namaGerobak").value = v.nama || "";
             document.getElementById("status").value = v.status || "buka";
+            
+            // JANGAN KASIH DEFAULT JAM KALAU DB KOSONG
             document.getElementById("jamBuka").value = v.jamBuka || "";
             document.getElementById("jamTutup").value = v.jamTutup || "";
             
-            // Gabungkan array menu dengan ENTER (\n) untuk ditampilkan di textarea
-            let menuText = "";
+            let cleanMenu = [];
             if (Array.isArray(v.menu)) {
-                menuText = v.menu.join("\n");
+                cleanMenu = v.menu;
             } else if (v.menu) {
-                // Support legacy data (koma) jika ada
-                menuText = v.menu.replace(/,/g, "\n");
+                cleanMenu = v.menu.replace(/,/g, "\n").split("\n");
             }
-            document.getElementById("menu").value = menuText;
+            
+            // Hapus "Contoh Menu" jika ada di database (agar form bersih)
+            cleanMenu = cleanMenu.filter(m => !m.includes("Contoh Menu"));
+
+            document.getElementById("menu").value = cleanMenu.join("\n");
 
             if (v.gambar) {
                 currentImageBase64 = v.gambar;
@@ -513,7 +510,18 @@ function showVendorDetail(v, vendorId) {
     if(v.status === 'buka') { statusEl.innerText = "BUKA"; statusEl.className = "status-badge status-buka"; } 
     else { statusEl.innerText = "TUTUP"; statusEl.className = "status-badge status-tutup"; }
     
-    document.getElementById("dJam").innerText = `${v.jamBuka || "--"} - ${v.jamTutup || "--"}`;
+    // === LOGIKA BARU: HANYA TAMPILKAN JAM JIKA SUDAH DISET ===
+    const jamEl = document.getElementById("dJam");
+    const sepJam = document.getElementById("sepJam");
+    
+    if (v.jamBuka && v.jamTutup && v.jamBuka !== "" && v.jamTutup !== "") {
+        jamEl.innerText = `${v.jamBuka} - ${v.jamTutup}`;
+        jamEl.style.display = "inline"; 
+        sepJam.style.display = "inline";
+    } else {
+        jamEl.style.display = "none"; 
+        sepJam.style.display = "none";
+    }
 
     const imgEl = document.getElementById("dGambar");
     if (v.gambar) { imgEl.src = v.gambar; imgEl.style.display = "block"; } 
@@ -522,23 +530,26 @@ function showVendorDetail(v, vendorId) {
     const menuDiv = document.getElementById("dMenu");
     menuDiv.innerHTML = "";
     
-    // Tampilkan Menu (Support Array)
     let menuItems = [];
     if (Array.isArray(v.menu)) {
         menuItems = v.menu;
     } else if (typeof v.menu === 'string') {
-        menuItems = v.menu.split(","); // Fallback jika data lama masih pakai koma
+        menuItems = v.menu.split(",");
     }
 
-    if (menuItems.length > 0) {
-        menuItems.forEach(m => {
-            if(m.trim() === "") return;
+    // === LOGIKA BARU: FILTER "CONTOH MENU" & EMPTY STRING ===
+    const validMenu = menuItems.filter(m => m.trim() !== "" && !m.includes("Contoh Menu"));
+
+    if (validMenu.length > 0) {
+        validMenu.forEach(m => {
             const item = document.createElement("div");
             item.innerText = "• " + m.trim();
             item.style.padding = "6px 0"; item.style.borderBottom = "1px solid #eee";
             menuDiv.appendChild(item);
         });
-    } else { menuDiv.innerText = "Belum ada info menu."; }
+    } else { 
+        // BIARKAN KOSONG JIKA TIDAK ADA MENU (Sesuai Request)
+    }
     
     const editBtn = document.getElementById("editProfilBtn");
     if (currentRole === 'vendor' && currentUser && !currentUser.isAnonymous && vendorId === currentUser.uid) {
@@ -555,7 +566,6 @@ function closeDetailView() {
     document.getElementById("customerDetailPanel").style.display = "none";
     document.getElementById("map").style.height = "100vh";
     
-    // CLOSE POPUP MAP JUGA
     if(map) map.closePopup();
 
     selectedVendorId = null; 

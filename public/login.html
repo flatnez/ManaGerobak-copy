@@ -132,6 +132,8 @@ function login() {
           showError("Email belum terdaftar.");
       } else if (error.code === "auth/wrong-password") {
           showError("Password salah.");
+      } else if (error.code === "auth/invalid-login-credentials") {
+          showError("Email/Password salah.");
       } else {
           showError("Error: " + error.message);
       }
