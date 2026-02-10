@@ -21,11 +21,11 @@
       position: sticky; top: 0; z-index: 1000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; 
+      flex-wrap: nowrap; /* Mencegah wrap agar layout stabil */
   }
-  .header-container h2 { margin: 0; font-size: 1.1rem; margin-right: auto; }
+  .header-container h2 { margin: 0; font-size: 1.1rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
   
-  .header-actions { display: flex; gap: 5px; align-items: center; }
+  .header-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
 
   .header-btn {
       border: none; padding: 8px 10px; border-radius: 6px; 
@@ -39,6 +39,7 @@
   #btnStopShare { background-color: #f44336; display: none; animation: pulse 2s infinite; } 
   #myGerobakBtn { background: #4CAF50; display: none; } 
   #logoutBtnHeader { background: #555; display: none; }
+  #btnSearch { background-color: #673AB7; color: white; display: block; } /* Ungu untuk search */
 
   @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
@@ -51,6 +52,31 @@
     transition: height 0.4s ease-in-out;
   }
   
+  /* SEARCH OVERLAY */
+  #searchOverlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 2000; display: none;
+      flex-direction: column; padding: 20px; box-sizing: border-box;
+  }
+  .search-header { display: flex; gap: 10px; margin-bottom: 20px; }
+  #searchInput {
+      flex-grow: 1; padding: 12px; font-size: 1.1rem;
+      border: 2px solid #673AB7; border-radius: 8px; outline: none; margin-bottom: 0;
+  }
+  .close-search-btn {
+      background: #ccc; border: none; padding: 0 15px; border-radius: 8px; font-size: 1.2rem; cursor: pointer;
+  }
+  #searchResults { overflow-y: auto; flex-grow: 1; }
+  
+  .search-item {
+      padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+  }
+  .search-item:hover { background: #f9f9f9; }
+  .item-info b { display: block; font-size: 1rem; color: #333; }
+  .item-dist { font-size: 0.85rem; color: #666; background: #eee; padding: 2px 6px; border-radius: 4px; }
+
   /* PANEL STYLE */
   .panel { 
     background: #fff; padding: 20px;
@@ -61,22 +87,15 @@
 
   input, select, button, textarea { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;}
   
-  /* Tombol Form */
   .form-btn { cursor: pointer; font-weight: bold; border: none; color: white; transition: 0.2s; }
   .form-btn:active { transform: scale(0.98); }
   
   #updateBtn { background-color: #2196F3; }
   #cancelEditBtn { background-color: #999; margin-top: 10px;}
   
-  /* Posisi Tombol Edit Profil di Panel Publik */
   #editProfilBtn { 
-      background-color: #FF9800; 
-      margin-right: 8px; 
-      display: none; 
-      width: auto; 
-      padding: 8px 16px; 
-      font-size: 0.9rem;
-      border: none; color: white; border-radius: 6px; cursor: pointer;
+      background-color: #FF9800; margin-right: 8px; display: none; width: auto; 
+      padding: 8px 16px; font-size: 0.9rem; border: none; color: white; border-radius: 6px; cursor: pointer;
   }
   
   #customerLocBtn {
@@ -87,12 +106,10 @@
     font-size: 14px; display: none; color: white; border: none; font-weight: bold;
   }
 
-  /* STATUS BADGE */
   .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; color: white; }
-  .status-mangkal { background-color: #2ecc71; } /* Hijau */
-  .status-keliling { background-color: #007AFF; } /* Biru */
+  .status-mangkal { background-color: #2ecc71; }
+  .status-keliling { background-color: #007AFF; }
 
-  /* DETAIL STYLING */
   .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
   .detail-img { 
       width: auto; max-width: 100%; height: auto; max-height: 250px;       
@@ -102,44 +119,31 @@
   .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; margin: 0; border: none; cursor: pointer; }
   .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; min-height: 50px;}
 
-  /* PENGUMUMAN STYLE */
   .announcement-box {
-      background-color: #fff3cd; color: #856404;
-      border: 1px solid #ffeeba;
-      padding: 12px; border-radius: 8px; margin-bottom: 20px;
-      display: none; 
-      font-size: 0.95rem;
-      line-height: 1.5;
+      background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+      padding: 12px; border-radius: 8px; margin-bottom: 20px; display: none; 
+      font-size: 0.95rem; line-height: 1.5;
   }
 
-  /* UPLOAD FOTO AREA */
   .image-preview-container { text-align: center; margin-bottom: 15px; }
   #previewGambar { 
       width: 100%; height: 200px; object-fit: contain; 
-      border-radius: 8px; border: 2px dashed #ccc; 
-      display: none; 
+      border-radius: 8px; border: 2px dashed #ccc; display: none; 
       margin-bottom: 10px; background: #eee; 
   }
   .upload-controls { display: flex; align-items: center; gap: 10px; }
   input[type="file"] { border: none; padding: 0; flex-grow: 1; width: auto; margin-bottom: 0;}
   
-  /* Tombol Hapus Foto */
   #hapusFotoBtn {
-      background-color: #e74c3c; color: white;
-      border: none; padding: 8px 12px; border-radius: 6px;
-      cursor: pointer; display: none; font-size: 0.9rem;
-      white-space: nowrap; margin-bottom: 0; width: auto;
+      background-color: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 6px;
+      cursor: pointer; display: none; font-size: 0.9rem; white-space: wrap; margin-bottom: 0; width: auto;
   }
 
-  /* Input Waktu Wrapper */
   .time-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
   .time-wrapper input { margin-bottom: 0; flex: 1; }
   .btn-clear-time {
-      background: #ff5252; color: white; border: none; 
-      width: 40px; height: 40px; border-radius: 8px; 
-      cursor: pointer; font-weight: bold; font-size: 1.2rem;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 0;
+      background: #ff5252; color: white; border: none; width: 40px; height: 40px; border-radius: 8px; 
+      cursor: pointer; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;
   }
 </style>
 </head>
@@ -152,6 +156,9 @@
         <button id="btnStopShare" class="header-btn" onclick="stopSharingLocation()">🛑 Stop</button>
 
         <button id="myGerobakBtn" class="header-btn" onclick="showMyPublicProfile()">🏠 Gerobak Saya</button>
+        
+        <button id="btnSearch" class="header-btn" onclick="openSearch()">🔍 Cari</button>
+
         <button id="logoutBtnHeader" class="header-btn" onclick="logout()">🚪 Logout</button>
     </div>
 </div>
@@ -159,6 +166,15 @@
 <div id="mapContainer">
   <div id="map"></div>
   <button id="customerLocBtn" onclick="enableCustomerLocation()">📍 Lokasi Saya</button>
+</div>
+
+<div id="searchOverlay">
+    <div class="search-header">
+        <input type="text" id="searchInput" placeholder="Cari nama gerobak..." onkeyup="handleSearch()">
+        <button class="close-search-btn" onclick="closeSearch()">✕</button>
+    </div>
+    <div id="searchResults">
+        </div>
 </div>
 
 <div id="vendorEditPanel" class="panel" style="border-top: 5px solid #FF9800;">
@@ -169,7 +185,7 @@
       <img id="previewGambar"> 
       <div class="upload-controls">
           <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(this)">
-          <button type="button" id="hapusFotoBtn" onclick="deleteImage()">🗑️ Hapus Foto</button>
+          <button type="button" id="hapusFotoBtn" onclick="deleteImage()">Hapus Foto</button>
       </div>
   </div>
 
@@ -254,6 +270,8 @@ let currentRole = null;
 let selectedVendorId = null;
 let currentImageBase64 = ""; 
 let isSharingLocally = false;
+let userCurrentLat = -6.200; // Default Jakarta
+let userCurrentLng = 106.816;
 
 const normalIcon = L.icon({
  iconUrl: "image/gerobak.png",
@@ -276,6 +294,7 @@ if (currentRole === 'customer') {
     document.getElementById("logoutBtnHeader").style.display = "none"; 
     document.getElementById("btnStartShare").style.display = "none";
     document.getElementById("btnStopShare").style.display = "none";
+    
     document.getElementById("map").style.height = "100vh";
     document.getElementById("customerLocBtn").style.display = "block";
 }
@@ -328,7 +347,16 @@ function logout() {
 function initMap() {
     if(map) return; 
     
-    map = L.map('map', { zoomControl: false }).setView([-6.200, 106.816], 13);
+    // Coba ambil lokasi awal user untuk centering map (bukan watch)
+    if(navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            userCurrentLat = pos.coords.latitude;
+            userCurrentLng = pos.coords.longitude;
+            map.setView([userCurrentLat, userCurrentLng], 14);
+        });
+    }
+
+    map = L.map('map', { zoomControl: false }).setView([userCurrentLat, userCurrentLng], 13);
     L.control.zoom({ position: 'topright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
     
@@ -337,6 +365,105 @@ function initMap() {
     
     loadVendorsOnMap(); 
 }
+
+// === LOGIKA PENCARIAN (SEARCH) ===
+
+function openSearch() {
+    document.getElementById("searchOverlay").style.display = "flex";
+    document.getElementById("searchInput").focus();
+    handleSearch(); // Tampilkan list kosong atau history jika ada
+}
+
+function closeSearch() {
+    document.getElementById("searchOverlay").style.display = "none";
+}
+
+// Hitung Jarak (Haversine Formula) dalam KM
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius bumi km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+}
+
+function handleSearch() {
+    const query = document.getElementById("searchInput").value.toLowerCase();
+    const resultsDiv = document.getElementById("searchResults");
+    resultsDiv.innerHTML = "";
+
+    // Ambil semua ID marker yang aktif
+    let activeVendors = [];
+    Object.keys(vendorMarkers).forEach(id => {
+        const marker = vendorMarkers[id];
+        const vData = marker.options.vendorData;
+        
+        // Filter nama
+        const name = (vData.nama || "Gerobak").toLowerCase();
+        
+        if (query === "" || name.includes(query)) {
+            // Hitung jarak dari user
+            const vLat = parseFloat(vData.lat);
+            const vLng = parseFloat(vData.lng);
+            const dist = getDistance(userCurrentLat, userCurrentLng, vLat, vLng);
+            
+            activeVendors.push({
+                id: id,
+                data: vData,
+                dist: dist
+            });
+        }
+    });
+
+    // Urutkan berdasarkan jarak terdekat
+    activeVendors.sort((a, b) => a.dist - b.dist);
+
+    if (activeVendors.length === 0) {
+        resultsDiv.innerHTML = "<div style='padding:20px; text-align:center; color:#777;'>Tidak ada gerobak aktif dengan nama tersebut.</div>";
+        return;
+    }
+
+    // Tampilkan hasil
+    activeVendors.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "search-item";
+        div.onclick = function() {
+            selectSearchedVendor(item.id, item.data);
+        };
+        
+        const distText = item.dist < 1 ? (item.dist * 1000).toFixed(0) + " m" : item.dist.toFixed(1) + " km";
+        
+        div.innerHTML = `
+            <div class="item-info">
+                <b>${item.data.nama || "Gerobak"}</b>
+                <span style="font-size:0.8rem; color:#666;">${item.data.status === 'keliling' ? 'Sedang Keliling' : 'Sedang Mangkal'}</span>
+            </div>
+            <div class="item-dist">📍 ${distText}</div>
+        `;
+        resultsDiv.appendChild(div);
+    });
+}
+
+function selectSearchedVendor(id, vData) {
+    closeSearch();
+    
+    // Pindahkan map ke lokasi gerobak
+    const lat = parseFloat(vData.lat);
+    const lng = parseFloat(vData.lng);
+    
+    if(map) {
+        map.flyTo([lat, lng], 17, { animate: true, duration: 1 });
+        
+        // Highlight marker & Buka Detail
+        highlightVendorIcon(id);
+        showVendorDetail(vData, id);
+    }
+}
+
+// === END LOGIKA PENCARIAN ===
 
 function startSharingLocation() {
     if (!navigator.geolocation) return alert("Browser tidak mendukung Geolocation");
@@ -347,6 +474,10 @@ function startSharingLocation() {
     navigator.geolocation.getCurrentPosition(pos => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
+        
+        // Update global user pos
+        userCurrentLat = lat;
+        userCurrentLng = lng;
         
         map.setView([lat, lng], 17);
         
@@ -361,6 +492,9 @@ function startSharingLocation() {
 function updatePositionToDB(pos) {
     if (!currentUser) return;
     
+    userCurrentLat = pos.coords.latitude;
+    userCurrentLng = pos.coords.longitude;
+
     const updates = {
         lat: pos.coords.latitude, 
         lng: pos.coords.longitude,
@@ -410,7 +544,6 @@ function resetLocationButtons(isLive) {
 function loadVendorsOnMap() {
   if(!map) return;
   
-  // LIVE LISTENER FIREBASE
   db.ref("vendors").on("value", snap => {
     const data = snap.val();
     let activeVendorIds = [];
@@ -433,19 +566,14 @@ function loadVendorsOnMap() {
           let currentIcon = (id === selectedVendorId) ? bigIcon : normalIcon;
 
           if (vendorMarkers[id]) {
-            // Update posisi marker di map
             vendorMarkers[id].setLatLng([lat, lng]);
             vendorMarkers[id].setIcon(currentIcon);
-            vendorMarkers[id].options.vendorData = v; // Update data yang tersimpan di marker
+            vendorMarkers[id].options.vendorData = v; 
             
             vendorMarkers[id].bindPopup(`<b>${displayName}</b>`);
             
-            // FITUR: Jaga Popup tetap terbuka jika marker ini yang sedang dipilih
             if (id === selectedVendorId) {
                 vendorMarkers[id].openPopup();
-                
-                // FITUR UTAMA: UPDATE REALTIME PANEL PROFIL
-                // Jika panel detail sedang terbuka DAN ID-nya sama, refresh tampilan
                 if (document.getElementById("customerDetailPanel").style.display === "block") {
                     showVendorDetail(v, id);
                 }
@@ -464,13 +592,10 @@ function loadVendorsOnMap() {
         });
     }
     
-    // Hapus marker yang sudah tidak aktif/offline
     Object.keys(vendorMarkers).forEach(existingId => {
         if (!activeVendorIds.includes(existingId)) {
             map.removeLayer(vendorMarkers[existingId]);
             delete vendorMarkers[existingId];
-            
-            // Jika vendor yang sedang dilihat tiba-tiba offline, tutup panelnya
             if (existingId === selectedVendorId) {
                 closeDetailView();
                 alert("Gerobak ini baru saja offline/tutup.");
@@ -701,8 +826,6 @@ function showVendorDetail(v, vendorId) {
 
     panel.style.display = "block";
     
-    // Kita panggil invalidateSize tapi TIDAK memanggil flyTo di sini
-    // agar map tidak lompat-lompat saat auto-update
     setTimeout(() => { if(map) map.invalidateSize(); }, 400); 
 }
 
@@ -762,6 +885,10 @@ function enableCustomerLocation() {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     
+    // Update global var agar search feature lebih akurat
+    userCurrentLat = lat;
+    userCurrentLng = lng;
+
     if (customerMarker) {
         customerMarker.setLatLng([lat, lng]);
     } else {
