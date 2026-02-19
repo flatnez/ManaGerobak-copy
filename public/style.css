@@ -7,7 +7,7 @@ body {
 .line2-border {
     top: 57px;
     width: 100vw;
-    position: absolute;
+    position: fixed;
     display: flex;
     pointer-events: none;
     z-index: 10000;
@@ -16,13 +16,13 @@ body {
     position: absolute;
     left: 0;
     width: 10px;
-    height: 3px;
+    height: 2px;
 }
 .line2-right {
     position: absolute;
     right: 0;
     width: 10px;
-    height: 3px;
+    height: 2px;
 }
 
 .line-border {
