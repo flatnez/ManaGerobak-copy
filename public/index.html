@@ -33,6 +33,37 @@
       font-weight: bold; white-space: nowrap;
       display: flex; align-items: center; justify-content: center;
   }
+
+  /* DROPDOWN BAHASA */
+  .lang-dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: #fff;
+      min-width: 130px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 2000;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 5px;
+      border: 1px solid #ddd;
+  }
+  .lang-dropdown-content div {
+      color: #333;
+      padding: 12px 15px;
+      text-decoration: none;
+      display: block;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+      transition: background 0.2s;
+  }
+  .lang-dropdown-content div:hover {
+      background-color: #f1f1f1;
+  }
+  .show-dropdown {
+      display: block;
+  }
   
   /* Tombol Header Spesifik */
   #btnStartShare { background-color: #2196F3; display: none; } 
@@ -157,7 +188,17 @@
 
         <button id="myGerobakBtn" class="header-btn" onclick="showMyPublicProfile()">🏠 Gerobak Saya</button>
         
-        <button id="btnSearch" class="header-btn" onclick="openSearch()">🔍 Cari Gerobak</button>
+        <button id="btnSearch" class="header-btn" onclick="openSearch()" data-i18n="btn_search">🔍 Cari Gerobak</button>
+
+        <div id="langDropdownContainer" class="lang-dropdown-container" style="position: relative; display: inline-block;">
+            <button class="header-btn" onclick="toggleLangDropdown()" style="background-color: #333;">
+                🌐 <span id="langLabel">IN</span>
+            </button>
+            <div id="langDropdown" class="lang-dropdown-content">
+                <div onclick="setLanguage('id')">Indonesia</div>
+                <div onclick="setLanguage('en')">English</div>
+            </div>
+        </div>
 
         <button id="logoutBtnHeader" class="header-btn" onclick="logout()">Logout</button>
     </div>
@@ -165,12 +206,12 @@
 
 <div id="mapContainer">
   <div id="map"></div>
-  <button id="customerLocBtn" onclick="enableCustomerLocation()">📍 Lokasi Saya</button>
+  <button id="customerLocBtn" onclick="enableCustomerLocation()" data-i18n="btn_my_loc">📍 Lokasi Saya</button>
 </div>
 
 <div id="searchOverlay">
     <div class="search-header">
-        <input type="text" id="searchInput" placeholder="Cari nama gerobak..." onkeyup="handleSearch()">
+        <input type="text" id="searchInput" placeholder="Cari nama gerobak..." onkeyup="handleSearch()" data-i18n-placeholder="search_placeholder">
         <button class="close-search-btn" onclick="closeSearch()">✕</button>
     </div>
     <div id="searchResults">
@@ -229,16 +270,16 @@
     <img id="dGambar" class="detail-img" src="" onerror="this.style.display='none'">
     
     <div style="margin-bottom: 20px; font-size: 1.1em;">
-        <span id="dStatus" class="status-badge">STATUS</span>
+        <span id="dStatus" class="status-badge">STATUS</span> 
         <span id="sepJam" style="margin: 0 10px; color:#ccc; display:none;">|</span>
         <span id="dJam" style="font-weight:bold; color: #555; display:none;"></span>
     </div>
     
     <div id="dPengumumanBox" class="announcement-box">
-        <strong>📢 Pengumuman:</strong> <span id="dPengumumanText"></span>
+        <strong data-i18n="lbl_info">📢 Pengumuman:</strong> <span id="dPengumumanText"></span>
     </div>
 
-    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">📋 Daftar Menu</h3>
+    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;" data-i18n="lbl_menu_list">📋 Daftar Menu</h3>
     <div id="dMenu" class="menu-list"></div>
 </div>
 
@@ -433,6 +474,12 @@ if (currentRole === 'customer') {
     
     document.getElementById("map").style.height = "100vh";
     document.getElementById("customerLocBtn").style.display = "block";
+    // Pastikan tombol dropdown bahasa muncul untuk customer
+    document.getElementById("langDropdownContainer").style.display = "inline-block"; 
+} 
+else if (currentRole === 'vendor') {
+    // TAMBAHKAN BARIS INI: Sembunyikan dropdown bahasa untuk vendor
+    document.getElementById("langDropdownContainer").style.display = "none";
 }
 
 // === 2. LISTENER AUTHENTICATION ===
@@ -558,7 +605,8 @@ function handleSearch() {
     activeVendors.sort((a, b) => a.dist - b.dist);
 
     if (activeVendors.length === 0) {
-        resultsDiv.innerHTML = "<div style='padding:20px; text-align:center; color:#777;'>Tidak ada gerobak aktif dengan nama tersebut.</div>";
+        // GUNAKAN t()
+        resultsDiv.innerHTML = `<div style='padding:20px; text-align:center; color:#777;'>${t('msg_no_result')}</div>`;
         return;
     }
 
@@ -570,13 +618,17 @@ function handleSearch() {
             selectSearchedVendor(item.id, item.data);
         };
         
-        const distText = item.dist < 1 ? (item.dist * 1000).toFixed(0) + " m" : item.dist.toFixed(1) + " km";
+    // GUNAKAN t() untuk satuan jarak
+        const distText = item.dist < 1 
+            ? (item.dist * 1000).toFixed(0) + t('dist_meter') 
+            : item.dist.toFixed(1) + t('dist_km');
         
+        const statusText = (item.data.status === 'keliling') ? t('status_keliling_search') : t('status_mangkal_search');
+
         div.innerHTML = `
             <div class="item-info">
                 <b>${item.data.nama || "Gerobak"}</b>
-                <span style="font-size:0.8rem; color:#666;">${item.data.status === 'keliling' ? 'Sedang Keliling' : 'Sedang Mangkal'}</span>
-            </div>
+                <span style="font-size:0.8rem; color:#666;">${statusText}</span> </div>
             <div class="item-dist">📍 ${distText}</div>
         `;
         resultsDiv.appendChild(div);
@@ -902,10 +954,10 @@ function showVendorDetail(v, vendorId) {
     if(displayStatus === 'buka') displayStatus = 'mangkal';
     
     if(displayStatus === 'keliling') { 
-        statusEl.innerText = "KELILING"; 
+        statusEl.innerText = t('status_keliling'); // GUNAKAN t()
         statusEl.className = "status-badge status-keliling"; 
     } else { 
-        statusEl.innerText = "MANGKAL"; 
+        statusEl.innerText = t('status_mangkal'); // GUNAKAN t()
         statusEl.className = "status-badge status-mangkal"; 
     }
     
@@ -928,8 +980,19 @@ function showVendorDetail(v, vendorId) {
     const pengumumanText = document.getElementById("dPengumumanText");
 
     if (v.pengumuman && v.pengumuman.trim() !== "") {
-        pengumumanText.innerText = v.pengumuman;
         pengumumanBox.style.display = "block";
+        
+        // Tampilkan teks asli (ID) atau status loading jika EN
+        if (currentLang === "en") {
+            pengumumanText.innerText = "Translating..."; // Indikator loading
+            
+            // Panggil API terjemahan
+            translateDynamicText(v.pengumuman, "en").then(translatedText => {
+                pengumumanText.innerText = translatedText;
+            });
+        } else {
+            pengumumanText.innerText = v.pengumuman;
+        }
     } else {
         pengumumanBox.style.display = "none";
     }
@@ -942,24 +1005,66 @@ function showVendorDetail(v, vendorId) {
         imgEl.style.display = "none"; 
     }
 
-    const menuDiv = document.getElementById("dMenu");
+const menuDiv = document.getElementById("dMenu");
     menuDiv.innerHTML = "";
     
     let menuItems = [];
     if (Array.isArray(v.menu)) {
         menuItems = v.menu;
     } else if (typeof v.menu === 'string') {
-        menuItems = v.menu.split(",");
+        // Memisahkan berdasarkan koma atau enter (baris baru)
+        menuItems = v.menu.split(/,|\n/); 
     }
 
+    // Membersihkan item yang kosong atau berisi teks contoh
     const validMenu = menuItems.filter(m => m.trim() !== "" && !m.includes("Contoh Menu"));
 
     if (validMenu.length > 0) {
-        validMenu.forEach(m => {
+        if (currentLang === "en") {
+            // 1. Tampilkan teks loading sementara API bekerja
+            menuDiv.innerHTML = "<div style='padding:6px 0; color:#888;'><em>Translating menu...</em></div>";
+            
+            // 2. Gabungkan array menjadi satu string dengan pemisah baris baru (\n) agar hemat panggilan API
+            const textToTranslate = validMenu.join("\n");
+
+            translateDynamicText(textToTranslate, "en").then(translatedText => {
+                menuDiv.innerHTML = ""; // Bersihkan teks loading
+                
+                // 3. Pecah kembali teks yang sudah diterjemahkan menjadi array
+                const translatedItems = translatedText.split("\n");
+                
+                translatedItems.forEach(m => {
+                    if (m.trim() !== "") { // Pastikan tidak membuat elemen kosong
+                        const item = document.createElement("div");
+                        item.innerText = "• " + m.trim();
+                        item.style.padding = "6px 0"; 
+                        item.style.borderBottom = "1px solid #eee";
+                        menuDiv.appendChild(item);
+                    }
+                });
+            }).catch(err => {
+                console.error("Gagal translate menu:", err);
+                renderOriginalMenu(validMenu, menuDiv); // Fallback ke teks asli jika API error
+            });
+
+        } else {
+            // Jika bahasa Indonesia (ID), langsung render teks asli
+            renderOriginalMenu(validMenu, menuDiv);
+        }
+    } else {
+        // Jika tidak ada menu sama sekali
+        menuDiv.innerHTML = `<div style='padding:6px 0; color:#888;'><em>${currentLang === "en" ? "No menu available" : "Belum ada menu"}</em></div>`;
+    }
+
+    // === Fungsi Bantuan (Helper) agar kode tidak berulang ===
+    function renderOriginalMenu(items, container) {
+        container.innerHTML = "";
+        items.forEach(m => {
             const item = document.createElement("div");
             item.innerText = "• " + m.trim();
-            item.style.padding = "6px 0"; item.style.borderBottom = "1px solid #eee";
-            menuDiv.appendChild(item);
+            item.style.padding = "6px 0"; 
+            item.style.borderBottom = "1px solid #eee";
+            container.appendChild(item);
         });
     }
     
@@ -1048,10 +1153,156 @@ function enableCustomerLocation() {
       if (err.code === 1 && isIOS) {
           showiOSLocationHelp(); // Panggil popup bantuan
       } else {
-          alert("Gagal mendeteksi lokasi. Pastikan GPS aktif.");
+          alert(t('msg_loc_denied'));
       }
       document.getElementById("customerLocBtn").innerText = "📍 Lokasi Saya";
   }, { enableHighAccuracy: true });
+}
+
+/* ===============================================
+        MULTI-LANGUAGE SUPPORT (ID / EN)
+   =============================================== */
+
+// 1. Kamus Bahasa
+const translations = {
+    id: {
+        btn_search: "🔍 Cari",
+        btn_my_loc: "📍 Lokasi Saya",
+        btn_close: "✕ Tutup",
+        lbl_info: "📢 Pengumuman:",
+        lbl_menu_list: "📋 Daftar Menu",
+        search_placeholder: "Cari nama gerobak...",
+        status_mangkal: "MANGKAL",        // Untuk profil
+        status_keliling: "KELILING",      // Untuk profil
+        status_mangkal_search: "Sedang Mangkal",  // KHUSUS PENCARIAN
+        status_keliling_search: "Sedang Keliling", // KHUSUS PENCARIAN
+        status_open: "BUKA",
+        msg_loc_denied: "Gagal mendeteksi lokasi. Pastikan GPS aktif.",
+        msg_no_result: "Tidak ada gerobak aktif dengan nama tersebut.",
+        dist_meter: " m",
+        dist_km: " km",
+        // Vendor specific (jika vendor juga ingin diterjemahkan)
+        btn_live: "📡 Live",
+        btn_stop: "🛑 Stop",
+        btn_my_cart: "🏠 Gerobak Saya",
+        btn_logout: "🚪 Keluar"
+    },
+    en: {
+        btn_search: "🔍 Search",
+        btn_my_loc: "📍 My Location",
+        btn_close: "✕ Close",
+        lbl_info: "📢 Announcement:",
+        lbl_menu_list: "📋 Menu List",
+        search_placeholder: "Search cart name...",
+        status_mangkal: "STATIONED",     // Untuk profil
+        status_keliling: "ROAMING",       // Untuk profil
+        status_mangkal_search: "Currently Stationed", // KHUSUS PENCARIAN
+        status_keliling_search: "Currently Roaming",   // KHUSUS PENCARIAN
+        status_open: "OPEN",
+        msg_loc_denied: "Failed to detect location. Please enable GPS.",
+        msg_no_result: "No active carts found with that name.",
+        dist_meter: " m",
+        dist_km: " km",
+        // Vendor specific
+        btn_live: "📡 Live",
+        btn_stop: "🛑 Stop",
+        btn_my_cart: "🏠 My Cart",
+        btn_logout: "🚪 Logout"
+    }
+};
+
+// 2. Set Bahasa Awal (Cek localStorage atau default ID)
+let currentLang = localStorage.getItem("appLang") || "id";
+
+// Jalankan saat pertama kali load
+document.addEventListener("DOMContentLoaded", () => {
+    updateLanguageUI();
+});
+
+// 3. Fungsi Dropdown Bahasa
+
+// Menampilkan atau menyembunyikan menu dropdown
+function toggleLangDropdown() {
+    document.getElementById("langDropdown").classList.toggle("show-dropdown");
+}
+
+// Menutup dropdown otomatis jika user klik di luar area tombol
+window.onclick = function(event) {
+    if (!event.target.closest('.lang-dropdown-container')) {
+        const dropdowns = document.getElementsByClassName("lang-dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            if (dropdowns[i].classList.contains('show-dropdown')) {
+                dropdowns[i].classList.remove('show-dropdown');
+            }
+        }
+    }
+}
+
+// Fungsi ketika user memilih bahasa spesifik dari dropdown
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("appLang", currentLang);
+    updateLanguageUI();
+    
+    // Tutup dropdown setelah memilih
+    document.getElementById("langDropdown").classList.remove("show-dropdown");
+    
+    // Update tampilan search jika sedang terbuka
+    const searchOverlay = document.getElementById("searchOverlay");
+    if(searchOverlay && searchOverlay.style.display === "flex") {
+        handleSearch(); 
+    }
+    
+    // Update tampilan detail jika sedang terbuka
+    if(selectedVendorId && vendorMarkers[selectedVendorId]) {
+         showVendorDetail(vendorMarkers[selectedVendorId].options.vendorData, selectedVendorId);
+    }
+}
+
+// 4. Fungsi Penerjemah Utama
+function t(key) {
+    return translations[currentLang][key] || key;
+}
+
+function updateLanguageUI() {
+    // Ganti label tombol bahasa untuk menunjukkan bahasa saat ini (bukan opsi sebaliknya)
+    const langLabel = document.getElementById("langLabel");
+    if(langLabel) {
+        langLabel.innerText = (currentLang === "id") ? "IN" : "EN"; 
+    }
+
+    // Ganti teks elemen dengan atribut data-i18n
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        el.innerText = t(key);
+    });
+
+    // Ganti placeholder input
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        el.placeholder = t(key);
+    });
+}
+
+// Fungsi untuk menerjemahkan teks dinamis secara otomatis via API Gratis
+async function translateDynamicText(text, targetLang) {
+    // Jika teks kosong atau bahasa tujuannya adalah Indonesia (asli), kembalikan teks asli
+    if (!text || targetLang === "id") return text; 
+
+    try {
+        // Menggunakan MyMemory Translation API (Gratis, limit ~500 kata/hari)
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=id|${targetLang}`);
+        const data = await response.json();
+        
+        // Pastikan API mengembalikan hasil yang valid
+        if (data && data.responseData && data.responseData.translatedText) {
+            return data.responseData.translatedText;
+        }
+        return text; // Fallback jika gagal parsing
+    } catch (error) {
+        console.error("Gagal menerjemahkan teks:", error);
+        return text; // Tampilkan teks bahasa Indonesia asli jika API error/offline
+    }
 }
 
 </script>
