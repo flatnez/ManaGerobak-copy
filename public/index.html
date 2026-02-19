@@ -313,7 +313,7 @@ if (currentRole === 'customer') {
     document.getElementById("btnStartShare").style.display = "none";
     document.getElementById("btnStopShare").style.display = "none";
     
-    document.getElementById("map").style.height = "100vh";
+    document.getElementById("map").style.height = "calc(100vh - 55px)";
     document.getElementById("customerLocBtn").style.display = "block";
     // Pastikan tombol dropdown bahasa muncul untuk customer
     document.getElementById("langDropdownContainer").style.display = "inline-block"; 
@@ -923,7 +923,7 @@ const menuDiv = document.getElementById("dMenu");
 
 function closeDetailView() {
     document.getElementById("customerDetailPanel").style.display = "none";
-    document.getElementById("map").style.height = "100vh";
+    document.getElementById("map").style.height = "calc(100vh - 55px)";
     
     if(map) map.closePopup();
 
