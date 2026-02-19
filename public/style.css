@@ -4,7 +4,7 @@ body {
     overflow-y: hidden; 
   }
 
-.line2-border {
+/* .line2-border {
     top: 57px;
     width: 100vw;
     position: fixed;
@@ -23,7 +23,7 @@ body {
     right: 0;
     width: 10px;
     height: 2px;
-}
+} */
 
 .line-border {
     top: 56px;
