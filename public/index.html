@@ -45,6 +45,18 @@
 <img src="image/border_right.png" class="decor-border-right" alt="">
 </div>
 
+<div class="line-border">
+<img src="image/line-left.png" alt="" class="line-left">
+<img src="image/line-right.png" alt="" class="line-right">
+</div>
+
+<img src="image/line-bottom.png" alt="" class="line-bottom">
+
+<div class="line2-border">
+<img src="image/line-left.png" alt="" class="line2-left">
+<img src="image/line-right.png" alt="" class="line2-right">
+</div>
+
 <div id="mapContainer">
   <div id="map"></div>
   <button id="customerLocBtn" onclick="enableCustomerLocation()" data-i18n="btn_my_loc">📍 Lokasi Saya</button>
@@ -313,7 +325,7 @@ if (currentRole === 'customer') {
     document.getElementById("btnStartShare").style.display = "none";
     document.getElementById("btnStopShare").style.display = "none";
     
-    document.getElementById("map").style.height = "calc(100vh - 55px)";
+    document.getElementById("map").style.height = "calc(100vh)";
     document.getElementById("customerLocBtn").style.display = "block";
     // Pastikan tombol dropdown bahasa muncul untuk customer
     document.getElementById("langDropdownContainer").style.display = "inline-block"; 
@@ -783,6 +795,7 @@ function loadMyFormData(uid) {
 }
 
 function showVendorDetail(v, vendorId) {
+    document.body.style.overflowY = "auto";
     document.getElementById("vendorEditPanel").style.display = "none";
     const panel = document.getElementById("customerDetailPanel");
     const mapDiv = document.getElementById("map");
@@ -922,8 +935,10 @@ const menuDiv = document.getElementById("dMenu");
 }
 
 function closeDetailView() {
+    window.scrollTo({ top: 0 });
+    document.body.style.overflowY = "hidden";
     document.getElementById("customerDetailPanel").style.display = "none";
-    document.getElementById("map").style.height = "calc(100vh - 55px)";
+    document.getElementById("map").style.height = "calc(100vh)";
     
     if(map) map.closePopup();
 
