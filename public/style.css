@@ -5,35 +5,76 @@ body {
 
   /* HEADER */
   .header-logo {
-    height: 30px; /* Anda bisa menaik-turunkan angka ini misal ke 25px atau 35px sampai pas */
+    height: 25px; /* Anda bisa menaik-turunkan angka ini misal ke 25px atau 35px sampai pas */
     width: auto;  /* Memastikan gambar tidak melar/peyang */
     object-fit: contain;
     margin-right: 15px; /* Memberi jarak sedikit dari tombol-tombol di sebelahnya */
     }
     
 .header-line{
-    height: 7.7px;
+    height: 6.3px;
 }
 
   .header-container {
-      background: #fff; padding: 10px 15px; 
-      border-bottom: 1px solid #ccc;
+      background: #356849; 
+      padding: 10px 15px 15px 15px; 
+      border-bottom: 1px solid #000;
       position: sticky; top: 0; z-index: 1000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex; justify-content: space-between; align-items: center;
       flex-wrap: wrap; /* Mencegah wrap agar layout stabil */
-      background: #356849;
   }
+
   .header-container h2 { margin: 0; margin-bottom: 0.5rem; font-size: 1.1rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
   
-  .header-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+  .header-actions { 
+    display: flex; 
+    gap: 5px; 
+    align-items: center; 
+    flex-shrink: 0; 
+}
 
   .header-btn {
-      border: none; padding: 8px 10px; border-radius: 6px; 
-      font-size: 0.8rem; cursor: pointer; color: white;
-      font-weight: bold; white-space: nowrap;
-      display: flex; align-items: center; justify-content: center;
+      border: none; 
+      padding: 8px 10px; 
+      border-radius: 6px; 
+      font-size: 0.8rem; 
+      cursor: pointer; 
+      color: white;
+      font-weight: bold; 
+      white-space: nowrap;
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
   }
+
+.decor-border {
+  position: fixed;       /* Container fixed di layar */
+  top: 56px;
+  width: 100vw;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;  /* Agar tidak mengganggu klik */
+  z-index: 999;
+}
+
+.decor-border-left {
+  position: fixed;
+  left: 0;
+  height: 300px;
+  width: auto;
+  object-fit: contain;
+  z-index: 998;
+}
+
+.decor-border-right {
+  position: fixed;
+  right: 0;
+  height: 300px;
+  width: auto;
+  object-fit: contain;
+  z-index: 1001;
+}
 
   /* DROPDOWN BAHASA */
   .lang-dropdown-content {
@@ -117,7 +158,14 @@ body {
     display: none; padding-bottom: 80px; 
   }
 
-  input, select, button, textarea { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;}
+  input, select, button, textarea { 
+    width: 100%; 
+    padding: 12px;
+    box-sizing: border-box; 
+    border: 1px solid #ddd; 
+    border-radius: 8px; 
+    font-size: 1rem;
+}
   
   .form-btn { cursor: pointer; font-weight: bold; border: none; color: white; transition: 0.2s; }
   .form-btn:active { transform: scale(0.98); }
@@ -183,12 +231,16 @@ body {
     .header-container {
         flex-direction: column; /* Mengubah susunan menjadi atas-bawah */
         align-items: center;    /* Membuat logo dan tombol berada di tengah (center) */
-        gap: 12px;              /* Memberi jarak antara logo dan barisan tombol */
-        padding-top: 15px;
+        /* gap: 12px; */
     }
 
     .header-logo {
         margin-right: 0;        /* Hapus margin kanan karena logo sudah di tengah */
+    }
+
+    .header-line {
+        margin: 5px 0 7px 0;
+
     }
 
     .header-actions {
@@ -196,4 +248,17 @@ body {
         justify-content: center;/* Tombol-tombol berbaris rapi di tengah */
         gap: 8px;               /* Jarak antar tombol */
     }
+    
+    .decor-border {
+        top: 100px;
+    }
+    
+    .decor-border-left {
+        height: 200px;
+    }
+
+     .decor-border-right {
+        height: 200px;
+    }
+
 }
