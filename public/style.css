@@ -5,7 +5,7 @@ body {
   }
 
 .line2-border {
-    top: 59.5px;
+    top: 57px;
     width: 100vw;
     position: fixed;
     display: flex;
@@ -326,7 +326,7 @@ body {
     }
     
     .decor-border {
-        top: 100px;
+        top: 101px;
     }
     .decor-border-left {
         height: 200px;
