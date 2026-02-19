@@ -8,180 +8,16 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<style>
-  body { 
-    font-family: sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;
-    overflow-x: hidden; overflow-y: auto; 
-  }
+<link rel="stylesheet" href="style.css">
 
-  /* HEADER */
-  .header-container {
-      background: #fff; padding: 10px 15px; 
-      border-bottom: 1px solid #ccc;
-      position: sticky; top: 0; z-index: 1000;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; /* Mencegah wrap agar layout stabil */
-  }
-  .header-container h2 { margin: 0; margin-bottom: 0.5rem; font-size: 1.1rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-  
-  .header-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
-
-  .header-btn {
-      border: none; padding: 8px 10px; border-radius: 6px; 
-      font-size: 0.8rem; cursor: pointer; color: white;
-      font-weight: bold; white-space: nowrap;
-      display: flex; align-items: center; justify-content: center;
-  }
-
-  /* DROPDOWN BAHASA */
-  .lang-dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      background-color: #fff;
-      min-width: 130px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      z-index: 2000;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 5px;
-      border: 1px solid #ddd;
-  }
-  .lang-dropdown-content div {
-      color: #333;
-      padding: 12px 15px;
-      text-decoration: none;
-      display: block;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-      transition: background 0.2s;
-  }
-  .lang-dropdown-content div:hover {
-      background-color: #f1f1f1;
-  }
-  .show-dropdown {
-      display: block;
-  }
-  
-  /* Tombol Header Spesifik */
-  #btnStartShare { background-color: #2196F3; display: none; } 
-  #btnStopShare { background-color: #f44336; display: none; animation: pulse 2s infinite; } 
-  #myGerobakBtn { background: #4CAF50; display: none; } 
-  #logoutBtnHeader { background: #555; display: none; }
-  #btnSearch { background-color: #8d8d8d; color: white; display: block; } /* Ungu untuk search */
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
-  }
-
-  #map { 
-    height: 100vh; width: 100%; z-index: 1; 
-    transition: height 0.4s ease-in-out;
-  }
-  
-  /* SEARCH OVERLAY */
-  #searchOverlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 255, 255, 0.95);
-      z-index: 2000; display: none;
-      flex-direction: column; padding: 20px; box-sizing: border-box;
-  }
-  .search-header { display: flex; gap: 10px; margin-bottom: 20px; }
-  #searchInput {
-      flex-grow: 1; padding: 12px; font-size: 1.1rem;
-      border: 2px solid #8d8d8d; border-radius: 8px; outline: none; margin-bottom: 0;
-  }
-  .close-search-btn {
-      background: #ccc; width: 50px; height: 45px; border: none; margin: auto; padding: 0 15px; border-radius: 8px; font-size: 1.2rem; cursor: pointer;
-  }
-  #searchResults { overflow-y: auto; flex-grow: 1; }
-  
-  .search-item {
-      padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;
-      display: flex; justify-content: space-between; align-items: center;
-  }
-  .search-item:hover { background: #f9f9f9; }
-  .item-info b { display: block; font-size: 1rem; color: #333; }
-  .item-dist { font-size: 0.85rem; color: #666; background: #eee; padding: 2px 6px; border-radius: 4px; }
-
-  /* PANEL STYLE */
-  .panel { 
-    background: #fff; padding: 20px;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
-    position: relative; width: 100%; box-sizing: border-box;
-    display: none; padding-bottom: 80px; 
-  }
-
-  input, select, button, textarea { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;}
-  
-  .form-btn { cursor: pointer; font-weight: bold; border: none; color: white; transition: 0.2s; }
-  .form-btn:active { transform: scale(0.98); }
-  
-  #updateBtn { background-color: #2196F3; }
-  #cancelEditBtn { background-color: #999; margin-top: 10px;}
-  
-  #editProfilBtn { 
-      background-color: #FF9800; margin: auto; display: none; width: auto; white-space: nowrap; 
-      padding: 8px 16px; font-size: 0.9rem; border: none; color: white; border-radius: 6px; cursor: pointer;
-  }
-  
-  #customerLocBtn {
-    position: fixed; bottom: 25px; right: 15px; z-index: 999;
-    background-color: #007AFF; 
-    width: auto; padding: 12px 20px; border-radius: 50px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    font-size: 14px; display: none; color: white; border: none; font-weight: bold;
-  }
-
-  .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; color: white; }
-  .status-mangkal { background-color: #2ecc71; }
-  .status-keliling { background-color: #007AFF; }
-
-  .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-  .detail-img { 
-      width: auto; max-width: 100%; height: auto; max-height: 250px;       
-      display: block; margin: 0 auto 20px auto; border-radius: 8px; 
-      object-fit: contain; background: #f9f9f9;
-  }
-  .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 1.1em; margin: 0; border: none; cursor: pointer; }
-  .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; min-height: 50px;}
-
-  .announcement-box {
-      background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
-      padding: 12px; border-radius: 8px; margin-bottom: 20px; display: none; 
-      font-size: 0.95rem; line-height: 1.5;
-  }
-
-  .image-preview-container { text-align: center; margin-bottom: 15px; }
-  #previewGambar { 
-      width: 100%; height: 200px; object-fit: contain; 
-      border-radius: 8px; border: 2px dashed #ccc; display: none; 
-      margin-bottom: 10px; background: #eee; 
-  }
-  .upload-controls { display: flex; align-items: center; gap: 10px; }
-  input[type="file"] { border: none; padding: 0; flex-grow: 1; width: 200px; margin-bottom: 0;}
-  
-  #hapusFotoBtn {
-      background-color: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 6px;
-      cursor: pointer; display: none; font-size: 0.9rem; white-space: wrap; margin-bottom: 0; width: auto;
-  }
-
-  .time-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
-  .time-wrapper input { margin-bottom: 0; flex: 1; }
-  .btn-clear-time {
-      background: #ff5252; color: white; border: none; width: 40px; height: 40px; border-radius: 8px; 
-      cursor: pointer; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;
-  }
-</style>
 </head>
+
 <body>
 
 <div class="header-container">
-    <h2>ManaGerobak</h2>
+    <img src="image/managerobak_logo.png" alt="ManaGerobak" class="header-logo">
+    <img src="image/header_line.png" alt="-" class="header-line">
+
     <div class="header-actions">
         <button id="btnStartShare" class="header-btn" onclick="startSharingLocation()">📍 Live</button>
         <button id="btnStopShare" class="header-btn" onclick="stopSharingLocation()">🛑 Stop</button>
@@ -1182,7 +1018,7 @@ const translations = {
         dist_meter: " m",
         dist_km: " km",
         // Vendor specific (jika vendor juga ingin diterjemahkan)
-        btn_live: "📡 Live",
+        btn_live: "📍 Live",
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 Gerobak Saya",
         btn_logout: "🚪 Keluar"
@@ -1204,7 +1040,7 @@ const translations = {
         dist_meter: " m",
         dist_km: " km",
         // Vendor specific
-        btn_live: "📡 Live",
+        btn_live: "📍 Live",
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 My Cart",
         btn_logout: "🚪 Logout"
