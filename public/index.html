@@ -19,8 +19,12 @@
     <img src="image/header_line.png" alt="-" class="header-line">
 
     <div class="header-actions">
-        <button id="btnStartShare" class="header-btn" onclick="startSharingLocation()">📍 Live</button>
-        <button id="btnStopShare" class="header-btn" onclick="stopSharingLocation()">🛑 Stop</button>
+        <button id="btnStartShare" class="image-btn" onclick="startSharingLocation()">
+            <img src="image/btn-live.png" alt="📍 Live">
+        </button>
+        <button id="btnStopShare" class="image-btn" onclick="stopSharingLocation()">
+            <img src="image/btn-stop.png" alt="🛑 Stop">
+        </button>
 
         <button id="myGerobakBtn" class="header-btn" onclick="showMyPublicProfile()">🏠 Gerobak Saya</button>
         
@@ -581,13 +585,11 @@ function resetLocationButtons(isLive) {
     const btnStart = document.getElementById("btnStartShare");
     const btnStop = document.getElementById("btnStopShare");
     
-    btnStart.innerText = "📍 Live"; 
-
     if (isLive) {
         btnStart.style.display = "none";
-        btnStop.style.display = "block";
+        btnStop.style.display = "flex"; 
     } else {
-        btnStart.style.display = "block";
+        btnStart.style.display = "flex"; 
         btnStop.style.display = "none";
     }
 }
