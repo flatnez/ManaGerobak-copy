@@ -26,7 +26,9 @@
             <img src="image/btn-stop.png" alt="🛑 Stop">
         </button>
 
-        <button id="myGerobakBtn" class="header-btn" onclick="showMyPublicProfile()">🏠 Gerobak Saya</button>
+        <button id="myGerobakBtn" class="image-btn" onclick="showMyPublicProfile()">
+            <img src="image/btn-mygerobak.png" alt="🏠 Gerobak Saya">
+        </button>
         
         <button id="btnSearch" class="header-btn" onclick="openSearch()" data-i18n="btn_search">🔍 Cari Gerobak</button>
 
@@ -589,6 +591,7 @@ function resetLocationButtons(isLive) {
         btnStart.style.display = "none";
         btnStop.style.display = "flex"; 
     } else {
+        btnStart.innerHTML = '<img src="image/btn-live.png" alt="Mulai Live">';
         btnStart.style.display = "flex"; 
         btnStop.style.display = "none";
     }

@@ -173,7 +173,7 @@ body {
   
   /* Tombol Header Spesifik */
 /* PENGATURAN TOMBOL GAMBAR (LIVE) */
-#btnStartShare.image-btn {
+.image-btn {
     background: transparent;
     border: none;
     padding: 0;
@@ -182,6 +182,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center; }
+
 #btnStartShare.image-btn img {
     height: 35px;            /* Sesuaikan tinggi ini agar pas dengan logo/tombol lain */
     width: auto;
@@ -190,15 +191,6 @@ body {
 #btnStartShare.image-btn:active img { transform: scale(0.92); }
 
 #btnStopShare { background-color: #f44336; display: none; animation: pulse 2s infinite; }
-#btnStopShare.image-btn {
-    background: transparent;
-    border: none;
-    padding: 0;
-    display: none;           /* Tetap di-hidden secara default sampai vendor login */
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center; }
 #btnStopShare.image-btn img {
     height: 35px;            /* Sesuaikan tinggi ini agar pas dengan logo/tombol lain */
     width: auto;
@@ -206,7 +198,13 @@ body {
     transition: transform 0.2s ease; /* Memberi efek animasi saat diklik */ }
 #btnStopShare.image-btn:active img { transform: scale(0.92); } 
 
-  #myGerobakBtn { background: #4CAF50; display: none; } 
+#myGerobakBtn.image-btn img {
+    height: 35px;            /* Sesuaikan tinggi ini agar pas dengan logo/tombol lain */
+    width: auto;
+    object-fit: contain;
+    transition: transform 0.2s ease; /* Memberi efek animasi saat diklik */ }
+#myGerobakBtn.image-btn:active img { transform: scale(0.92); } 
+
   #logoutBtnHeader { background: #555; display: none; }
   #btnSearch { background-color: #8d8d8d; color: white; display: block; } /* Ungu untuk search */
 
