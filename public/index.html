@@ -27,10 +27,12 @@
         </button>
 
         <button id="myGerobakBtn" class="image-btn" onclick="showMyPublicProfile()">
-            <img src="image/btn-mygerobak.png" alt="🏠 Gerobak Saya">
+            <img id="imgBtnMyGerobak" src="image/btn-mygerobak.png" alt="Gerobak Saya">
         </button>
         
-        <button id="btnSearch" class="header-btn" onclick="openSearch()" data-i18n="btn_search">🔍 Cari Gerobak</button>
+        <button id="btnSearch" class="image-btn" onclick="openSearch()">
+            <img id="imgBtnSearch" src="image/btn-search.png" alt="Cari Gerobak 🔎">
+        </button>
 
         <div id="langDropdownContainer" class="lang-dropdown-container" style="position: relative; display: inline-block;">
             <button class="header-btn" onclick="toggleLangDropdown()" style="background-color: #333;">
@@ -42,7 +44,9 @@
             </div>
         </div>
 
-        <button id="logoutBtnHeader" class="header-btn" onclick="logout()">Logout</button>
+        <button id="logoutBtnHeader" class="image-btn" onclick="logout()">
+            <img id="imgBtnlogout" src="image/btn-logout.png" alt="Logout">
+        </button>
     </div>
 </div>
 
@@ -79,18 +83,20 @@
 
 <div id="vendorEditPanel" class="panel" style="border-top: 5px solid #FF9800;">
   <h3>✏️ Edit Profil Gerobak</h3>
-  
+
+  <label>Nama Gerobak:</label>
+  <input id="namaGerobak"> 
+
   <label>Foto Gerobak:</label>
   <div class="image-preview-container">
       <img id="previewGambar"> 
       <div class="upload-controls">
           <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(this)">
-          <button type="button" id="hapusFotoBtn" onclick="deleteImage()">Hapus Foto</button>
+          <button type="button" class="image-btn" id="hapusFotoBtn" onclick="deleteImage()">
+            <img src="image/btn-hapusfoto.png" alt="HAPUS FOTO">
+          </button>
       </div>
   </div>
-
-  <label>Nama Gerobak:</label>
-  <input id="namaGerobak"> 
   
   <label>Status Saat Ini:</label>
   <select id="status">
@@ -103,7 +109,9 @@
     <input id="jamBuka" type="time"> 
     <span>s/d</span> 
     <input id="jamTutup" type="time">
-    <button type="button" class="btn-clear-time" onclick="clearTime()" title="Hapus Jam">✕</button>
+    <button type="button" class="btn-clear-time" onclick="clearTime()" title="Hapus Jam">
+        <img src="image/btn-xred.png" alt="✕">
+    </button>
   </div>
   
   <label>📢 Pengumuman:</label>
@@ -112,17 +120,28 @@
   <label>📋 Daftar Menu:</label>
   <textarea id="menu" rows="6" placeholder="Tulis menu di sini... (Tekan 'Enter' untuk baris baru)"></textarea> 
   
-  <button class="form-btn" id="updateBtn" onclick="updateProfil()">Simpan Profil</button>
-  <button class="form-btn" id="cancelEditBtn" onclick="cancelEdit()">Batal</button>
+  <div class="simpan-batal">
+  <button class="form-btn" id="updateBtn" onclick="updateProfil()">
+    <img src="image/btn-simpan.png" alt="💾 SIMPAN PROFIL">
+  </button>
+  <button class="form-btn" id="cancelEditBtn" onclick="cancelEdit()">
+    <img src="image/btn-batal.png" alt="BATAL">
+  </button>
+  </div>
+
 </div>
 
 <div id="customerDetailPanel" class="panel" style="border-top: none;">
     <div class="detail-header">
-        <h2 id="dNama" style="font-size: 1.2em; text-align: left; padding: 0;">Nama Gerobak</h2>
+        <h2 id="dNama" style="font-size: 1.4em; text-align: left; padding: 0;">Nama Gerobak</h2>
         
         <div style="display: flex; align-items: center; gap: 8px; align-self: baseline; margin-block-start: 0.83em;">
-            <button id="editProfilBtn" onclick="openEditMode()">✏️ Edit Profil</button>
-            <button class="close-btn" onclick="closeDetailView()">✕</button>
+            <button id="editProfilBtn" class="image-btn" onclick="openEditMode()">
+                <img src="image/btn-editprofil.png" alt="EDIT PROFIL">
+            </button>
+            <button id="close-btn" class="image-btn" onclick="closeDetailView()">
+                <img src="image/btn-x.png" alt="✕">
+            </button>
         </div>
     </div>
 
@@ -336,10 +355,10 @@ if (currentRole === 'customer') {
     // Pastikan tombol dropdown bahasa muncul untuk customer
     document.getElementById("langDropdownContainer").style.display = "inline-block"; 
 } 
-else if (currentRole === 'vendor') {
-    // TAMBAHKAN BARIS INI: Sembunyikan dropdown bahasa untuk vendor
-    document.getElementById("langDropdownContainer").style.display = "none";
-}
+// else if (currentRole === 'vendor') {
+//     // TAMBAHKAN BARIS INI: Sembunyikan dropdown bahasa untuk vendor
+//     document.getElementById("langDropdownContainer").style.display = "none";
+// }
 
 // === 2. LISTENER AUTHENTICATION ===
 auth.onAuthStateChanged(user => {
@@ -725,7 +744,10 @@ function deleteImage() {
 function updateProfil() {
   if (!currentUser || currentUser.isAnonymous) return;
   const updateBtn = document.getElementById("updateBtn");
-  updateBtn.innerText = "Menyimpan..."; updateBtn.disabled = true;
+  
+  // 1. Saat mulai menyimpan: ganti dengan GAMBAR loading "Menyimpan"
+  updateBtn.innerHTML = '<img src="image/btn-menyimpan.png" alt="Menyimpan...">'; 
+  updateBtn.disabled = true;
   
   let rawMenu = document.getElementById("menu").value;
   let menuArray = rawMenu.split("\n").filter(item => item.trim() !== "");
@@ -740,11 +762,14 @@ function updateProfil() {
     gambar: currentImageBase64 
   }).then(() => {
       alert("Profil berhasil disimpan!");
-      updateBtn.innerText = "💾 Simpan Profil"; updateBtn.disabled = false;
+      updateBtn.innerHTML = '<img src="image/btn-simpan.png" alt="💾 SIMPAN PROFIL">'; 
+      updateBtn.disabled = false;
+      
       showMyPublicProfile(); 
   }).catch(err => {
       alert("Gagal update: " + err.message);
-      updateBtn.innerText = "💾 Simpan Profil"; updateBtn.disabled = false;
+      updateBtn.innerHTML = '<img src="image/btn-simpan.png" alt="💾 SIMPAN PROFIL">'; 
+      updateBtn.disabled = false;
   });
 }
 
@@ -1143,6 +1168,26 @@ function updateLanguageUI() {
         const key = el.getAttribute("data-i18n-placeholder");
         el.placeholder = t(key);
     });
+
+    const imgBtnSearch = document.getElementById("imgBtnSearch");
+    if (imgBtnSearch) {
+        if (currentLang === "en") {
+            // Jika bahasa Inggris, gunakan gambar ini
+            imgBtnSearch.src = "image/btn-search-en.png"; 
+        } else {
+            // Jika bahasa Indonesia, gunakan gambar ini
+            imgBtnSearch.src = "image/btn-search.png";
+        }
+    }
+
+    const imgBtnMyGerobak = document.getElementById("imgBtnMyGerobak");
+    if (imgBtnMyGerobak) {
+        if (currentLang === "en") {
+            imgBtnMyGerobak.src = "image/btn-mygerobak-en.png";
+        } else {
+            imgBtnMyGerobak.src = "image/btn-mygerobak.png";
+        }
+    }
 }
 
 // Fungsi untuk menerjemahkan teks dinamis secara otomatis via API Gratis
