@@ -487,13 +487,13 @@ input, textarea {
     }
     
     .decor-border {
-        top: 101px;
+        top: 110px;
     }
     .decor-border-left {
-        height: 200px;
+        height: 250px;
     }
      .decor-border-right {
-        height: 200px;
+        height: 250px;
     }
 
   #searchOverlay {
