@@ -124,15 +124,15 @@
     
     <div style="margin-bottom: 20px; font-size: 1.1em;">
         <span id="dStatus" class="status-badge">STATUS</span> 
-        <span id="sepJam" style="margin: 0 10px; color:#ccc; display:none;">|</span>
-        <span id="dJam" style="font-weight:bold; color: #555; display:none;"></span>
+        <span id="sepJam" style="margin: 0 10px; color:#fcf2d0; display:none;">|</span>
+        <span id="dJam" style="font-weight: normal; font-size: 1.2rem; color: #fcf2d0; display:none;"></span>
     </div>
     
     <div id="dPengumumanBox" class="announcement-box">
         <strong data-i18n="lbl_info">📢 Pengumuman:</strong> <span id="dPengumumanText"></span>
     </div>
 
-    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;" data-i18n="lbl_menu_list">📋 Daftar Menu</h3>
+    <h3 style="border-bottom: 1.5px solid #00491a; padding-bottom: 10px;" data-i18n="lbl_menu_list">📋 Daftar Menu</h3>
     <div id="dMenu" class="menu-list"></div>
 </div>
 
@@ -892,7 +892,7 @@ const menuDiv = document.getElementById("dMenu");
                         const item = document.createElement("div");
                         item.innerText = "• " + m.trim();
                         item.style.padding = "6px 0"; 
-                        item.style.borderBottom = "1px solid #eee";
+                        item.style.borderBottom = "1px solid #00491a";
                         menuDiv.appendChild(item);
                     }
                 });
@@ -917,7 +917,7 @@ const menuDiv = document.getElementById("dMenu");
             const item = document.createElement("div");
             item.innerText = "• " + m.trim();
             item.style.padding = "6px 0"; 
-            item.style.borderBottom = "1px solid #eee";
+            item.style.borderBottom = "1px solid #00491a";
             container.appendChild(item);
         });
     }

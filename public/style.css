@@ -1,5 +1,8 @@
 body { 
-    font-family: sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0; 
+    background-color: #f4f4f4;
     overflow-x: hidden;
     overflow-y: hidden; 
   }
@@ -219,12 +222,16 @@ body {
 
   /* PANEL STYLE */
   .panel { 
-    background: #fff; 
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1.3rem;
+    color: #fcf2d0;
+    background: #356849; 
     padding: 20px;
     box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
     position: relative; width: 100%; box-sizing: border-box;
     display: none; padding-bottom: 80px; 
     z-index: 1010;
+    border-top: 2px solid #000;
   }
 
   input, select, button, textarea { 
@@ -255,9 +262,9 @@ body {
     font-size: 14px; display: none; color: white; border: none; font-weight: bold;
   }
 
-  .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; color: white; }
-  .status-mangkal { background-color: #2ecc71; }
-  .status-keliling { background-color: #007AFF; }
+  .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; color: #fcf2d0; }
+  .status-mangkal { background-color: #3d5f3c; border: 1.5px solid #f4ebcd;}
+  .status-keliling { background-color: #315c4f; border: 1.5px solid #f4ebcd;}
 
   .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
   .detail-img { 
@@ -266,12 +273,27 @@ body {
       object-fit: contain; background: #f9f9f9;
   }
   .close-btn { background: #eee; color: #333; width: auto; padding: 8px 16px; border-radius: 20px; font-size: 1.1em; margin: 0; border: none; cursor: pointer; }
-  .menu-list { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc; line-height: 1.6; min-height: 50px;}
+  .menu-list { 
+    font-size: 1rem;
+    background: #2c5b3d; 
+    padding: 15px; 
+    border-radius: 12px; 
+    border: 1.5px dashed #00491a; 
+    line-height: 1.6; 
+    min-height: 50px;
+    border-color: #00491a;
+    }
 
   .announcement-box {
-      background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
-      padding: 12px; border-radius: 8px; margin-bottom: 20px; display: none; 
-      font-size: 0.95rem; line-height: 1.5;
+      background-color: #fcf2d0; 
+      color: #356849; 
+      border: 1.5px solid #2c5b3d;
+      padding: 12px; 
+      border-radius: 8px; 
+      margin-bottom: 20px; 
+      display: none; 
+      font-size: 0.95rem; 
+      line-height: 1.5;
   }
 
   .image-preview-container { text-align: center; margin-bottom: 15px; }
