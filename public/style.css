@@ -64,6 +64,7 @@ label {
   }
 
   /* HEADER */
+
   .header-logo {
     height: 25px; /* Anda bisa menaik-turunkan angka ini misal ke 25px atau 35px sampai pas */
     width: auto;  /* Memastikan gambar tidak melar/peyang */
@@ -459,7 +460,11 @@ input, textarea {
 
 
 
-  /* RESPONSIVE MOBILE (Lebar Layar 620px) */
+
+
+
+
+  /* RESPONSIVE MOBILE (Lebar Layar 900px) */
 @media (max-width: 900px) {
     .header-container {
         flex-direction: column; /* Mengubah susunan menjadi atas-bawah */
@@ -475,8 +480,18 @@ input, textarea {
     }
     .header-actions {
         display: flex;
-        justify-content: center;/* Tombol-tombol berbaris rapi di tengah */
-        gap: 8px;               /* Jarak antar tombol */
+        flex-direction: row !important; /* Wajib baris ke samping */
+        flex-wrap: wrap;                /* Turun jika total lebarnya melebihi layar */
+        justify-content: center;
+        align-items: center;            /* Rata tengah secara vertikal */
+        gap: 8px;
+        width: 100%;
+    }
+
+    .header-actions > button,
+    .header-actions > div {
+        width: auto !important;  /* Batalin efek width: 100% bawaan */
+        flex: 0 0 auto;          /* Jangan biarkan elemen merenggang sendiri */
     }
 
     .line-border {
@@ -487,7 +502,7 @@ input, textarea {
     }
     
     .decor-border {
-        top: 110px;
+        top: 109px;
     }
     .decor-border-left {
         height: 250px;
