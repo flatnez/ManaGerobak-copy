@@ -78,7 +78,7 @@ label {
 
   .header-container {
       background: #356849; 
-      padding: 10px 15px 15px 15px; 
+      padding: 10px 25px 8px 25px; 
       border-bottom: 1.5px solid #000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       position: sticky; top: 0;
@@ -101,7 +101,7 @@ label {
   
   .header-actions { 
     display: flex; 
-    gap: 5px; 
+    gap: 8px; 
     align-items: center; 
     flex-shrink: 0; 
 }
@@ -249,7 +249,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* (✕) Tutup Profil */
 #close-btn.image-btn img {
-    height: 35px;
+    height: 40px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -290,7 +290,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
   /* (SIMPAN PROFIL) */
 #updateBtn.form-btn img {
-    height: 38px;
+    height: 42px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -298,7 +298,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
   /* (BATAL SIMPAN PROFIL) */
 #cancelEditBtn.form-btn img {
-    height: 38px;
+    height: 42px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -311,7 +311,6 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
     align-items: center;     /* Memastikan kedua tombol sejajar rata tengah secara vertikal */
     gap: 8px;                /* Mengunci jarak di antara kedua tombol tepat 8px */
     width: 100%;             /* Wajib agar div memakan seluruh lebar layar dan bisa menengahkan isinya */
-    margin-top: 20px;        /* (Opsional) Memberi jarak dari form/inputan di atasnya */
 }
 
 .form-btn {
@@ -429,11 +428,17 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
     width: auto;
   }
 
+/* PROFILE EDIT PANEL */
+  div#vendorEditPanel {
+    padding-bottom: 30px;
+  }
+
   #vendorEditPanel h3 {
-  font-size: 1.3rem;      /* ubah ukuran font */
-  color: #fcf2d0;       /* ubah warna teks */
-  font-weight: bold;    /* opsional */
+  font-size: 0.8em;     /* ubah ukuran font */
+  color: #fcf2d0;      /* ubah warna teks */
+  font-weight: bold;     /* opsional */
   text-align: center;
+  margin-bottom: 30px;
 }
 
   input, select, button, textarea { 
@@ -451,6 +456,50 @@ input, textarea {
     border: 1.5px dashed #00491a;
     color: #fff;
 }
+
+    input#namaGerobak {
+    margin: 10px 0 30px;
+    }
+
+    .image-preview-container { 
+        text-align: center; 
+        margin: 10px 0 15px; /* up */
+    }
+    .upload-controls { 
+        display: flex; 
+        align-items: center; 
+        gap: 10px; 
+        margin-bottom: 25px; /* bottom */
+    }
+    input[type="file"] { 
+        border: none; 
+        padding: 0; 
+        flex-grow: 1; 
+        width: 200px; 
+        margin-bottom: 0; 
+        background: transparent; 
+        font-size: 0.8rem; 
+    }
+
+    select#status {
+        margin: 10px 0 30px;
+    }
+
+    .time-wrapper { 
+        display: flex; 
+        gap: 10px; 
+        align-items: center; 
+        margin: 10px 0 30px;
+    }
+    .time-wrapper input { margin-bottom: 0; flex: 1; }
+
+    textarea#pengumumanInput {
+        margin: 10px 0 30px;
+    }
+
+    textarea#menu {
+        margin: 10px 0 40px;
+    }
 
   #customerLocBtn {
     position: fixed; bottom: 25px; right: 15px; z-index: 999;
@@ -512,7 +561,6 @@ input, textarea {
   opacity: 50%;
 }
 
-  .image-preview-container { text-align: center; margin-bottom: 15px; }
   #previewGambar { 
       width: 100%; height: 200px; object-fit: contain; 
       border-radius: 8px;
@@ -521,11 +569,10 @@ input, textarea {
       margin-bottom: 10px;
       background: #2c5b3d; 
   }
-  .upload-controls { display: flex; align-items: center; gap: 10px; }
-  input[type="file"] { border: none; padding: 0; flex-grow: 1; width: 200px; margin-bottom: 0; background: transparent; font-size: 0.8rem; }
 
-  .time-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
-  .time-wrapper input { margin-bottom: 0; flex: 1; }
+
+
+
 
 
 
@@ -555,7 +602,7 @@ input, textarea {
         flex-wrap: wrap;                /* Turun jika total lebarnya melebihi layar */
         justify-content: center;
         align-items: center;            /* Rata tengah secara vertikal */
-        gap: 8px;
+        gap: 5px 8px;
         width: 100%;
     }
 
