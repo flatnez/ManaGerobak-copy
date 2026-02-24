@@ -89,6 +89,19 @@ label {
       z-index: 9999;
   }
 
+h2#dNama {
+    font-size: 1.4em; 
+    text-align: left; 
+    padding: 0;
+    
+    /* KUNCI MENCEGAH OVERFLOW */
+    flex: 1;                   /* Biarkan teks mengambil sisa ruang kosong yang aman... */
+    min-width: 0;              /* ...tapi izinkan wadahnya mengecil agar teks bisa turun */
+    overflow-wrap: break-word; /* Memaksa teks turun ke bawah jika kepanjangan */
+    word-break: break-word;    /* Memotong paksa kata panjang (misal tanpa spasi) agar turun */
+    margin-right: 15px;        /* Jarak aman agar teks tidak terlalu menempel dengan tombol */
+}
+
   /* .header-container h2 {
     margin: 0;
     margin-bottom: 0.5rem;
