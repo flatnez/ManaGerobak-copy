@@ -203,7 +203,7 @@ h2#dNama {
 
 /* (LIVE) */
 #btnStartShare.image-btn img {
-    height: 35px;            /* Sesuaikan tinggi ini agar pas dengan logo/tombol lain */
+    height: 40px;            /* Sesuaikan tinggi ini agar pas dengan logo/tombol lain */
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; /* Memberi efek animasi saat diklik */ }
@@ -212,7 +212,7 @@ h2#dNama {
 /* (STOP) */
 #btnStopShare { background-color: #f44336; border-radius: 10px; display: none; animation: pulse 2s infinite; }
 #btnStopShare.image-btn img {
-    height: 35px;      
+    height: 40px;      
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -220,7 +220,7 @@ h2#dNama {
 
 /* (GEROBAK SAYA) */
 #myGerobakBtn.image-btn img {
-    height: 35px;
+    height: 40px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -228,7 +228,7 @@ h2#dNama {
 
 /* (CARI GEROBAK) */
 #btnSearch.image-btn img {
-    height: 35px;
+    height: 40px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -236,7 +236,7 @@ h2#dNama {
 
 /* (LANGUAGE) */
 #imgLangBtn {
-    height: 35px !important;
+    height: 40px !important;
     width: auto !important;
     object-fit: contain !important;
     transition: transform 0.2s ease !important;
@@ -246,7 +246,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* (LOGOUT) */
 #logoutBtnHeader.image-btn img {
-    height: 35px;
+    height: 40px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -254,7 +254,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* (EDIT PROFIL) */
 #editProfilBtn.image-btn img {
-    height: 35px;
+    height: 40px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -270,7 +270,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* (✕) Hapus Jam */
 .btn-clear-time img {
-    height: 35px;
+    height: 40px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -289,7 +289,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
     /* (HAPUS FOTO) */
 #hapusFotoBtn.image-btn img {
-    height: 35px;
+    height: 40px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -303,7 +303,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
   /* (SIMPAN PROFIL) */
 #updateBtn.form-btn img {
-    height: 42px;
+    height: 45px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -311,7 +311,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
   /* (BATAL SIMPAN PROFIL) */
 #cancelEditBtn.form-btn img {
-    height: 42px;
+    height: 45px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -354,7 +354,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
   /* SEARCH OVERLAY */
   #searchOverlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 255, 255, 0.95);
+      background: #356849;
       margin-top: 55px;
       z-index: 2000;
       display: none;
@@ -365,7 +365,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
   .search-header { display: flex; gap: 10px; margin-bottom: 20px; }
   #searchInput {
       flex-grow: 1; padding: 12px; font-size: 1.1rem;
-      border: 2px solid #8d8d8d; border-radius: 8px; outline: none; margin-bottom: 0;
+      border: 2px dashed #00491a; border-radius: 12px; outline: none; margin-bottom: 0;
   }
   .close-search-btn {
       background: #ccc; width: 50px; height: 45px; border: none; margin: auto; padding: 0 15px; border-radius: 8px; font-size: 1.2rem; cursor: pointer;
@@ -373,12 +373,12 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
   #searchResults { overflow-y: auto; flex-grow: 1; }
   
   .search-item {
-      padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;
+      padding: 15px; border-bottom: 1px solid #00491a; cursor: pointer;
       display: flex; justify-content: space-between; align-items: center;
   }
-  .search-item:hover { background: #f9f9f9; }
-  .item-info b { display: block; font-size: 1rem; color: #333; }
-  .item-dist { font-size: 0.85rem; color: #666; background: #eee; padding: 2px 6px; border-radius: 4px; }
+  .search-item:hover { background: #346345; }
+  .item-info b { display: block; font-size: 1rem; color: #fcf2d0; }
+  .item-dist { font-size: 0.85rem; color: #cebc8a; background: #2c5b3d; padding: 2px 6px; border-radius: 4px; }
 
   /* PANEL STYLE */
   #customerDetailPanel {
@@ -642,7 +642,7 @@ input, textarea {
         height: 250px;
     }
 
-  #searchOverlay {
+    #searchOverlay {
       margin-top: 100px;
   }
 }
