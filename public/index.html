@@ -35,8 +35,8 @@
         </button>
 
         <div id="langDropdownContainer" class="lang-dropdown-container" style="position: relative; display: inline-block;">
-            <button class="header-btn" onclick="toggleLangDropdown()" style="background-color: #333;">
-                🌐 <span id="langLabel">IN</span>
+            <button class="image-btn" onclick="toggleLangDropdown()">
+                <img id="imgLangBtn" src="image/btn-id.png" alt="Bahasa">
             </button>
             <div id="langDropdown" class="lang-dropdown-content">
                 <div onclick="setLanguage('id')">Indonesia</div>
@@ -87,7 +87,7 @@
 <img src="image/pborder-uright.png" alt="" class="pborder-uright">
 </div>
 
-  <h3>✏️ Edit Profil Gerobak</h3>
+  <h3>Edit Profil Gerobak</h3>
 
   <label>Nama Gerobak:</label>
   <input id="namaGerobak"> 
@@ -1173,9 +1173,13 @@ function t(key) {
 
 function updateLanguageUI() {
     // Ganti label tombol bahasa untuk menunjukkan bahasa saat ini (bukan opsi sebaliknya)
-    const langLabel = document.getElementById("langLabel");
-    if(langLabel) {
-        langLabel.innerText = (currentLang === "id") ? "IN" : "EN"; 
+    const imgLangBtn = document.getElementById("imgLangBtn");
+    if (imgLangBtn) {
+        if (currentLang === "en") {
+            imgLangBtn.src = "image/btn-en.png"; // Saat bahasa Inggris
+        } else {
+            imgLangBtn.src = "image/btn-id.png"; // Saat bahasa Indonesia
+        }
     }
 
     // Ganti teks elemen dengan atribut data-i18n

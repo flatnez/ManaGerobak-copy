@@ -221,6 +221,16 @@ label {
     transition: transform 0.2s ease; }
 #btnSearch.image-btn:active img { transform: scale(0.92); }
 
+/* (LANGUAGE) */
+#imgLangBtn {
+    height: 35px !important;
+    width: auto !important;
+    object-fit: contain !important;
+    transition: transform 0.2s ease !important;
+    display: block !important;
+}
+button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
+
 /* (LOGOUT) */
 #logoutBtnHeader.image-btn img {
     height: 35px;
@@ -378,7 +388,7 @@ label {
 
   .pborder-up {
     position: absolute;
-    top: -4px;
+    top: -2px;
     left: 0;
     width: 100%;
     display: flex;
@@ -423,6 +433,7 @@ label {
   font-size: 1.3rem;      /* ubah ukuran font */
   color: #fcf2d0;       /* ubah warna teks */
   font-weight: bold;    /* opsional */
+  text-align: center;
 }
 
   input, select, button, textarea { 
