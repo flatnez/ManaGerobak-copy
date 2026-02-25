@@ -262,7 +262,8 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* (✕) Tutup Profil */
 #close-btn.image-btn img {
-    height: 40px;
+    margin-top: 4px;
+    height: 30px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -398,15 +399,24 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
     position: relative; width: 100%; box-sizing: border-box;
     display: none; padding-bottom: 80px; 
     z-index: 1010;
-    border-top: 2px solid #000;
+    border-top: 1.5px solid #000;
+  }
+
+  .panel-close-btn {
+    position: absolute;
+    top: -15px; /* Silakan ubah angka ini (misal -5px atau -20px) agar tingginya pas dengan dekorasi */
+    left: 50%;
+    transform: translateX(-50%); /* Rumus sakti membelah tengah layar */
+    z-index: 1015; /* Pastikan tombol di atas segalanya agar mudah diklik */
   }
 
   .pborder-up {
     position: absolute;
-    top: -2px;
+    top: -3px;
     left: 0;
     width: 100%;
     display: flex;
+    justify-content: space-between;
     align-items: center;
     pointer-events: none;
   }
@@ -446,7 +456,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* PROFILE EDIT PANEL */
   div#vendorEditPanel {
-    padding-bottom: 30px;
+    padding-bottom: 50px;
   }
 
   #vendorEditPanel h3 {
@@ -545,7 +555,7 @@ input, textarea {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    margin: 0px 30px 0px 30px;
+    margin: 10px 30px 0px 30px;
   }
   .detail-img { 
       width: auto; max-width: 100%; height: auto; max-height: 250px;       

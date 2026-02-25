@@ -109,15 +109,22 @@
       <option value="keliling">Keliling</option>
   </select>
   
-  <label>Jam Operasional:</label>
-  <div class="time-wrapper">
-    <input id="jamBuka" type="time"> 
+<label>Jam Operasional:</label>
+<div class="time-wrapper">
+    <input id="jamBuka" type="time" 
+           onfocus="this.type='time'" 
+           onblur="if(this.value==='') this.type='text'"> 
+    
     <span>s/d</span> 
-    <input id="jamTutup" type="time">
+    
+    <input id="jamTutup" type="time" 
+           onfocus="this.type='time'" 
+           onblur="if(this.value==='') this.type='text'">
+           
     <button type="button" class="btn-clear-time" onclick="clearTime()" title="Hapus Jam">
         <img src="image/btn-xred.png" alt="✕">
     </button>
-  </div>
+</div>
   
   <label>📢 Pengumuman:</label>
   <textarea id="pengumumanInput" rows="3" placeholder="Contoh: Promo hari ini, Stok terbatas, dll..."></textarea>
@@ -141,11 +148,15 @@
     
 </div>
 
-<div id="customerDetailPanel" class="panel" style="border-top: none;">
+<div id="customerDetailPanel" class="panel">
     <div class="pborder-up">
-    <img src="image/pborder-uleft.png" alt="" class="pborder-uleft">
-    <img src="image/pborder-uright.png" alt="" class="pborder-uright">
+        <img src="image/pborder-uleft.png" alt="" class="pborder-uleft">
+        <img src="image/pborder-uright.png" alt="" class="pborder-uright">
     </div>
+
+    <button id="close-btn" class="image-btn panel-close-btn" onclick="closeDetailView()">
+        <img id="closeBtn" src="image/btn-tutupprofil.png" alt="tutup">
+    </button>
 
     <div class="detail-header">
         
@@ -153,10 +164,7 @@
         
         <div class="profil-btn">
             <button id="editProfilBtn" class="image-btn" onclick="openEditMode()">
-                <img src="image/btn-editprofil.png" alt="EDIT PROFIL">
-            </button>
-            <button id="close-btn" class="image-btn" onclick="closeDetailView()">
-                <img src="image/btn-x.png" alt="✕">
+                <img id="editProfil" src="image/btn-editprofil.png" alt="EDIT PROFIL">
             </button>
         </div>
 
@@ -751,8 +759,16 @@ function cancelEdit() {
 }
 
 function clearTime() {
-    document.getElementById("jamBuka").value = "";
-    document.getElementById("jamTutup").value = "";
+    const jamBuka = document.getElementById("jamBuka");
+    const jamTutup = document.getElementById("jamTutup");
+
+    // 1. Kosongkan nilainya
+    jamBuka.value = "";
+    jamTutup.value = "";
+
+    // 2. Ubah tipe menjadi 'text' agar tulisan --:-- benar-benar hilang
+    jamBuka.type = "text";
+    jamTutup.type = "text";
 }
 
 function deleteImage() {
@@ -1216,6 +1232,25 @@ function updateLanguageUI() {
             imgBtnMyGerobak.src = "image/btn-mygerobak.png";
         }
     }
+
+    const closeBtn = document.getElementById("closeBtn");
+    if (closeBtn) {
+        if (currentLang === "en") {
+            closeBtn.src = "image/btn-tutupprofil-en.png";
+        } else {
+            closeBtn.src = "image/btn-tutupprofil.png";
+        }
+    }
+
+    const editProfil = document.getElementById("editProfil");
+    if (editProfil) {
+        if (currentLang === "en") {
+            editProfil.src = "image/btn-editprofil-en.png";
+        } else {
+            editProfil.src = "image/btn-editprofil.png";
+        }
+    }
+
 }
 
 // Fungsi untuk menerjemahkan teks dinamis secara otomatis via API Gratis
