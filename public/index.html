@@ -1286,19 +1286,20 @@ document.addEventListener("DOMContentLoaded", function() {
 if (header) {
         const observer = new ResizeObserver(function(entries) {
             for (let entry of entries) {
-                // Get the pure, exact height of the header
-                const baseHeaderHeight = entry.target.offsetHeight; 
+                // Subtract 1px right here to pull everything up and hide the gap!
+                const headerHeight = entry.target.offsetHeight - 1; 
                 
-                // 1. Sesuaikan Decor Border (Apply your -1px here)
+                // 1. Sesuaikan Decor Border
                 if (decorBorder) {
-                    decorBorder.style.top = (baseHeaderHeight - 2) + "px";
+                    decorBorder.style.top = headerHeight + "px";
                 }
                 
-                // 2. Sesuaikan Search Overlay (Apply your -1px here)
+                // 2. Sesuaikan Search Overlay (walaupun sedang disembunyikan, posisinya tetap kita siapkan)
                 if (searchOverlay) {
-                    const overlayTop = baseHeaderHeight - 1;
-                    searchOverlay.style.top = overlayTop + "px";
-                    searchOverlay.style.height = `calc(100% - ${overlayTop}px)`;
+                    searchOverlay.style.top = headerHeight + "px";
+                    
+                    // The calc will now automatically account for the -1px we did above
+                    searchOverlay.style.height = `calc(100% - ${headerHeight}px)`;
                 }
             }
         });
