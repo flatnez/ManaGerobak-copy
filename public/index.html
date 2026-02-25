@@ -1292,6 +1292,8 @@ if (header) {
                 // 1. Sesuaikan Decor Border
                 if (decorBorder) {
                     decorBorder.style.top = headerHeight + "px";
+
+                    decorBorder.style.height = `calc(100% - ${headerHeight}px)`;
                 }
                 
                 // 2. Sesuaikan Search Overlay (walaupun sedang disembunyikan, posisinya tetap kita siapkan)
