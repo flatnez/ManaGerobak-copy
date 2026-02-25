@@ -1283,10 +1283,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const decorBorder = document.querySelector(".decor-border");
     const searchOverlay = document.getElementById("searchOverlay");
 
-    if (header) {
+if (header) {
         const observer = new ResizeObserver(function(entries) {
             for (let entry of entries) {
-                const headerHeight = entry.target.offsetHeight;
+                // Subtract 1px right here to pull everything up and hide the gap!
+                const headerHeight = entry.target.offsetHeight - 1; 
                 
                 // 1. Sesuaikan Decor Border
                 if (decorBorder) {
@@ -1296,11 +1297,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 // 2. Sesuaikan Search Overlay (walaupun sedang disembunyikan, posisinya tetap kita siapkan)
                 if (searchOverlay) {
                     searchOverlay.style.top = headerHeight + "px";
+                    
+                    // The calc will now automatically account for the -1px we did above
                     searchOverlay.style.height = `calc(100% - ${headerHeight}px)`;
                 }
             }
         });
-        
         observer.observe(header);
     }
 });
