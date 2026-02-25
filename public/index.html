@@ -388,10 +388,10 @@ if (currentRole === 'customer') {
     // Pastikan tombol dropdown bahasa muncul untuk customer
     document.getElementById("langDropdownContainer").style.display = "inline-block"; 
 } 
-// else if (currentRole === 'vendor') {
-//     // TAMBAHKAN BARIS INI: Sembunyikan dropdown bahasa untuk vendor
-//     document.getElementById("langDropdownContainer").style.display = "none";
-// }
+else if (currentRole === 'vendor') {
+    // TAMBAHKAN BARIS INI: Sembunyikan dropdown bahasa untuk vendor
+    document.getElementById("langDropdownContainer").style.display = "none";
+}
 
 // === 2. LISTENER AUTHENTICATION ===
 auth.onAuthStateChanged(user => {
