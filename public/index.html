@@ -75,7 +75,9 @@
 <div id="searchOverlay">
     <div class="search-header">
         <input type="text" id="searchInput" placeholder="Cari nama gerobak..." onkeyup="handleSearch()" data-i18n-placeholder="search_placeholder">
-        <button class="close-search-btn" onclick="closeSearch()">✕</button>
+        <button id="closeSearchBtn" class="close-search-btn" onclick="closeSearch()">
+            <img src="image/btn-x.png" alt="x">
+        </button>
     </div>
     <div id="searchResults">
         </div>

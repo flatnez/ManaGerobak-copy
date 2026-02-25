@@ -269,6 +269,22 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
     transition: transform 0.2s ease; }
 #close-btn.image-btn:active img { transform: scale(0.92); }
 
+/* (✕) Search Overlay */
+.close-search-btn {
+    background: transparent;
+    cursor: pointer;
+    margin: 0;
+    width: 50px; 
+    height: 50px;
+    padding: 0;
+}
+#closeSearchBtn.close-search-btn img {
+    height: 45px;
+    width: auto;
+    object-fit: contain;
+    transition: transform 0.2s ease; }
+#closeSearchBtn.close-search-btn:active img { transform: scale(0.92); }
+
 /* (✕) Hapus Jam */
 .btn-clear-time img {
     height: 40px;
@@ -371,9 +387,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
       flex-grow: 1; padding: 12px; font-size: 1.1rem;
       border: 2px dashed #00491a; border-radius: 12px; outline: none; margin-bottom: 0;
   }
-  .close-search-btn {
-      background: #ccc; width: 50px; height: 45px; border: none; margin: auto; padding: 0 15px; border-radius: 8px; font-size: 1.2rem; cursor: pointer;
-  }
+
   #searchResults { overflow-y: auto; flex-grow: 1; }
   
   .search-item {
@@ -547,8 +561,10 @@ input, textarea {
     display: flex; 
     align-items: center; 
     gap: 8px; 
-    align-self: baseline; 
-    margin-block-start: 0.83em;
+    align-self: flex-end; /* baseline --> if start at top */
+    /* margin-block-start: 0.83em; */
+    margin-bottom: 20px;
+
   }
 
   .detail-header { 

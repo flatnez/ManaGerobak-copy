@@ -5,10 +5,70 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Login Gerobak</title>
 <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f4; }
-    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    /* RESET DASAR */
+    body { 
+        font-family: Arial, Helvetica, sans-serif; 
+        margin: 0; 
+        background-color: #356849; 
+        display: flex;
+        flex-direction: column; /* Menyusun header dan konten dari atas ke bawah */
+        min-height: 100vh;      /* Memastikan minimal setinggi layar */
+    }
+
+    /* --- STYLE HEADER (Dari index.html) --- */
+    .header-container {
+        background: #356849; 
+        padding: 10px 25px 8px 25px; 
+        border-bottom: 1.5px solid #000;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        position: sticky; top: 0;
+        display: flex;
+        justify-content: flex-start; /* Logo menempel ke kiri */
+        flex-direction: column; /* Mengubah susunan menjadi atas-bawah */
+        align-items: center;    /* Membuat logo dan tombol berada di tengah (center) */
+        flex-wrap: wrap; 
+        z-index: 9999;
+    }
+    .header-logo {
+        height: 25px; 
+        width: auto;  
+        object-fit: contain;
+        margin-right: 0; 
+    }
+    .header-line {
+        /* display: block;
+        margin-left: auto; */
+        height: 6.5px;
+        margin: 6px 0 8px 0;
+    }
+
+    /* --- STYLE KONTEN TENGAH --- */
+    .main-wrapper {
+        flex: 1; /* Akan mengambil seluruh sisa tinggi layar di bawah header */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px; /* Jarak aman untuk HP */
+    }
+
+    .container { 
+        background: white; 
+        padding: 30px; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        width: 300px; 
+        max-width: 100%; /* Agar responsif di HP kecil */
+        text-align: center; 
+    }
     
-    input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    input { 
+        width: 100%; 
+        padding: 10px; 
+        margin: 10px 0; 
+        box-sizing: border-box; 
+        border: 1px solid #ccc; 
+        border-radius: 4px; 
+    }
     
     /* Container Password */
     .password-container {
@@ -18,7 +78,7 @@
     }
     .password-container input {
         margin: 0;
-        padding-right: 40px; /* Ruang untuk ikon */
+        padding-right: 40px; 
     }
     
     /* Tombol Mata SVG */
@@ -31,7 +91,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #777; /* Warna ikon abu-abu */
+        color: #777; 
     }
     
     .toggle-eye svg {
@@ -39,7 +99,17 @@
         height: 20px;
     }
 
-    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    button { 
+        width: 100%; 
+        padding: 10px; 
+        background-color: #4CAF50; 
+        color: white; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        margin-top: 10px; 
+    }
     button:hover { background-color: #45a049; }
     .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
     a { text-decoration: none; color: #007AFF; }
@@ -47,23 +117,30 @@
 </head>
 <body>
 
-<div class="container">
-    <h2>Login Gerobak</h2>
+<div class="header-container">
+    <img src="image/managerobak_logo.png" alt="ManaGerobak" class="header-logo">
+    <img src="image/header_line.png" alt="-" class="header-line">
+</div>
 
-    <input type="email" id="email" placeholder="Email" required>
-    
-    <div class="password-container">
-        <input type="password" id="password" placeholder="Password" required>
-        <span id="togglePassword" class="toggle-eye" onclick="togglePasswordVisibility()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-        </span>
+<div class="main-wrapper">
+    <div class="container">
+        <h2>Login Gerobak</h2>
+
+        <input type="email" id="email" placeholder="Email" required>
+        
+        <div class="password-container">
+            <input type="password" id="password" placeholder="Password" required>
+            <span id="togglePassword" class="toggle-eye" onclick="togglePasswordVisibility()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </span>
+        </div>
+
+        <button id="loginBtn" onclick="login()">Login</button>
+        
+        <p id="errorText" class="error-msg"></p>
+
+        <p style="font-size: small;">Belum punya akun? <a href="signup.html">Daftar</a></p>
     </div>
-
-    <button id="loginBtn" onclick="login()">Login</button>
-    
-    <p id="errorText" class="error-msg"></p>
-
-    <p style="font-size: small;">Belum punya akun? <a href="signup.html">Daftar</a></p>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -95,10 +172,10 @@ function togglePasswordVisibility() {
     
     if (passwordInput.type === "password") {
         passwordInput.type = "text";
-        toggleIcon.innerHTML = iconEyeClosed; // Ganti icon jadi mata dicoret
+        toggleIcon.innerHTML = iconEyeClosed;
     } else {
         passwordInput.type = "password";
-        toggleIcon.innerHTML = iconEyeOpen; // Ganti icon jadi mata biasa
+        toggleIcon.innerHTML = iconEyeOpen;
     }
 }
 
