@@ -134,7 +134,7 @@ h2#dNama {
   }
 
 .decor-border {
-  position: sticky;
+  position: fixed;
   /* top: 55px; */
   width: 100vw;
   display: flex;
@@ -210,7 +210,7 @@ h2#dNama {
 #btnStartShare.image-btn:active img { transform: scale(0.92); }
 
 /* (STOP) */
-#btnStopShare { background-color: #f44336; border-radius: 10px; display: none; animation: pulse 2s infinite; }
+#btnStopShare { background-color: #f44336; border-radius: 13px; display: none; animation: pulse 2s infinite; }
 #btnStopShare.image-btn img {
     height: 40px;      
     width: auto;
@@ -254,7 +254,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* (EDIT PROFIL) */
 #editProfilBtn.image-btn img {
-    height: 40px;
+    height: 35px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
