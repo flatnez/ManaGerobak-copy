@@ -453,9 +453,10 @@ function initMap() {
 // === LOGIKA PENCARIAN (SEARCH) ===
 
 function openSearch() {
+    // Cukup tampilkan dan fokus, ukurannya sudah diurus ResizeObserver!
     document.getElementById("searchOverlay").style.display = "flex";
     document.getElementById("searchInput").focus();
-    handleSearch(); // Tampilkan list kosong atau history jika ada
+    handleSearch(); 
 }
 
 function closeSearch() {
@@ -507,7 +508,7 @@ function handleSearch() {
 
     if (activeVendors.length === 0) {
         // GUNAKAN t()
-        resultsDiv.innerHTML = `<div style='padding:20px; text-align:center; color:#777;'>${t('msg_no_result')}</div>`;
+        resultsDiv.innerHTML = `<div style='padding:20px; text-align:center; color:#ffffff; opacity: 50%;'>${t('msg_no_result')}</div>`;
         return;
     }
 
@@ -529,7 +530,7 @@ function handleSearch() {
         div.innerHTML = `
             <div class="item-info">
                 <b>${item.data.nama || "Gerobak"}</b>
-                <span style="font-size:0.8rem; color:#cebc8a;">${statusText}</span> </div>
+                <span style="font-size:0.8rem; color:#becc8b;">${statusText}</span> </div>
             <div class="item-dist">📍 ${distText}</div>
         `;
         resultsDiv.appendChild(div);
@@ -1237,6 +1238,35 @@ async function translateDynamicText(text, targetLang) {
         return text; // Tampilkan teks bahasa Indonesia asli jika API error/offline
     }
 }
+
+// Resize observer
+
+document.addEventListener("DOMContentLoaded", function() {
+    const header = document.querySelector(".header-container");
+    const decorBorder = document.querySelector(".decor-border");
+    const searchOverlay = document.getElementById("searchOverlay");
+
+    if (header) {
+        const observer = new ResizeObserver(function(entries) {
+            for (let entry of entries) {
+                const headerHeight = entry.target.offsetHeight;
+                
+                // 1. Sesuaikan Decor Border
+                if (decorBorder) {
+                    decorBorder.style.top = headerHeight + "px";
+                }
+                
+                // 2. Sesuaikan Search Overlay (walaupun sedang disembunyikan, posisinya tetap kita siapkan)
+                if (searchOverlay) {
+                    searchOverlay.style.top = headerHeight + "px";
+                    searchOverlay.style.height = `calc(100% - ${headerHeight}px)`;
+                }
+            }
+        });
+        
+        observer.observe(header);
+    }
+});
 
 </script>
 </body>
