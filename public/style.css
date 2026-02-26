@@ -203,7 +203,7 @@ h2#dNama {
 
 /* (LIVE) */
 #btnStartShare.image-btn img {
-    height: 40px;            /* Sesuaikan tinggi ini agar pas dengan logo/tombol lain */
+    height: 35px;            /* Sesuaikan tinggi ini agar pas dengan logo/tombol lain */
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; /* Memberi efek animasi saat diklik */ }
@@ -212,7 +212,7 @@ h2#dNama {
 /* (STOP) */
 #btnStopShare { background-color: #f44336; border-radius: 13px; display: none; animation: pulse 2s infinite; }
 #btnStopShare.image-btn img {
-    height: 40px;      
+    height: 35px;      
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -220,7 +220,7 @@ h2#dNama {
 
 /* (GEROBAK SAYA) */
 #myGerobakBtn.image-btn img {
-    height: 40px;
+    height: 35px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -228,7 +228,7 @@ h2#dNama {
 
 /* (CARI GEROBAK) */
 #btnSearch.image-btn img {
-    height: 40px;
+    height: 35px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -236,7 +236,7 @@ h2#dNama {
 
 /* (LANGUAGE) */
 #imgLangBtn {
-    height: 40px !important;
+    height: 35px !important;
     width: auto !important;
     object-fit: contain !important;
     transition: transform 0.2s ease !important;
@@ -246,7 +246,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
 /* (LOGOUT) */
 #logoutBtnHeader.image-btn img {
-    height: 40px;
+    height: 35px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -263,7 +263,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 /* (✕) Tutup Profil */
 #close-btn.image-btn img {
     margin-top: 4px;
-    height: 30px;
+    height: 25px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
@@ -294,7 +294,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
     transition: transform 0.2s ease; }
 .btn-clear-time:active img { transform: scale(0.92); }
 .btn-clear-time { 
-    width: 40px;
+    width: 35px;
     background: transparent;
     border: none;
     padding: 0;
@@ -307,7 +307,7 @@ button.image-btn:active #imgLangBtn { transform: scale(0.92) !important; }
 
     /* (HAPUS FOTO) */
 #hapusFotoBtn.image-btn img {
-    height: 40px;
+    height: 35px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
