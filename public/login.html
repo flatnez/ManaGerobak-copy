@@ -5,62 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Login Gerobak</title>
 <style>
-    /* RESET DASAR */
+    /* --- RESET & BODY --- */
     body { 
         font-family: Arial, Helvetica, sans-serif; 
         margin: 0; 
         background-color: #356849; 
-        display: flex;
-        flex-direction: column; /* Menyusun header dan konten dari atas ke bawah */
-        min-height: 100vh;      /* Memastikan minimal setinggi layar */
+        display: flex; 
+        flex-direction: column; 
+        min-height: 100vh; 
     }
 
-    /* --- STYLE HEADER (Dari index.html) --- */
-    .header-container {
+    /* --- HEADER (Sama dengan index & signup) --- */
+    .header-container { 
         background: #356849; 
         padding: 10px 25px 8px 25px; 
-        border-bottom: 1.5px solid #000;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        position: sticky; top: 0;
-        display: flex;
-        justify-content: flex-start; /* Logo menempel ke kiri */
-        flex-direction: column; /* Mengubah susunan menjadi atas-bawah */
-        align-items: center;    /* Membuat logo dan tombol berada di tengah (center) */
-        flex-wrap: wrap; 
-        z-index: 9999;
+        border-bottom: 1.5px solid #000; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+        position: sticky; 
+        top: 0; 
+        display: flex; 
+        justify-content: flex-start; 
+        flex-direction: column; 
+        align-items: center; 
+        z-index: 9999; 
     }
-    .header-logo {
+    .header-logo { 
         height: 25px; 
-        width: auto;  
-        object-fit: contain;
-        margin-right: 0; 
+        width: auto; 
+        object-fit: contain; 
     }
-    .header-line {
-        /* display: block;
-        margin-left: auto; */
-        height: 6.5px;
-        margin: 6px 0 8px 0;
+    .header-line { 
+        height: 6.5px; 
+        margin: 6px 0 8px 0; 
     }
 
-    /* --- STYLE KONTEN TENGAH --- */
-    .main-wrapper {
-        flex: 1; /* Akan mengambil seluruh sisa tinggi layar di bawah header */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px; /* Jarak aman untuk HP */
+    /* --- MAIN LAYOUT & CONTAINER --- */
+    .main-wrapper { 
+        flex: 1; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        padding: 20px; 
     }
-
     .container { 
         background: white; 
         padding: 30px; 
         border-radius: 8px; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
         width: 300px; 
-        max-width: 100%; /* Agar responsif di HP kecil */
+        max-width: 100%; 
         text-align: center; 
     }
+    h2 { margin-top: 0; color: #333; }
     
+    /* --- FORM INPUTS --- */
     input { 
         width: 100%; 
         padding: 10px; 
@@ -69,36 +67,27 @@
         border: 1px solid #ccc; 
         border-radius: 4px; 
     }
-    
-    /* Container Password */
-    .password-container {
-        position: relative;
-        width: 100%;
-        margin: 10px 0;
+    .password-container { 
+        position: relative; 
+        width: 100%; 
+        margin: 10px 0; 
     }
-    .password-container input {
-        margin: 0;
+    .password-container input { 
+        margin: 0; 
         padding-right: 40px; 
     }
-    
-    /* Tombol Mata SVG */
-    .toggle-eye {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .toggle-eye { 
+        position: absolute; 
+        right: 10px; 
+        top: 50%; 
+        transform: translateY(-50%); 
+        cursor: pointer; 
+        display: flex; 
+        align-items: center; 
         color: #777; 
     }
     
-    .toggle-eye svg {
-        width: 20px;
-        height: 20px;
-    }
-
+    /* --- BUTTONS --- */
     button { 
         width: 100%; 
         padding: 10px; 
@@ -110,9 +99,37 @@
         font-weight: bold; 
         margin-top: 10px; 
     }
-    button:hover { background-color: #45a049; }
-    .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
-    a { text-decoration: none; color: #007AFF; }
+    button:hover { 
+        background-color: #45a049; 
+    }
+    button:disabled { 
+        background-color: #ccc; 
+        cursor: not-allowed; 
+    }
+    
+    /* --- MESSAGES & LINKS --- */
+    .error-msg { 
+        color: red; 
+        font-size: 0.85em; 
+        margin-top: 10px; 
+        display: none; 
+    }
+    .success-msg { 
+        color: #2e7d32; 
+        font-size: 0.85em; 
+        margin-top: 10px; 
+        display: none; 
+    }
+    .link-text { 
+        font-size: small; 
+        color: #666; 
+        margin-top: 15px; 
+    }
+    a { 
+        text-decoration: none; 
+        color: #007AFF; 
+        cursor: pointer; 
+    }
 </style>
 </head>
 <body>
@@ -124,22 +141,30 @@
 
 <div class="main-wrapper">
     <div class="container">
-        <h2>Login Gerobak</h2>
+        <h2 id="formTitle">Login Gerobak</h2>
 
         <input type="email" id="email" placeholder="Email" required>
         
-        <div class="password-container">
-            <input type="password" id="password" placeholder="Password" required>
-            <span id="togglePassword" class="toggle-eye" onclick="togglePasswordVisibility()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </span>
+        <div id="passwordArea">
+            <div class="password-container">
+                <input type="password" id="password" placeholder="Password" required>
+                <span id="togglePassword" class="toggle-eye" onclick="togglePasswordVisibility()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </span>
+            </div>
         </div>
 
-        <button id="loginBtn" onclick="login()">Login</button>
+        <button id="mainBtn" onclick="handleAuth()">Login</button>
         
         <p id="errorText" class="error-msg"></p>
+        <p id="successText" class="success-msg"></p>
 
-        <p style="font-size: small;">Belum punya akun? <a href="signup.html">Daftar</a></p>
+        <div class="link-text">
+            <span id="forgotPassLink">Lupa password? <a onclick="showForgotPassword()">Klik disini</a></span>
+            <span id="backToLoginLink" style="display:none;"><a onclick="showLogin()">Kembali ke Login</a></span>
+        </div>
+
+        <p class="link-text" id="signUpLink">Belum punya akun? <a href="signup.html">Daftar</a></p>
     </div>
 </div>
 
@@ -162,67 +187,123 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// SVG ICONS
-const iconEyeOpen = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
-const iconEyeClosed = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+let isForgotPasswordMode = false;
 
+// UI Control Functions
 function togglePasswordVisibility() {
-    const passwordInput = document.getElementById("password");
-    const toggleIcon = document.getElementById("togglePassword");
-    
-    if (passwordInput.type === "password") {
-        passwordInput.type = "text";
-        toggleIcon.innerHTML = iconEyeClosed;
+    const p = document.getElementById("password");
+    p.type = p.type === "password" ? "text" : "password";
+}
+
+function showForgotPassword() {
+    isForgotPasswordMode = true;
+    document.getElementById("formTitle").innerText = "Reset Password";
+    document.getElementById("passwordArea").style.display = "none";
+    document.getElementById("mainBtn").innerText = "Kirim Link Reset";
+    document.getElementById("forgotPassLink").style.display = "none";
+    document.getElementById("backToLoginLink").style.display = "inline";
+    document.getElementById("signUpLink").style.display = "none";
+    clearMsgs();
+}
+
+function showLogin() {
+    isForgotPasswordMode = false;
+    document.getElementById("formTitle").innerText = "Login Gerobak";
+    document.getElementById("passwordArea").style.display = "block";
+    document.getElementById("mainBtn").innerText = "Login";
+    document.getElementById("forgotPassLink").style.display = "inline";
+    document.getElementById("backToLoginLink").style.display = "none";
+    document.getElementById("signUpLink").style.display = "block";
+    clearMsgs();
+}
+
+function clearMsgs() {
+    document.getElementById("errorText").style.display = "none";
+    document.getElementById("successText").style.display = "none";
+}
+
+function showError(msg) {
+    const err = document.getElementById("errorText");
+    err.innerText = msg; err.style.display = "block";
+}
+
+function showSuccess(msg) {
+    const scs = document.getElementById("successText");
+    scs.innerText = msg; scs.style.display = "block";
+}
+
+// Authentication Logic
+function handleAuth() {
+    if (isForgotPasswordMode) {
+        resetPassword();
     } else {
-        passwordInput.type = "password";
-        toggleIcon.innerHTML = iconEyeOpen;
+        login();
     }
 }
 
 function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
-  const errorText = document.getElementById("errorText");
-  const loginBtn = document.getElementById("loginBtn");
+  const btn = document.getElementById("mainBtn");
 
-  errorText.style.display = "none"; errorText.innerText = "";
-
-  if (!email || !password) { showError("Harap isi email dan password."); return; }
-
-  loginBtn.innerText = "Loading..."; loginBtn.disabled = true;
+  if (!email || !password) { showError("Isi semua kolom."); return; }
+  
+  btn.innerText = "Loading..."; btn.disabled = true;
+  clearMsgs();
 
   auth.signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
-      const uid = userCredential.user.uid;
+      const user = userCredential.user;
+      
+      // CEK VERIFIKASI EMAIL DI SINI
+      if (!user.emailVerified) {
+          // Jika belum diverifikasi, paksa logout dan tampilkan error
+          auth.signOut();
+          btn.innerText = "Login"; btn.disabled = false;
+          showError("Akun belum diverifikasi. Silakan cek Inbox/Spam email Anda dan klik link verifikasi.");
+          return;
+      }
+
+      // Jika sudah diverifikasi, lanjut ambil data dari database
+      const uid = user.uid;
       db.ref("vendors/" + uid).once("value").then(snapshot => {
-          let role = "customer";
-          if (snapshot.exists()) { role = "vendor"; }
+          let role = snapshot.exists() ? "vendor" : "customer";
           localStorage.setItem("vendorUid", uid);
           localStorage.setItem("role", role);
           window.location.href = `index.html?role=${role}`;
       });
     })
     .catch((error) => {
-      loginBtn.innerText = "Login"; loginBtn.disabled = false;
-      console.error(error);
-      if (error.code === "auth/user-not-found" || error.code === "auth/invalid-email") {
-          showError("Email belum terdaftar.");
-      } else if (error.code === "auth/wrong-password") {
-          showError("Password salah.");
-      } else if (error.code === "auth/invalid-login-credentials") {
-          showError("Email/Password salah.");
+      btn.innerText = "Login"; btn.disabled = false;
+      
+      // Pesan error yang lebih spesifik
+      if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-login-credentials") {
+          showError("Email atau Password salah.");
       } else {
-          showError("Error: " + error.message);
+          showError("Terjadi kesalahan: " + error.message);
       }
     });
 }
 
-function showError(message) {
-    const errorText = document.getElementById("errorText");
-    errorText.innerText = message;
-    errorText.style.display = "block";
+function resetPassword() {
+    const email = document.getElementById("email").value.trim();
+    const btn = document.getElementById("mainBtn");
+
+    if (!email) { showError("Masukkan email Anda."); return; }
+
+    btn.innerText = "Mengirim..."; btn.disabled = true;
+    clearMsgs();
+
+    auth.sendPasswordResetEmail(email)
+        .then(() => {
+            btn.innerText = "Kirim Link Reset"; btn.disabled = false;
+            showSuccess("Link reset telah dikirim ke email Anda. Silakan cek Inbox/Spam.");
+        })
+        .catch((error) => {
+            btn.innerText = "Kirim Link Reset"; btn.disabled = false;
+            showError("Gagal mengirim link. Pastikan email terdaftar.");
+        });
 }
 </script>
-
 </body>
 </html>
