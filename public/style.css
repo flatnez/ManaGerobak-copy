@@ -145,7 +145,7 @@ h2#dNama {
 .decor-border-left {
   position: absolute;
   left: 0;
-  height: 300px;
+  height: 250px;
   width: auto;
   object-fit: contain;
   z-index: 1001;
@@ -153,7 +153,7 @@ h2#dNama {
 .decor-border-right {
   position: absolute;
   right: 0;
-  height: 300px;
+  height: 250px;
   width: auto;
   object-fit: contain;
   z-index: 1003;
@@ -667,10 +667,10 @@ input, textarea {
     }
     
     .decor-border-left {
-        height: 250px;
+        height: 200px;
     }
      .decor-border-right {
-        height: 250px;
+        height: 200px;
     }
 
 }
