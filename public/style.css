@@ -234,6 +234,23 @@ h2#dNama {
     transition: transform 0.2s ease; }
 #btnSearch.image-btn:active img { transform: scale(0.92); }
 
+/* (LOKASI SAYA) */
+#customerLocBtn.image-btn img {
+    height: 35px;
+    width: auto;
+    object-fit: contain;
+    transition: transform 0.2s ease; }
+#customerLocBtn.image-btn:active img { transform: scale(0.92); }
+
+  #customerLocBtn {
+    position: fixed; 
+    bottom: 25px; 
+    right: 25px; 
+    z-index: 999;
+    width: auto; 
+    /* box-shadow: 0 4px 10px rgba(0,0,0,0.3); */
+  }
+
 /* (LANGUAGE) */
 #imgLangBtn {
     height: 35px !important;
@@ -545,14 +562,6 @@ input, textarea {
     textarea#menu {
         margin: 10px 0 40px;
     }
-
-  #customerLocBtn {
-    position: fixed; bottom: 25px; right: 15px; z-index: 999;
-    background-color: #007AFF; 
-    width: auto; padding: 12px 20px; border-radius: 50px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    font-size: 14px; display: none; color: white; border: none; font-weight: bold;
-  }
 
   .status-badge { display: inline-block; padding: 8px 17px; border-radius: 30px ; font-size: 0.8em; font-weight: bold; color: #fcf2d0; }
   .status-mangkal { background-color: #3d5f3c; border: 1.7px solid #f4ebcd;}

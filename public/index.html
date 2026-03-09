@@ -69,7 +69,10 @@
 
 <div id="mapContainer">
   <div id="map"></div>
-  <button id="customerLocBtn" onclick="enableCustomerLocation()" data-i18n="btn_my_loc">📍 Lokasi Saya</button>
+  
+  <button id="customerLocBtn" class="image-btn" onclick="enableCustomerLocation()">
+      <img id="imgMyLoc" src="image/btn-mylocation.png" alt="Lokasi Saya">
+  </button>
 </div>
 
 <div id="searchOverlay">
@@ -1051,6 +1054,8 @@ function handleImageUpload(input) {
 function enableCustomerLocation() {
   if (!navigator.geolocation) return alert("Geolocation Error");
   
+  const locBtn = document.getElementById("customerLocBtn");
+
   if (customerWatchID !== null) { 
      if(customerMarker) map.setView(customerMarker.getLatLng(), 17);
      return; 
@@ -1058,7 +1063,8 @@ function enableCustomerLocation() {
 
   const customerStyle = { radius: 10, color: "#fff", weight: 3, fillColor: "#007AFF", fillOpacity: 1, pane: 'customerPane' };
   
-  document.getElementById("customerLocBtn").innerText = "⏳...";
+  // Efek visual loading: buat gambar agak transparan sebagai ganti teks "⏳..."
+  if (locBtn) locBtn.style.opacity = "0.5";
 
   customerWatchID = navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
@@ -1073,7 +1079,9 @@ function enableCustomerLocation() {
     } else {
         customerMarker = L.circleMarker([lat, lng], customerStyle).addTo(map);
         map.setView([lat, lng], 17);
-        document.getElementById("customerLocBtn").innerText = "📍 Lokasi Saya";
+        
+        // Kembalikan gambar jadi terang saat lokasi ketemu (pengganti "📍 Lokasi Saya")
+        if (locBtn) locBtn.style.opacity = "1";
     }
   }, err => {
       console.error(err);
@@ -1083,7 +1091,9 @@ function enableCustomerLocation() {
       } else {
           alert(t('msg_loc_denied'));
       }
-      document.getElementById("customerLocBtn").innerText = "📍 Lokasi Saya";
+      
+      // Kembalikan gambar jadi terang jika error/ditolak
+      if (locBtn) locBtn.style.opacity = "1";
   }, { enableHighAccuracy: true });
 }
 
@@ -1253,6 +1263,16 @@ function updateLanguageUI() {
         }
     }
 
+const imgMyLoc = document.getElementById("imgMyLoc"); 
+    if (imgMyLoc) {
+        if (currentLang === "en") {
+            imgMyLoc.src = "image/btn-mylocation-en.png";
+            imgMyLoc.alt = "My Location";
+        } else {
+            imgMyLoc.src = "image/btn-mylocation.png";
+            imgMyLoc.alt = "Lokasi Saya";
+        }
+    }
 }
 
 // Fungsi untuk menerjemahkan teks dinamis secara otomatis via API Gratis
