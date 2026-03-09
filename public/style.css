@@ -119,6 +119,10 @@ h2#dNama {
     flex-shrink: 0; 
 }
 
+    .header-actions img {
+    display: block;
+    }
+
   .header-btn {
       border: none; 
       padding: 8px 10px; 
@@ -659,10 +663,6 @@ input, textarea {
         align-items: center;            /* Rata tengah secara vertikal */
         gap: 5px 8px;
         width: 100%;
-    }
-
-    .header-actions img {
-    display: block;
     }
 
     .header-actions > button,
