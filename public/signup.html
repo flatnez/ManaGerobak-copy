@@ -155,6 +155,15 @@ function togglePasswordVisibility() {
     }
 }
 
+function showSuccessAndRedirect(isResend = false) {
+    let msg = "Pendaftaran berhasil!\n\nLink verifikasi telah dikirim ke email Anda. Harap cek Inbox atau folder Spam untuk mengaktifkan akun sebelum Login.";
+    if (isResend) {
+        msg = "Email ini sebelumnya sudah didaftarkan tapi belum diverifikasi.\n\nLink verifikasi BARU telah berhasil dikirim ulang. Harap cek email Anda sekarang.";
+    }
+    alert(msg);
+    window.location.href = "login.html";
+}
+
 function signUp(e) {
   e.preventDefault(); 
 
@@ -168,43 +177,70 @@ function signUp(e) {
 
   if (password.length < 6) { showError("Password harus minimal 6 karakter."); return; }
 
-  regBtn.innerText = "Mendaftarkan..."; regBtn.disabled = true;
+  regBtn.innerText = "Memproses..."; regBtn.disabled = true;
 
+  // Percobaan 1: Buat Akun Baru
   auth.createUserWithEmailAndPassword(email, password)
     .then(res => {
       const user = res.user;
-      
-      // 1. Kirim Email Verifikasi
       return user.sendEmailVerification().then(() => {
-          
-          // 2. Simpan ke Database
           return db.ref("vendors/" + user.uid).set({
             idGerobak: gerobakId,
             nama: gerobakId, 
-            email: email, // Simpan email asli
+            email: email, 
             lat: 0, lng: 0,
             jamBuka: "08:00", jamTutup: "17:00",
             status: "tutup",
             menu: ["Contoh Menu 1", "Contoh Menu 2"], 
             gambar: ""
           });
-          
       }).then(() => {
-          // 3. Paksa Logout agar tidak langsung masuk sebelum verifikasi
           return auth.signOut();
+      }).then(() => {
+          showSuccessAndRedirect(false);
       });
     })
-    .then(() => {
-        alert("Pendaftaran berhasil!\n\nLink verifikasi telah dikirim ke email Anda. Harap cek Inbox atau folder Spam untuk mengaktifkan akun sebelum Login.");
-        window.location.href = "login.html";
-    })
     .catch(err => {
-        regBtn.innerText = "Daftar Sekarang"; regBtn.disabled = false;
-        console.error(err);
-        if (err.code === "auth/email-already-in-use") { showError("Email ini sudah terdaftar."); } 
-        else if (err.code === "auth/invalid-email") { showError("Format email tidak valid."); } 
-        else if (err.code === "auth/weak-password") { showError("Password terlalu lemah."); } 
-        else { showError("Gagal daftar: " + err.message); }
+        // Percobaan 2: Jika Email Sudah Ada, Cek Apakah Belum Verifikasi
+        if (err.code === "auth/email-already-in-use") {
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    const user = userCredential.user;
+                    
+                    if (!user.emailVerified) {
+                        // Jika belum verifikasi, kirim ulang link dan update nama gerobak jika diganti
+                        user.sendEmailVerification().then(() => {
+                            return db.ref("vendors/" + user.uid).update({
+                                idGerobak: gerobakId,
+                                nama: gerobakId
+                            });
+                        }).then(() => {
+                            return auth.signOut();
+                        }).then(() => {
+                            showSuccessAndRedirect(true);
+                        });
+                    } else {
+                        // Jika ternyata sudah verifikasi, larang daftar ulang
+                        auth.signOut();
+                        regBtn.innerText = "Daftar Sekarang"; regBtn.disabled = false;
+                        showError("Email ini sudah terdaftar & terverifikasi. Silakan Login.");
+                    }
+                })
+                .catch(loginErr => {
+                    // Jika login gagal (contoh: user masukkin password beda dari saat pertama daftar)
+                    regBtn.innerText = "Daftar Sekarang"; regBtn.disabled = false;
+                    showError("Email sudah terdaftar. Jika Anda belum verifikasi, pastikan password yang dimasukkan SAMA persis seperti saat mendaftar pertama kali.");
+                });
+
+        } else {
+            // Error pendaftaran lainnya
+            regBtn.innerText = "Daftar Sekarang"; regBtn.disabled = false;
+            console.error(err);
+            if (err.code === "auth/invalid-email") { showError("Format email tidak valid."); } 
+            else if (err.code === "auth/weak-password") { showError("Password terlalu lemah."); } 
+            else { showError("Gagal daftar: " + err.message); }
+        }
     });
 }
 
