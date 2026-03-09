@@ -236,7 +236,7 @@ h2#dNama {
 
 /* (LOKASI SAYA) */
 #customerLocBtn.image-btn img {
-    height: 35px;
+    height: 37px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
