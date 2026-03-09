@@ -242,13 +242,13 @@ h2#dNama {
     transition: transform 0.2s ease; }
 #customerLocBtn.image-btn:active img { transform: scale(0.92); }
 
-  #customerLocBtn {
+#customerLocBtn {
     position: fixed; 
     bottom: 25px; 
     right: 25px; 
     z-index: 999;
     width: auto;
-  }
+}
 
 /* (LANGUAGE) */
 #imgLangBtn {
