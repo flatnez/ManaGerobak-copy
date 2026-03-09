@@ -181,7 +181,7 @@ h2#dNama {
       cursor: pointer;
       font-size: 0.9rem;
       font-weight: bold;
-      transition: background 0.2s;
+      transition: 0.2s;
   }
   .lang-dropdown-content div:hover {
       background-color: #f1f1f1;
@@ -659,6 +659,10 @@ input, textarea {
         align-items: center;            /* Rata tengah secara vertikal */
         gap: 5px 8px;
         width: 100%;
+    }
+
+    .header-actions img {
+    display: block;
     }
 
     .header-actions > button,
