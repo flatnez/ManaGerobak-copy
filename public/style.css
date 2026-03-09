@@ -236,11 +236,19 @@ h2#dNama {
 
 /* (LOKASI SAYA) */
 #customerLocBtn.image-btn img {
-    height: 35px;
+    height: 37px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease; }
 #customerLocBtn.image-btn:active img { transform: scale(0.92); }
+
+  #customerLocBtn {
+    position: fixed; 
+    bottom: 25px; 
+    right: 25px; 
+    z-index: 999;
+    width: auto;
+  }
 
 /* (LANGUAGE) */
 #imgLangBtn {
