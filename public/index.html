@@ -29,6 +29,10 @@
         <button id="myGerobakBtn" class="image-btn" onclick="showMyPublicProfile()">
             <img id="imgBtnMyGerobak" src="image/btn-mygerobak.png" alt="Gerobak Saya">
         </button>
+
+        <button id="customerLocBtn" class="image-btn" onclick="enableCustomerLocation()">
+            <img id="imgMyLoc" src="image/btn-mylocation.png" alt="📍 Lokasi Saya">
+        </button>
         
         <button id="btnSearch" class="image-btn" onclick="openSearch()">
             <img id="imgBtnSearch" src="image/btn-search.png" alt="Cari Gerobak 🔎">
@@ -69,10 +73,6 @@
 
 <div id="mapContainer">
   <div id="map"></div>
-  
-  <button id="customerLocBtn" class="image-btn" onclick="enableCustomerLocation()">
-      <img id="imgMyLoc" src="image/btn-mylocation.png" alt="Lokasi Saya">
-  </button>
 </div>
 
 <div id="searchOverlay">
@@ -388,11 +388,9 @@ if (currentRole === 'customer') {
     
     document.getElementById("map").style.height = "calc(100vh)";
     document.getElementById("customerLocBtn").style.display = "block";
-    // Pastikan tombol dropdown bahasa muncul untuk customer
     document.getElementById("langDropdownContainer").style.display = "inline-block"; 
 } 
 else if (currentRole === 'vendor') {
-    // TAMBAHKAN BARIS INI: Sembunyikan dropdown bahasa untuk vendor
     document.getElementById("langDropdownContainer").style.display = "none";
     document.getElementById("customerLocBtn").style.display = "none";
 }
