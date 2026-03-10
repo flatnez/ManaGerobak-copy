@@ -78,7 +78,7 @@ label {
 
   .header-container {
       background: #356849; 
-      padding: 10px 25px 8px 25px; 
+      padding: 10px 25px 10px 25px; 
       border-bottom: 1.5px solid #000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       position: sticky; top: 0;
@@ -121,7 +121,6 @@ h2#dNama {
 
     .header-actions img {
     display: block;
-    margin-bottom: 3px;
     }
 
   /* .header-btn {
@@ -662,7 +661,7 @@ input, textarea {
         flex-wrap: wrap;                /* Turun jika total lebarnya melebihi layar */
         justify-content: center;
         align-items: center;            /* Rata tengah secara vertikal */
-        gap: 5px 8px;
+        gap: 9px 8px;
         width: 100%;
     }
 
