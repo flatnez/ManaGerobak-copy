@@ -62,11 +62,6 @@
 
 <img src="image/line-bottom.png" alt="" class="line-bottom">
 
-<!-- <div class="line2-border">
-<img src="image/line-left.png" alt="" class="line2-left">
-<img src="image/line-right.png" alt="" class="line2-right">
-</div> -->
-
 <div id="mapContainer">
   <div id="map"></div>
 
@@ -238,6 +233,59 @@ const bigIcon = L.icon({
  iconSize: [58, 58], iconAnchor: [29, 58], popupAnchor: [0, -58]
 });
 
+// === DATA SAFE SPOTS & LAYER GROUP ===
+const safeSpotsData = [
+    { 
+        lat: 1.308956, lng: 103.888244, 
+        type: 'green', 
+        nameKey: 'spot_green_name', 
+        descKey: 'spot_green_desc' 
+    },
+    { 
+        lat: 1.310500, lng: 103.889500, 
+        type: 'yellow', 
+        nameKey: 'spot_yellow_name', 
+        descKey: 'spot_yellow_desc' 
+    },
+    { 
+        lat: 1.307500, lng: 103.887000, 
+        type: 'red', 
+        nameKey: 'spot_red_name', 
+        descKey: 'spot_red_desc' 
+    }
+];
+let safeSpotsLayer = L.layerGroup();
+
+// FUNGSI UNTUK MENGGAMBAR SAFE SPOTS
+function renderSafeSpots() {
+    safeSpotsLayer.clearLayers(); 
+    
+    safeSpotsData.forEach(spot => {
+        let spotColor, fillOpacity;
+
+        if (spot.type === 'green') { 
+            spotColor = '#28a745'; fillOpacity = 0.4;
+        } else if (spot.type === 'yellow') { 
+            spotColor = '#ffc107'; fillOpacity = 0.4;
+        } else if (spot.type === 'red') { 
+            spotColor = '#dc3545'; fillOpacity = 0.5;
+        }
+
+        const areaCircle = L.circle([spot.lat, spot.lng], {
+            color: spotColor, fillColor: spotColor, fillOpacity: fillOpacity, weight: 2, radius: 50
+        });
+
+        // Di sini kita panggil t(spot.nameKey) untuk memunculkan bahasanya
+        areaCircle.bindPopup(`
+            <div style="font-family: sans-serif; text-align: center;">
+                <h4 style="margin: 0 0 5px 0;">${t(spot.nameKey)}</h4>
+                <p style="margin: 0; font-size: 14px;">${t(spot.descKey)}</p>
+            </div>
+        `);
+
+        safeSpotsLayer.addLayer(areaCircle);
+    });
+}
 /* ===============================================
         iOS Browser Detection + Location Help Popup
     =============================================== */
@@ -387,11 +435,9 @@ if (currentRole === 'customer') {
     document.getElementById("btnStopShare").style.display = "none";
     
     document.getElementById("map").style.height = "calc(100vh)";
-    // document.getElementById("customerLocBtn").style.display = "block";
-    // document.getElementById("langDropdownContainer").style.display = "inline-block"; 
 } 
 else if (currentRole === 'vendor') {
-    document.getElementById("langDropdownContainer").style.display = "none";
+    // document.getElementById("langDropdownContainer").style.display = "none";
     document.getElementById("customerLocBtn").style.display = "none";
 }
 
@@ -443,12 +489,13 @@ function logout() {
 function initMap() {
     if(map) return; 
     
-    // Coba ambil lokasi awal user untuk centering map (bukan watch)
     if(navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
             userCurrentLat = pos.coords.latitude;
             userCurrentLng = pos.coords.longitude;
-            map.setView([userCurrentLat, userCurrentLng], 14);
+            if(map) {
+                map.setView([userCurrentLat, userCurrentLng], 14);
+            }
         });
     }
 
@@ -459,13 +506,25 @@ function initMap() {
     map.createPane('customerPane');
     map.getPane('customerPane').style.zIndex = 650;
     
+    // ==========================================
+    // LOGIKA SAFE SPOT DIMASUKKAN DI SINI
+    // ==========================================
+    if (currentRole === 'vendor') {
+        renderSafeSpots();
+        safeSpotsLayer.addTo(map);
+    } else if (currentRole === 'customer') {
+        if (map.hasLayer(safeSpotsLayer)) {
+            map.removeLayer(safeSpotsLayer);
+        }
+    }
+    // ==========================================
+
     loadVendorsOnMap(); 
 }
 
 // === LOGIKA PENCARIAN (SEARCH) ===
 
 function openSearch() {
-    // Cukup tampilkan dan fokus, ukurannya sudah diurus ResizeObserver!
     document.getElementById("searchOverlay").style.display = "flex";
     document.getElementById("searchInput").focus();
     handleSearch(); 
@@ -475,9 +534,8 @@ function closeSearch() {
     document.getElementById("searchOverlay").style.display = "none";
 }
 
-// Hitung Jarak (Haversine Formula) dalam KM
 function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius bumi km
+    const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
@@ -492,17 +550,14 @@ function handleSearch() {
     const resultsDiv = document.getElementById("searchResults");
     resultsDiv.innerHTML = "";
 
-    // Ambil semua ID marker yang aktif
     let activeVendors = [];
     Object.keys(vendorMarkers).forEach(id => {
         const marker = vendorMarkers[id];
         const vData = marker.options.vendorData;
         
-        // Filter nama
         const name = (vData.nama || "Gerobak").toLowerCase();
         
         if (query === "" || name.includes(query)) {
-            // Hitung jarak dari user
             const vLat = parseFloat(vData.lat);
             const vLng = parseFloat(vData.lng);
             const dist = getDistance(userCurrentLat, userCurrentLng, vLat, vLng);
@@ -515,16 +570,13 @@ function handleSearch() {
         }
     });
 
-    // Urutkan berdasarkan jarak terdekat
     activeVendors.sort((a, b) => a.dist - b.dist);
 
     if (activeVendors.length === 0) {
-        // GUNAKAN t()
         resultsDiv.innerHTML = `<div style='padding:20px; text-align:center; color:#ffffff; opacity: 50%;'>${t('msg_no_result')}</div>`;
         return;
     }
 
-    // Tampilkan hasil
     activeVendors.forEach(item => {
         const div = document.createElement("div");
         div.className = "search-item";
@@ -532,7 +584,6 @@ function handleSearch() {
             selectSearchedVendor(item.id, item.data);
         };
         
-    // GUNAKAN t() untuk satuan jarak
         const distText = item.dist < 1 
             ? (item.dist * 1000).toFixed(0) + t('dist_meter') 
             : item.dist.toFixed(1) + t('dist_km');
@@ -552,14 +603,11 @@ function handleSearch() {
 function selectSearchedVendor(id, vData) {
     closeSearch();
     
-    // Pindahkan map ke lokasi gerobak
     const lat = parseFloat(vData.lat);
     const lng = parseFloat(vData.lng);
     
     if(map) {
         map.flyTo([lat, lng], 17, { animate: true, duration: 1 });
-        
-        // Highlight marker & Buka Detail
         highlightVendorIcon(id);
         showVendorDetail(vData, id);
     }
@@ -577,7 +625,6 @@ function startSharingLocation() {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         
-        // Update global user pos
         userCurrentLat = lat;
         userCurrentLng = lng;
         
@@ -624,14 +671,11 @@ function stopSharingLocation() {
 }
 
 function handleError(err) {
-    // Cek apakah device adalah iPhone/iPad/iPod
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // Error code 1 = PERMISSION_DENIED (User menolak / Browser memblokir)
     if (err.code === 1 && isIOS) {
-        showiOSLocationHelp(); // <--- Panggil fungsi custom Anda di sini
+        showiOSLocationHelp(); 
     } else {
-        // Error standar untuk Android atau error selain permission denied
         alert("Gagal mengakses GPS: " + err.message);
     }
     
@@ -766,11 +810,9 @@ function clearTime() {
     const jamBuka = document.getElementById("jamBuka");
     const jamTutup = document.getElementById("jamTutup");
 
-    // 1. Kosongkan nilainya
     jamBuka.value = "";
     jamTutup.value = "";
 
-    // 2. Ubah tipe menjadi 'text' agar tulisan --:-- benar-benar hilang
     jamBuka.type = "text";
     jamTutup.type = "text";
 }
@@ -789,7 +831,6 @@ function updateProfil() {
   if (!currentUser || currentUser.isAnonymous) return;
   const updateBtn = document.getElementById("updateBtn");
   
-  // 1. Saat mulai menyimpan: ganti dengan GAMBAR loading "Menyimpan"
   updateBtn.innerHTML = '<img src="image/btn-menyimpan.png" alt="Menyimpan...">'; 
   updateBtn.disabled = true;
   
@@ -1122,7 +1163,14 @@ const translations = {
         btn_live: "📍 Live",
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 Gerobak Saya",
-        btn_logout: "🚪 Keluar"
+        btn_logout: "🚪 Keluar",
+        //safe spots
+        spot_green_name: "🟢 Zona Ramah Gerobak",
+        spot_green_desc: "Lokasi yang relatif aman untuk mangkal. Biasanya cukup luas, tidak terlalu dekat dengan jalan, dan jarang ada pengawasan atau razia.",
+        spot_yellow_name: "🟡 Zona Fleksibel",
+        spot_yellow_desc: "Lokasi yang bisa digunakan untuk berjualan dalam waktu terbatas atau pada jam tertentu. Pedagang perlu waspada dan siap berpindah.",
+        spot_red_name: "🔴 Zona Risiko Tinggi",
+        spot_red_desc: "Lokasi dengan risiko tinggi seperti lalu lintas padat, sering ada patroli keamanan, atau larangan berjualan. Disarankan untuk menghindari area ini."
     },
     en: {
         btn_search: "🔍 Search",
@@ -1144,7 +1192,14 @@ const translations = {
         btn_live: "📍 Live",
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 My Cart",
-        btn_logout: "🚪 Logout"
+        btn_logout: "🚪 Logout",
+        //safe spots
+        spot_green_name: "🟢 Gerobak Friendly Zone",
+        spot_green_desc: "A relatively safe location for stationed gerobak. Usually quite spacious, not too close to the road, and rarely subject to surveillance or raids.",
+        spot_yellow_name: "🟡 Flexible Zone",
+        spot_yellow_desc: "Locations that can be used for selling for a limited time or at specific hours. Vendors need to be ready to move not to crowd the space.",
+        spot_red_name: "🔴 High Risk Zone",
+        spot_red_desc: "High-risk locations, such as heavy traffic, frequent security patrols, or sales restrictions, are recommended to be avoided."
     }
 };
 
@@ -1193,6 +1248,11 @@ function setLanguage(lang) {
     // Update tampilan detail jika sedang terbuka
     if(selectedVendorId && vendorMarkers[selectedVendorId]) {
          showVendorDetail(vendorMarkers[selectedVendorId].options.vendorData, selectedVendorId);
+    }
+
+    // --- TAMBAHKAN INI AGAR POPUP MAP IKUT BERUBAH ---
+    if (currentRole === 'vendor' && map && map.hasLayer(safeSpotsLayer)) {
+        renderSafeSpots();
     }
 }
 
