@@ -252,6 +252,8 @@ h2#dNama {
     right: 25px; 
     z-index: 999;
     width: auto;
+    border-radius: 15px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.3);
 }
 
 /* (LANGUAGE) */
