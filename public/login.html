@@ -15,28 +15,107 @@
         min-height: 100vh; 
     }
 
-    /* --- HEADER (Sama dengan index & signup) --- */
-    .header-container { 
-        background: #356849; 
-        padding: 10px 25px 8px 25px; 
-        border-bottom: 1.5px solid #000; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-        position: sticky; 
-        top: 0; 
-        display: flex; 
-        justify-content: flex-start; 
-        flex-direction: column; 
-        align-items: center; 
-        z-index: 9999; 
+    /* --- HEADER --- */
+  .header-logo {
+    height: 25px; /* Anda bisa menaik-turunkan angka ini misal ke 25px atau 35px sampai pas */
+    width: auto;  /* Memastikan gambar tidak melar/peyang */
+    object-fit: contain;
+    margin-right: 15px; /* Memberi jarak sedikit dari tombol-tombol di sebelahnya */
     }
-    .header-logo { 
-        height: 25px; 
-        width: auto; 
-        object-fit: contain; 
+    
+.header-line{
+    height: 7px;
+}
+
+  .header-container {
+      background: #356849; 
+      padding: 10px 25px 10px 25px; 
+      border-bottom: 1.5px solid #000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky; top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap; /* Mencegah wrap agar layout stabil */
+      z-index: 9999;
+  }
+
+    /* --- HEADER ACTIONS (Untuk Tombol Bahasa) --- */
+  .header-actions { 
+    display: flex; 
+    gap: 8px; 
+    align-items: center; 
+    flex-shrink: 0;
+}
+
+    .header-actions img {
+    display: block;
     }
-    .header-line { 
-        height: 6.5px; 
-        margin: 6px 0 8px 0; 
+
+    /* PENTING: Container dropdown harus relative agar konten absolute-nya terikat di bawahnya */
+    .lang-dropdown-container {
+        position: relative; 
+        display: inline-block;
+    }
+
+    .image-btn {
+        background: transparent !important; /* Paksa transparan */
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center; 
+        outline: none; /* Hilangkan garis fokus bawaan browser */
+    }
+    
+    /* Hilangkan background saat di-hover atau di-klik */
+    .image-btn:hover, .image-btn:focus, .image-btn:active {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    #imgLangBtn {
+        height: 35px !important;
+        width: auto !important;
+        object-fit: contain !important;
+        transition: transform 0.2s ease !important;
+        display: block !important;
+    }
+    
+    button.image-btn:active #imgLangBtn { 
+        transform: scale(0.92) !important; 
+    }
+
+    .lang-dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0; /* Align ke kanan dari posisi container */
+        top: 100%; /* Selalu muncul tepat di bawah container/tombol */
+        background-color: #fff;
+        min-width: 130px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 2000;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 5px;
+        border: 1px solid #ddd;
+    }
+    .lang-dropdown-content div {
+        color: #333;
+        padding: 12px 15px;
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+    .lang-dropdown-content div:hover {
+        background-color: #f1f1f1;
+    }
+    .show-dropdown {
+        display: block;
     }
 
     /* --- MAIN LAYOUT & CONTAINER --- */
@@ -134,6 +213,36 @@
         color: #007AFF; 
         cursor: pointer; 
     }
+
+    /* --- RESPONSIVE MOBILE (Lebar Layar 1000px) --- */
+    @media (max-width: 1000px) {
+        .header-container {
+            flex-direction: column; 
+            align-items: center;    
+        }
+        .header-logo {
+            margin-right: 0;        
+        }
+        .header-line {
+            height: 6.5px;
+            margin: 6px 0 8px 0;
+        }
+        .header-actions {
+            display: flex;
+            flex-direction: row !important; 
+            flex-wrap: wrap;                
+            justify-content: center;
+            align-items: center;            
+            gap: 9px 8px;
+            width: 100%;
+        }
+        
+        /* Agar di mobile dropdown-nya rata tengah di bawah tombol */
+        .lang-dropdown-content {
+            right: 50%;
+            transform: translateX(50%);
+        }
+    }
 </style>
 </head>
 <body>
@@ -141,34 +250,54 @@
 <div class="header-container">
     <img src="image/managerobak_logo.png" alt="ManaGerobak" class="header-logo">
     <img src="image/header_line.png" alt="-" class="header-line">
+    
+    <div class="header-actions">
+        <div id="langDropdownContainer" class="lang-dropdown-container">
+            <button class="image-btn" onclick="toggleLangDropdown()">
+                <img id="imgLangBtn" src="image/btn-id.png" alt="Bahasa">
+            </button>
+            <div id="langDropdown" class="lang-dropdown-content">
+                <div onclick="setLanguage('id')">Indonesia</div>
+                <div onclick="setLanguage('en')">English</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="main-wrapper">
     <div class="container">
-        <h2 id="formTitle">Login Gerobak</h2>
+        <h2 id="formTitle" data-i18n="title_login">Login Gerobak</h2>
 
-        <input type="email" id="email" placeholder="Email" required>
+        <input type="email" id="email" placeholder="Email" data-i18n-placeholder="ph_email" required>
         
         <div id="passwordArea">
             <div class="password-container">
-                <input type="password" id="password" placeholder="Password" required>
+                <input type="password" id="password" placeholder="Password" data-i18n-placeholder="ph_password" required>
                 <span id="togglePassword" class="toggle-eye" onclick="togglePasswordVisibility()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 </span>
             </div>
         </div>
 
-        <button id="mainBtn" onclick="handleAuth()">Login</button>
+        <button id="mainBtn" onclick="handleAuth()" data-i18n="btn_login">Login</button>
         
         <p id="errorText" class="error-msg"></p>
         <p id="successText" class="success-msg"></p>
 
         <div class="link-text">
-            <span id="forgotPassLink">Lupa password? <a onclick="showForgotPassword()">Klik disini</a></span>
-            <span id="backToLoginLink" style="display:none;"><a onclick="showLogin()">Kembali ke Login</a></span>
+            <span id="forgotPassLink">
+                <span data-i18n="link_forgot">Lupa password?</span> 
+                <a onclick="showForgotPassword()" data-i18n="link_click_here">Klik disini</a>
+            </span>
+            <span id="backToLoginLink" style="display:none;">
+                <a onclick="showLogin()" data-i18n="link_back_login">Kembali ke Login</a>
+            </span>
         </div>
 
-        <p class="link-text" id="signUpLink">Belum punya akun? <a href="signup.html">Daftar</a></p>
+        <p class="link-text" id="signUpLink">
+            <span data-i18n="link_no_account">Belum punya akun?</span> 
+            <a href="signup.html" data-i18n="link_register">Daftar</a>
+        </p>
     </div>
 </div>
 
@@ -197,6 +326,116 @@ let isForgotPasswordMode = false;
 const iconEyeOpen = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
 const iconEyeClosed = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
 
+/* ===============================================
+        MULTI-LANGUAGE SUPPORT (LOGIN)
+   =============================================== */
+const translations = {
+    id: {
+        title_login: "Login Gerobak",
+        title_reset: "Reset Password",
+        ph_email: "Email",
+        ph_password: "Password",
+        btn_login: "Login",
+        btn_loading: "Loading...",
+        btn_reset: "Kirim Link Reset",
+        btn_sending: "Mengirim...",
+        err_empty: "Isi semua kolom.",
+        err_unverified: "Akun belum diverifikasi. Silakan cek Inbox/Spam email Anda dan klik link verifikasi.",
+        err_invalid: "Email atau Password salah.",
+        err_error: "Terjadi kesalahan: ",
+        err_email_req: "Masukkan email Anda.",
+        err_reset_fail: "Gagal mengirim link. Pastikan email terdaftar.",
+        msg_reset_success: "Link reset telah dikirim ke email Anda. Silakan cek Inbox/Spam.",
+        link_forgot: "Lupa password?",
+        link_click_here: "Klik disini",
+        link_back_login: "Kembali ke Login",
+        link_no_account: "Belum punya akun?",
+        link_register: "Daftar"
+    },
+    en: {
+        title_login: "Gerobak Login",
+        title_reset: "Reset Password",
+        ph_email: "Email",
+        ph_password: "Password",
+        btn_login: "Login",
+        btn_loading: "Loading...",
+        btn_reset: "Send Reset Link",
+        btn_sending: "Sending...",
+        err_empty: "Please fill in all fields.",
+        err_unverified: "Account not verified. Please check your email Inbox/Spam and click the verification link.",
+        err_invalid: "Invalid Email or Password.",
+        err_error: "An error occurred: ",
+        err_email_req: "Please enter your email.",
+        err_reset_fail: "Failed to send link. Make sure the email is registered.",
+        msg_reset_success: "Reset link sent to your email. Please check Inbox/Spam.",
+        link_forgot: "Forgot password?",
+        link_click_here: "Click here",
+        link_back_login: "Back to Login",
+        link_no_account: "Don't have an account?",
+        link_register: "Register"
+    }
+};
+
+let currentLang = localStorage.getItem("appLang") || "id";
+
+document.addEventListener("DOMContentLoaded", () => {
+    updateLanguageUI();
+});
+
+function toggleLangDropdown() {
+    document.getElementById("langDropdown").classList.toggle("show-dropdown");
+}
+
+window.onclick = function(event) {
+    if (!event.target.closest('.lang-dropdown-container')) {
+        const dropdowns = document.getElementsByClassName("lang-dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            if (dropdowns[i].classList.contains('show-dropdown')) {
+                dropdowns[i].classList.remove('show-dropdown');
+            }
+        }
+    }
+}
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("appLang", currentLang);
+    updateLanguageUI();
+    document.getElementById("langDropdown").classList.remove("show-dropdown");
+    clearMsgs();
+}
+
+function t(key) {
+    return translations[currentLang][key] || key;
+}
+
+function updateLanguageUI() {
+    const imgLangBtn = document.getElementById("imgLangBtn");
+    if (imgLangBtn) {
+        if (currentLang === "en") {
+            imgLangBtn.src = "image/btn-en.png"; 
+        } else {
+            imgLangBtn.src = "image/btn-id.png"; 
+        }
+    }
+
+    const titleKey = isForgotPasswordMode ? "title_reset" : "title_login";
+    document.getElementById("formTitle").innerText = t(titleKey);
+
+    const btnKey = isForgotPasswordMode ? "btn_reset" : "btn_login";
+    document.getElementById("mainBtn").innerText = t(btnKey);
+
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        el.innerText = t(key);
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        el.placeholder = t(key);
+    });
+}
+
 // UI Control Functions
 function togglePasswordVisibility() {
     const passwordInput = document.getElementById("password");
@@ -213,9 +452,9 @@ function togglePasswordVisibility() {
 
 function showForgotPassword() {
     isForgotPasswordMode = true;
-    document.getElementById("formTitle").innerText = "Reset Password";
+    document.getElementById("formTitle").innerText = t("title_reset");
     document.getElementById("passwordArea").style.display = "none";
-    document.getElementById("mainBtn").innerText = "Kirim Link Reset";
+    document.getElementById("mainBtn").innerText = t("btn_reset");
     document.getElementById("forgotPassLink").style.display = "none";
     document.getElementById("backToLoginLink").style.display = "inline";
     document.getElementById("signUpLink").style.display = "none";
@@ -224,9 +463,9 @@ function showForgotPassword() {
 
 function showLogin() {
     isForgotPasswordMode = false;
-    document.getElementById("formTitle").innerText = "Login Gerobak";
+    document.getElementById("formTitle").innerText = t("title_login");
     document.getElementById("passwordArea").style.display = "block";
-    document.getElementById("mainBtn").innerText = "Login";
+    document.getElementById("mainBtn").innerText = t("btn_login");
     document.getElementById("forgotPassLink").style.display = "inline";
     document.getElementById("backToLoginLink").style.display = "none";
     document.getElementById("signUpLink").style.display = "block";
@@ -262,25 +501,23 @@ function login() {
   const password = document.getElementById("password").value.trim();
   const btn = document.getElementById("mainBtn");
 
-  if (!email || !password) { showError("Isi semua kolom."); return; }
+  if (!email || !password) { showError(t("err_empty")); return; }
   
-  btn.innerText = "Loading..."; btn.disabled = true;
+  btn.innerText = t("btn_loading"); 
+  btn.disabled = true;
   clearMsgs();
 
   auth.signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const user = userCredential.user;
       
-      // CEK VERIFIKASI EMAIL DI SINI
       if (!user.emailVerified) {
-          // Jika belum diverifikasi, paksa logout dan tampilkan error
           auth.signOut();
-          btn.innerText = "Login"; btn.disabled = false;
-          showError("Akun belum diverifikasi. Silakan cek Inbox/Spam email Anda dan klik link verifikasi.");
+          btn.innerText = t("btn_login"); btn.disabled = false;
+          showError(t("err_unverified"));
           return;
       }
 
-      // Jika sudah diverifikasi, lanjut ambil data dari database
       const uid = user.uid;
       db.ref("vendors/" + uid).once("value").then(snapshot => {
           let role = snapshot.exists() ? "vendor" : "customer";
@@ -290,13 +527,12 @@ function login() {
       });
     })
     .catch((error) => {
-      btn.innerText = "Login"; btn.disabled = false;
+      btn.innerText = t("btn_login"); btn.disabled = false;
       
-      // Pesan error yang lebih spesifik
       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-login-credentials") {
-          showError("Email atau Password salah.");
+          showError(t("err_invalid"));
       } else {
-          showError("Terjadi kesalahan: " + error.message);
+          showError(t("err_error") + error.message);
       }
     });
 }
@@ -305,19 +541,20 @@ function resetPassword() {
     const email = document.getElementById("email").value.trim();
     const btn = document.getElementById("mainBtn");
 
-    if (!email) { showError("Masukkan email Anda."); return; }
+    if (!email) { showError(t("err_email_req")); return; }
 
-    btn.innerText = "Mengirim..."; btn.disabled = true;
+    btn.innerText = t("btn_sending"); 
+    btn.disabled = true;
     clearMsgs();
 
     auth.sendPasswordResetEmail(email)
         .then(() => {
-            btn.innerText = "Kirim Link Reset"; btn.disabled = false;
-            showSuccess("Link reset telah dikirim ke email Anda. Silakan cek Inbox/Spam.");
+            btn.innerText = t("btn_reset"); btn.disabled = false;
+            showSuccess(t("msg_reset_success"));
         })
         .catch((error) => {
-            btn.innerText = "Kirim Link Reset"; btn.disabled = false;
-            showError("Gagal mengirim link. Pastikan email terdaftar.");
+            btn.innerText = t("btn_reset"); btn.disabled = false;
+            showError(t("err_reset_fail"));
         });
 }
 </script>

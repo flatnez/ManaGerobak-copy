@@ -643,7 +643,7 @@ input, textarea {
 
 
 
-  /* RESPONSIVE MOBILE (Lebar Layar 900px) */
+  /* RESPONSIVE MOBILE (Lebar Layar 1000px) */
 @media (max-width: 1000px) {
     .header-container {
         flex-direction: column; /* Mengubah susunan menjadi atas-bawah */

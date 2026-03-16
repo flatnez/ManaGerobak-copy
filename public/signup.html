@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Daftar Gerobak</title>
 <style>
+    /* --- RESET & BODY --- */
     body { 
         font-family: Arial, Helvetica, sans-serif; 
         margin: 0; 
@@ -14,9 +15,7 @@
         min-height: 100vh;      
     }
 
-    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-
-    /* --- STYLE HEADER --- */
+    /* --- HEADER --- */
     .header-container {
         background: #356849; 
         padding: 10px 25px 8px 25px; 
@@ -24,24 +23,107 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         position: sticky; top: 0;
         display: flex;
-        justify-content: flex-start; 
-        flex-direction: column; 
+        justify-content: space-between; /* Agar logo di kiri dan bahasa di kanan (jika di layar besar) */
         align-items: center;    
         flex-wrap: wrap; 
         z-index: 9999;
     }
+    
+    .header-logo-container {
+        display: flex;
+        flex-direction: column;
+    }
+    
     .header-logo {
         height: 25px; 
         width: auto;  
         object-fit: contain;
-        margin-right: 0; 
+        margin-right: 15px; 
     }
+    
     .header-line {
         height: 6.5px;
         margin: 6px 0 8px 0;
+        width: 100%;
+        max-width: 180px; /* Menyesuaikan garis dengan panjang logo */
     }
 
-    /* --- STYLE KONTEN TENGAH --- */
+    /* --- HEADER ACTIONS (Untuk Tombol Bahasa) --- */
+    .header-actions { 
+        display: flex; 
+        gap: 8px; 
+        align-items: center; 
+        flex-shrink: 0;
+    }
+
+    .lang-dropdown-container {
+        position: relative; 
+        display: inline-block;
+    }
+
+    .image-btn {
+        background: transparent !important; 
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center; 
+        outline: none; 
+    }
+    
+    .image-btn:hover, .image-btn:focus, .image-btn:active {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    #imgLangBtn {
+        height: 35px !important;
+        width: auto !important;
+        object-fit: contain !important;
+        transition: transform 0.2s ease !important;
+        display: block !important;
+    }
+    
+    button.image-btn:active #imgLangBtn { 
+        transform: scale(0.92) !important; 
+    }
+
+    .lang-dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0; 
+        top: 100%; 
+        background-color: #fff;
+        min-width: 130px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 2000;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 5px;
+        border: 1px solid #ddd;
+    }
+    
+    .lang-dropdown-content div {
+        color: #333;
+        padding: 12px 15px;
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+    
+    .lang-dropdown-content div:hover {
+        background-color: #f1f1f1;
+    }
+    
+    .show-dropdown {
+        display: block;
+    }
+
+    /* --- MAIN LAYOUT & CONTAINER --- */
     .main-wrapper {
         flex: 1; 
         display: flex;
@@ -50,19 +132,38 @@
         padding: 20px; 
     }
 
+    .container { 
+        background: white; 
+        padding: 30px; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        width: 300px; 
+        text-align: center; 
+    }
+
     h2 { margin-top: 0; color: #333; }
     
-    input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    /* --- FORM INPUTS --- */
+    input { 
+        width: 100%; 
+        padding: 10px; 
+        margin: 10px 0; 
+        box-sizing: border-box; 
+        border: 1px solid #ccc; 
+        border-radius: 4px; 
+    }
     
     .password-container {
         position: relative;
         width: 100%;
         margin: 10px 0;
     }
+    
     .password-container input {
         margin: 0;
         padding-right: 40px; 
     }
+    
     .toggle-eye {
         position: absolute;
         right: 10px;
@@ -74,48 +175,102 @@
         justify-content: center;
         color: #777;
     }
+    
     .toggle-eye svg {
         width: 20px;
         height: 20px;
     }
 
-    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-    button:hover { background-color: #45a049; }
-    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    /* --- BUTTONS & TEXT --- */
+    button[type="submit"] { 
+        width: 100%; 
+        padding: 10px; 
+        background-color: #4CAF50; 
+        color: white; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        margin-top: 10px; 
+    }
+    button[type="submit"]:hover { background-color: #45a049; }
+    button[type="submit"]:disabled { background-color: #ccc; cursor: not-allowed; }
+    
     .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
     a { text-decoration: none; color: #007AFF; }
     p { font-size: small; color: #666; margin-top: 15px; }
+
+    /* --- RESPONSIVE MOBILE --- */
+    @media (max-width: 1000px) {
+        .header-container {
+            flex-direction: column; 
+            align-items: center;    
+            justify-content: center;
+        }
+        .header-logo-container {
+            align-items: center;
+        }
+        .header-logo {
+            margin-right: 0;        
+        }
+        .header-actions {
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        .lang-dropdown-content {
+            right: 50%;
+            transform: translateX(50%);
+        }
+    }
 </style>
 </head>
 <body>
 
 <div class="header-container">
-    <img src="image/managerobak_logo.png" alt="ManaGerobak" class="header-logo">
-    <img src="image/header_line.png" alt="-" class="header-line">
+    <div class="header-logo-container">
+        <img src="image/managerobak_logo.png" alt="ManaGerobak" class="header-logo">
+        <img src="image/header_line.png" alt="-" class="header-line">
+    </div>
+
+    <div class="header-actions">
+        <div id="langDropdownContainer" class="lang-dropdown-container">
+            <button type="button" class="image-btn" onclick="toggleLangDropdown()">
+                <img id="imgLangBtn" src="image/btn-id.png" alt="Bahasa">
+            </button>
+            <div id="langDropdown" class="lang-dropdown-content">
+                <div onclick="setLanguage('id')">Indonesia</div>
+                <div onclick="setLanguage('en')">English</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="main-wrapper">
 <div class="container">
-    <h2>Daftar Gerobak Baru</h2>
+    <h2 id="formTitle" data-i18n="title_signup">Daftar Gerobak Baru</h2>
 
     <form onsubmit="signUp(event)">
-        <input type="text" id="gerobakId" placeholder="Nama Gerobak" required>
+        <input type="text" id="gerobakId" placeholder="Nama Gerobak" data-i18n-placeholder="ph_nama" required>
         
-        <input type="email" id="email" placeholder="Email" required>
+        <input type="email" id="email" placeholder="Email" data-i18n-placeholder="ph_email" required>
         
         <div class="password-container">
-            <input type="password" id="password" placeholder="Password (Min. 6 karakter)" required>
+            <input type="password" id="password" placeholder="Password (Min. 6 karakter)" data-i18n-placeholder="ph_password" required>
             <span id="togglePassword" class="toggle-eye" onclick="togglePasswordVisibility()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </span>
         </div>
         
-        <button type="submit" id="regBtn">Daftar Sekarang</button>
+        <button type="submit" id="regBtn" data-i18n="btn_register">Daftar Sekarang</button>
     </form>
 
     <p id="errorText" class="error-msg"></p>
 
-    <p>Sudah punya akun? <a href="login.html">Login disini</a></p>
+    <p>
+        <span data-i18n="txt_have_account">Sudah punya akun?</span> 
+        <a href="login.html" data-i18n="link_login">Login disini</a>
+    </p>
 </div>
 </div>
 
@@ -142,6 +297,107 @@ const db = firebase.database();
 const iconEyeOpen = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
 const iconEyeClosed = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
 
+/* ===============================================
+        MULTI-LANGUAGE SUPPORT (SIGNUP)
+   =============================================== */
+const translations = {
+    id: {
+        title_signup: "Daftar Gerobak Baru",
+        ph_nama: "Nama Gerobak",
+        ph_email: "Email",
+        ph_password: "Password (Min. 6 karakter)",
+        btn_register: "Daftar Sekarang",
+        btn_processing: "Memproses...",
+        err_pwd_len: "Password harus minimal 6 karakter.",
+        err_email_used: "Email ini sudah terdaftar & terverifikasi. Silakan Login.",
+        err_login_diff: "Email sudah terdaftar. Jika Anda belum verifikasi, pastikan password yang dimasukkan SAMA persis seperti saat mendaftar pertama kali.",
+        err_invalid_email: "Format email tidak valid.",
+        err_weak_pwd: "Password terlalu lemah.",
+        err_fail: "Gagal daftar: ",
+        msg_success: "Pendaftaran berhasil!\n\nLink verifikasi telah dikirim ke email Anda. Harap cek Inbox atau folder Spam untuk mengaktifkan akun sebelum Login.",
+        msg_resend: "Email ini sebelumnya sudah didaftarkan tapi belum diverifikasi.\n\nLink verifikasi BARU telah berhasil dikirim ulang. Harap cek email Anda sekarang.",
+        txt_have_account: "Sudah punya akun?",
+        link_login: "Login disini"
+    },
+    en: {
+        title_signup: "Register New Gerobak",
+        ph_nama: "Gerobak Name",
+        ph_email: "Email",
+        ph_password: "Password (Min. 6 characters)",
+        btn_register: "Register Now",
+        btn_processing: "Processing...",
+        err_pwd_len: "Password must be at least 6 characters.",
+        err_email_used: "This email is already registered & verified. Please Login.",
+        err_login_diff: "Email already registered. If not verified, ensure the password matches exactly as initially registered.",
+        err_invalid_email: "Invalid email format.",
+        err_weak_pwd: "Password is too weak.",
+        err_fail: "Registration failed: ",
+        msg_success: "Registration successful!\n\nA verification link has been sent to your email. Please check your Inbox or Spam folder to activate your account before logging in.",
+        msg_resend: "This email was previously registered but not verified.\n\nA NEW verification link has been resent. Please check your email now.",
+        txt_have_account: "Already have an account?",
+        link_login: "Login here"
+    }
+};
+
+let currentLang = localStorage.getItem("appLang") || "id";
+
+document.addEventListener("DOMContentLoaded", () => {
+    updateLanguageUI();
+});
+
+function toggleLangDropdown() {
+    document.getElementById("langDropdown").classList.toggle("show-dropdown");
+}
+
+window.onclick = function(event) {
+    if (!event.target.closest('.lang-dropdown-container')) {
+        const dropdowns = document.getElementsByClassName("lang-dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            if (dropdowns[i].classList.contains('show-dropdown')) {
+                dropdowns[i].classList.remove('show-dropdown');
+            }
+        }
+    }
+}
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("appLang", currentLang);
+    updateLanguageUI();
+    document.getElementById("langDropdown").classList.remove("show-dropdown");
+    
+    // Reset error messages if any
+    const errorText = document.getElementById("errorText");
+    if(errorText.style.display === "block") {
+        errorText.style.display = "none";
+    }
+}
+
+function t(key) {
+    return translations[currentLang][key] || key;
+}
+
+function updateLanguageUI() {
+    const imgLangBtn = document.getElementById("imgLangBtn");
+    if (imgLangBtn) {
+        if (currentLang === "en") {
+            imgLangBtn.src = "image/btn-en.png"; 
+        } else {
+            imgLangBtn.src = "image/btn-id.png"; 
+        }
+    }
+
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        el.innerText = t(key);
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        el.placeholder = t(key);
+    });
+}
+
 function togglePasswordVisibility() {
     const passwordInput = document.getElementById("password");
     const toggleIcon = document.getElementById("togglePassword");
@@ -156,10 +412,7 @@ function togglePasswordVisibility() {
 }
 
 function showSuccessAndRedirect(isResend = false) {
-    let msg = "Pendaftaran berhasil!\n\nLink verifikasi telah dikirim ke email Anda. Harap cek Inbox atau folder Spam untuk mengaktifkan akun sebelum Login.";
-    if (isResend) {
-        msg = "Email ini sebelumnya sudah didaftarkan tapi belum diverifikasi.\n\nLink verifikasi BARU telah berhasil dikirim ulang. Harap cek email Anda sekarang.";
-    }
+    let msg = isResend ? t("msg_resend") : t("msg_success");
     alert(msg);
     window.location.href = "login.html";
 }
@@ -175,9 +428,9 @@ function signUp(e) {
 
   errorText.style.display = "none"; errorText.innerText = "";
 
-  if (password.length < 6) { showError("Password harus minimal 6 karakter."); return; }
+  if (password.length < 6) { showError(t("err_pwd_len")); return; }
 
-  regBtn.innerText = "Memproses..."; regBtn.disabled = true;
+  regBtn.innerText = t("btn_processing"); regBtn.disabled = true;
 
   // Percobaan 1: Buat Akun Baru
   auth.createUserWithEmailAndPassword(email, password)
@@ -223,23 +476,23 @@ function signUp(e) {
                     } else {
                         // Jika ternyata sudah verifikasi, larang daftar ulang
                         auth.signOut();
-                        regBtn.innerText = "Daftar Sekarang"; regBtn.disabled = false;
-                        showError("Email ini sudah terdaftar & terverifikasi. Silakan Login.");
+                        regBtn.innerText = t("btn_register"); regBtn.disabled = false;
+                        showError(t("err_email_used"));
                     }
                 })
                 .catch(loginErr => {
                     // Jika login gagal (contoh: user masukkin password beda dari saat pertama daftar)
-                    regBtn.innerText = "Daftar Sekarang"; regBtn.disabled = false;
-                    showError("Email sudah terdaftar. Jika Anda belum verifikasi, pastikan password yang dimasukkan SAMA persis seperti saat mendaftar pertama kali.");
+                    regBtn.innerText = t("btn_register"); regBtn.disabled = false;
+                    showError(t("err_login_diff"));
                 });
 
         } else {
             // Error pendaftaran lainnya
-            regBtn.innerText = "Daftar Sekarang"; regBtn.disabled = false;
+            regBtn.innerText = t("btn_register"); regBtn.disabled = false;
             console.error(err);
-            if (err.code === "auth/invalid-email") { showError("Format email tidak valid."); } 
-            else if (err.code === "auth/weak-password") { showError("Password terlalu lemah."); } 
-            else { showError("Gagal daftar: " + err.message); }
+            if (err.code === "auth/invalid-email") { showError(t("err_invalid_email")); } 
+            else if (err.code === "auth/weak-password") { showError(t("err_weak_pwd")); } 
+            else { showError(t("err_fail") + err.message); }
         }
     });
 }
