@@ -528,14 +528,14 @@ function initMap() {
     // ==========================================
     // LOGIKA SAFE SPOT DIMASUKKAN DI SINI
     // ==========================================
-    if (currentRole === 'vendor') {
+    // if (currentRole === 'vendor') {
         renderSafeSpots();
         safeSpotsLayer.addTo(map);
-    } else if (currentRole === 'customer') {
-        if (map.hasLayer(safeSpotsLayer)) {
-            map.removeLayer(safeSpotsLayer);
-        }
-    }
+    // } else if (currentRole === 'customer') {
+    //     if (map.hasLayer(safeSpotsLayer)) {
+    //         map.removeLayer(safeSpotsLayer);
+    //     }
+    // }
     // ==========================================
 
     loadVendorsOnMap(); 
@@ -732,9 +732,11 @@ function loadVendorsOnMap() {
           let lat = parseFloat(v.lat);
           let lng = parseFloat(v.lng);
           
-          let displayName = v.nama || "Gerobak";
+          let displayName = v.nama || t('default_cart_name'); 
+          
           if (currentUser && !currentUser.isAnonymous && id === currentUser.uid) {
-             displayName += " (Anda)";
+             // Gunakan t() untuk menambahkan "(Anda)" atau "(You)"
+             displayName += " (" + t('lbl_you') + ")";
           }
 
           let currentIcon = (id === selectedVendorId) ? bigIcon : normalIcon;
@@ -837,7 +839,7 @@ function clearTime() {
 }
 
 function deleteImage() {
-    if(confirm("Apakah Anda yakin ingin menghapus foto gerobak?")) {
+if(confirm(t('msg_delete_foto'))) {
         currentImageBase64 = ""; 
         document.getElementById('previewGambar').src = "";
         document.getElementById('previewGambar').style.display = "none";
@@ -1190,7 +1192,9 @@ const translations = {
         msg_no_result: "Tidak ada gerobak aktif dengan nama tersebut.",
         dist_meter: " m",
         dist_km: " km",
-        // Vendor specific (jika vendor juga ingin diterjemahkan)
+        lbl_you: "Anda", 
+        default_cart_name: "Gerobak",
+
         btn_live: "📍 Live",
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 Gerobak Saya",
@@ -1215,7 +1219,8 @@ const translations = {
         lbl_edit_pengumuman: "📢 Pengumuman:",
         ph_pengumuman: "Contoh: Promo hari ini, Stok terbatas, dll...",
         lbl_edit_menu: "📋 Daftar Menu:",
-        ph_menu: "Tulis menu di sini... (Tekan 'Enter' untuk baris baru)"
+        ph_menu: "Tulis menu di sini... (Tekan 'Enter' untuk baris baru)",
+        msg_delete_foto: "Apakah Anda yakin ingin menghapus foto gerobak?"
     },
     en: {
         btn_search: "🔍 Search",
@@ -1233,7 +1238,9 @@ const translations = {
         msg_no_result: "No active street carts found with that name.",
         dist_meter: " m",
         dist_km: " km",
-        // Vendor specific
+        lbl_you: "You",
+        default_cart_name: "Gerobak",
+
         btn_live: "📍 Live",
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 My Cart",
@@ -1258,7 +1265,8 @@ const translations = {
         lbl_edit_pengumuman: "📢 Announcement:",
         ph_pengumuman: "Example: Today's promo, Limited stock, etc...",
         lbl_edit_menu: "📋 Menu List:",
-        ph_menu: "Write menu here... (Press 'Enter' for new line)"
+        ph_menu: "Write menu here... (Press 'Enter' for new line)",
+        msg_delete_foto: "Are you sure you want to delete the street cart photo?"
     }
 };
 
