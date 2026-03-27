@@ -232,52 +232,30 @@ const bigIcon = L.icon({
  iconSize: [58, 58], iconAnchor: [29, 58], popupAnchor: [0, -58]
 });
 
+const gerobakZoneIcon = L.icon({
+ iconUrl: "image/gerobakzone.png",
+ iconSize: [42, 77], iconAnchor: [21, 77], popupAnchor: [0, -77]
+});
+
 // === DATA SAFE SPOTS & LAYER GROUP ===
 const safeSpotsData = [
-    
     { 
-        lat: 1.308956, lng: 103.888244, 
-        type: 'green', 
-        nameKey: 'spot_green_name', 
-        descKey: 'spot_green_desc' 
-    },
-    { 
-        lat: 1.310500, lng: 103.889500, 
-        type: 'green', 
-        nameKey: 'spot_green_name', 
-        descKey: 'spot_green_desc' 
-    },
-    { 
-        lat: 1.307500, lng: 103.887000, 
+        lat: 1.303100, lng: 103.851900, 
         type: 'green', 
         nameKey: 'spot_green_name', 
         descKey: 'spot_green_desc' 
     }
-
-    // { 
-    //     lat: 1.308956, lng: 103.888244, 
-    //     type: 'green', 
-    //     nameKey: 'spot_green_name', 
-    //     descKey: 'spot_green_desc' 
-    // },
-    // { 
-    //     lat: 1.310500, lng: 103.889500, 
-    //     type: 'yellow', 
-    //     nameKey: 'spot_yellow_name', 
-    //     descKey: 'spot_yellow_desc' 
-    // },
-    // { 
-    //     lat: 1.307500, lng: 103.887000, 
-    //     type: 'red', 
-    //     nameKey: 'spot_red_name', 
-    //     descKey: 'spot_red_desc' 
-    // }
 ];
-let safeSpotsLayer = L.layerGroup();
+
+// Kita pisah layernya menjadi 2: untuk Lingkaran dan untuk Marker (Icon)
+let safeSpotsCirclesLayer = L.layerGroup();
+let safeSpotsMarkersLayer = L.layerGroup();
+const ZOOM_THRESHOLD = 15; // Batas zoom kapan berubah dari icon ke lingkaran
 
 // FUNGSI UNTUK MENGGAMBAR SAFE SPOTS
 function renderSafeSpots() {
-    safeSpotsLayer.clearLayers(); 
+    safeSpotsCirclesLayer.clearLayers(); 
+    safeSpotsMarkersLayer.clearLayers();
     
     safeSpotsData.forEach(spot => {
         let spotColor, fillOpacity;
@@ -290,21 +268,52 @@ function renderSafeSpots() {
             spotColor = '#dc3545'; fillOpacity = 0.5;
         }
 
-        const areaCircle = L.circle([spot.lat, spot.lng], {
-            color: spotColor, fillColor: spotColor, fillOpacity: fillOpacity, weight: 2, radius: 50
-        });
-
-        // Di sini kita panggil t(spot.nameKey) untuk memunculkan bahasanya
-        areaCircle.bindPopup(`
+        const popupContent = `
             <div style="font-family: sans-serif; text-align: center;">
                 <h4 style="margin: 0 0 5px 0;">${t(spot.nameKey)}</h4>
                 <p style="margin: 0; font-size: 14px;">${t(spot.descKey)}</p>
             </div>
-        `);
+        `;
 
-        safeSpotsLayer.addLayer(areaCircle);
+        // 1. Buat Lingkaran
+        const areaCircle = L.circle([spot.lat, spot.lng], {
+            color: spotColor, fillColor: spotColor, fillOpacity: fillOpacity, weight: 2, radius: 50
+        });
+        areaCircle.bindPopup(popupContent);
+        safeSpotsCirclesLayer.addLayer(areaCircle);
+
+        // 2. Buat Marker Icon
+        const zoneMarker = L.marker([spot.lat, spot.lng], { icon: gerobakZoneIcon });
+        
+        // Ketika Icon diklik, zoom ke lokasi dan buka popup lingkarannya
+        zoneMarker.on('click', function() {
+            map.flyTo([spot.lat, spot.lng], 16, { animate: true, duration: 0.5 });
+            map.once('moveend', function() {
+                areaCircle.openPopup();
+            });
+        });
+        safeSpotsMarkersLayer.addLayer(zoneMarker);
     });
+
+    updateSafeSpotsVisibility(); // Tentukan mana yang muncul saat pertama diload
 }
+
+// FUNGSI MENGATUR VISUAL BERDASARKAN ZOOM
+function updateSafeSpotsVisibility() {
+    if (!map) return;
+    const currentZoom = map.getZoom();
+    
+    if (currentZoom >= ZOOM_THRESHOLD) {
+        // Zoom in: Tampilkan Lingkaran, hapus Marker Icon
+        if (map.hasLayer(safeSpotsMarkersLayer)) map.removeLayer(safeSpotsMarkersLayer);
+        if (!map.hasLayer(safeSpotsCirclesLayer)) map.addLayer(safeSpotsCirclesLayer);
+    } else {
+        // Zoom out: Tampilkan Marker Icon, hapus Lingkaran
+        if (map.hasLayer(safeSpotsCirclesLayer)) map.removeLayer(safeSpotsCirclesLayer);
+        if (!map.hasLayer(safeSpotsMarkersLayer)) map.addLayer(safeSpotsMarkersLayer);
+    }
+}
+
 /* ===============================================
         iOS Browser Detection + Location Help Popup
     =============================================== */
@@ -525,13 +534,14 @@ function initMap() {
     map.createPane('customerPane');
     map.getPane('customerPane').style.zIndex = 650;
     
-    // ==========================================
+// ==========================================
     // LOGIKA SAFE SPOT DIMASUKKAN DI SINI
     // ==========================================
-    // if (currentRole === 'vendor') {
-        renderSafeSpots();
-        safeSpotsLayer.addTo(map);
-    // } else if (currentRole === 'customer') {
+        // if (currentRole === 'vendor') {
+    renderSafeSpots();
+    // Beritahu peta untuk mengecek zoom setiap kali pengguna melakukan zoom
+    map.on('zoomend', updateSafeSpotsVisibility);
+        // } else if (currentRole === 'customer') {
     //     if (map.hasLayer(safeSpotsLayer)) {
     //         map.removeLayer(safeSpotsLayer);
     //     }
@@ -983,21 +993,32 @@ function showVendorDetail(v, vendorId) {
 
     if (v.pengumuman && v.pengumuman.trim() !== "") {
         pengumumanBox.style.display = "block";
-        
-        // Tampilkan teks asli (ID) atau status loading jika EN
-        if (currentLang === "en") {
-            pengumumanText.innerText = "Translating..."; // Indikator loading
-            
-            // Panggil API terjemahan
-            translateDynamicText(v.pengumuman, "en").then(translatedText => {
-                pengumumanText.innerText = translatedText;
-            });
-        } else {
-            pengumumanText.innerText = v.pengumuman;
-        }
+        // Langsung tampilkan teks asli apa adanya tanpa melihat bahasa
+        pengumumanText.innerText = v.pengumuman; 
     } else {
         pengumumanBox.style.display = "none";
     }
+
+    // const pengumumanBox = document.getElementById("dPengumumanBox");
+    // const pengumumanText = document.getElementById("dPengumumanText");
+
+    // if (v.pengumuman && v.pengumuman.trim() !== "") {
+    //     pengumumanBox.style.display = "block";
+        
+    //     // Tampilkan teks asli (ID) atau status loading jika EN
+    //     if (currentLang === "en") {
+    //         pengumumanText.innerText = "Translating..."; // Indikator loading
+            
+    //         // Panggil API terjemahan
+    //         translateDynamicText(v.pengumuman, "en").then(translatedText => {
+    //             pengumumanText.innerText = translatedText;
+    //         });
+    //     } else {
+    //         pengumumanText.innerText = v.pengumuman;
+    //     }
+    // } else {
+    //     pengumumanBox.style.display = "none";
+    // }
 
     const imgEl = document.getElementById("dGambar");
     if (v.gambar && v.gambar !== "") { 
@@ -1007,7 +1028,7 @@ function showVendorDetail(v, vendorId) {
         imgEl.style.display = "none"; 
     }
 
-const menuDiv = document.getElementById("dMenu");
+    const menuDiv = document.getElementById("dMenu");
     menuDiv.innerHTML = "";
     
     let menuItems = [];
@@ -1022,39 +1043,10 @@ const menuDiv = document.getElementById("dMenu");
     const validMenu = menuItems.filter(m => m.trim() !== "" && !m.includes("Contoh Menu"));
 
     if (validMenu.length > 0) {
-        if (currentLang === "en") {
-            // 1. Tampilkan teks loading sementara API bekerja
-            menuDiv.innerHTML = "<div style='padding:6px 0; color:#888;'><em>Translating menu...</em></div>";
-            
-            const textToTranslate = validMenu.join(" | "); // Gunakan karakter unik
-
-            translateDynamicText(textToTranslate, "en").then(translatedText => {
-            menuDiv.innerHTML = ""; 
-    
-            // API kadang mengembalikan "Item1 | Item2" (dengan spasi di sekitar |) 
-            // atau "Item1|Item2". Jadi kita split pakai regex:
-            const translatedItems = translatedText.split(/\s*\|\s*/); 
-    
-        translatedItems.forEach(m => {
-        if (m.trim() !== "") {
-            const item = document.createElement("div");
-            item.innerText = "• " + m.trim();
-            item.style.padding = "6px 0"; 
-            item.style.borderBottom = "1px solid #00491a";
-            menuDiv.appendChild(item);
-                    }
-                });
-            }).catch(err => {
-                console.error("Gagal translate menu:", err);
-                renderOriginalMenu(validMenu, menuDiv); // Fallback ke teks asli jika API error
-            });
-
-        } else {
-            // Jika bahasa Indonesia (ID), langsung render teks asli
-            renderOriginalMenu(validMenu, menuDiv);
-        }
+        // Langsung panggil fungsi render original tanpa perlu dicek bahasanya
+        renderOriginalMenu(validMenu, menuDiv);
     } else {
-        // Jika tidak ada menu sama sekali
+        // Pesan kosong tetap diterjemahkan karena ini teks dari sistem
         menuDiv.innerHTML = `<div style='padding:6px 0; color:#ffffff; opacity:50%;'><em>${currentLang === "en" ? "No menu available" : "Belum ada menu"}</em></div>`;
     }
 
@@ -1069,6 +1061,69 @@ const menuDiv = document.getElementById("dMenu");
             container.appendChild(item);
         });
     }
+    
+// const menuDiv = document.getElementById("dMenu");
+//     menuDiv.innerHTML = "";
+    
+//     let menuItems = [];
+//     if (Array.isArray(v.menu)) {
+//         menuItems = v.menu;
+//     } else if (typeof v.menu === 'string') {
+//         // Memisahkan berdasarkan koma atau enter (baris baru)
+//         menuItems = v.menu.split(/,|\n/); 
+//     }
+
+//     // Membersihkan item yang kosong atau berisi teks contoh
+//     const validMenu = menuItems.filter(m => m.trim() !== "" && !m.includes("Contoh Menu"));
+
+//     if (validMenu.length > 0) {
+//         if (currentLang === "en") {
+//             // 1. Tampilkan teks loading sementara API bekerja
+//             menuDiv.innerHTML = "<div style='padding:6px 0; color:#888;'><em>Translating menu...</em></div>";
+            
+//             const textToTranslate = validMenu.join(" | "); // Gunakan karakter unik
+
+//             translateDynamicText(textToTranslate, "en").then(translatedText => {
+//             menuDiv.innerHTML = ""; 
+    
+//             // API kadang mengembalikan "Item1 | Item2" (dengan spasi di sekitar |) 
+//             // atau "Item1|Item2". Jadi kita split pakai regex:
+//             const translatedItems = translatedText.split(/\s*\|\s*/); 
+    
+//         translatedItems.forEach(m => {
+//         if (m.trim() !== "") {
+//             const item = document.createElement("div");
+//             item.innerText = "• " + m.trim();
+//             item.style.padding = "6px 0"; 
+//             item.style.borderBottom = "1px solid #00491a";
+//             menuDiv.appendChild(item);
+//                     }
+//                 });
+//             }).catch(err => {
+//                 console.error("Gagal translate menu:", err);
+//                 renderOriginalMenu(validMenu, menuDiv); // Fallback ke teks asli jika API error
+//             });
+
+//         } else {
+//             // Jika bahasa Indonesia (ID), langsung render teks asli
+//             renderOriginalMenu(validMenu, menuDiv);
+//         }
+//     } else {
+//         // Jika tidak ada menu sama sekali
+//         menuDiv.innerHTML = `<div style='padding:6px 0; color:#ffffff; opacity:50%;'><em>${currentLang === "en" ? "No menu available" : "Belum ada menu"}</em></div>`;
+//     }
+
+//     // === Fungsi Bantuan (Helper) agar kode tidak berulang ===
+//     function renderOriginalMenu(items, container) {
+//         container.innerHTML = "";
+//         items.forEach(m => {
+//             const item = document.createElement("div");
+//             item.innerText = "• " + m.trim();
+//             item.style.padding = "6px 0"; 
+//             item.style.borderBottom = "1px solid #00491a";
+//             container.appendChild(item);
+//         });
+//     }
     
     const editBtn = document.getElementById("editProfilBtn");
     if (currentRole === 'vendor' && currentUser && !currentUser.isAnonymous && vendorId === currentUser.uid) {
@@ -1199,15 +1254,8 @@ const translations = {
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 Gerobak Saya",
         btn_logout: "🚪 Keluar",
-        //safe spots
         spot_green_name: "🟢 Zona Gerobak",
-        spot_green_desc: "Lokasi aman untuk mangkal",
-        // spot_green_name: "🟢 Zona Ramah Gerobak",
-        // spot_green_desc: "Lokasi yang relatif aman untuk mangkal. Biasanya cukup luas, tidak terlalu dekat dengan jalan, dan jarang ada pengawasan atau razia.",
-        spot_yellow_name: "🟡 Zona Fleksibel",
-        spot_yellow_desc: "Lokasi yang bisa digunakan untuk berjualan dalam waktu terbatas atau pada jam tertentu. Pedagang perlu waspada dan siap berpindah.",
-        spot_red_name: "🔴 Zona Risiko Tinggi",
-        spot_red_desc: "Lokasi dengan risiko tinggi seperti lalu lintas padat, sering ada patroli keamanan, atau larangan berjualan. Disarankan untuk menghindari area ini.",
+        spot_green_desc: "Area ini menyediakan zona khusus untuk tempat mangkal gerobak yang aman!",
         title_edit_profil: "EDIT PROFIL GEROBAK",
         lbl_nama_gerobak: "Nama Gerobak:",
         lbl_foto_gerobak: "Foto Gerobak:",
@@ -1245,15 +1293,8 @@ const translations = {
         btn_stop: "🛑 Stop",
         btn_my_cart: "🏠 My Cart",
         btn_logout: "🚪 Logout",
-        //safe spots
         spot_green_name: "🟢 Gerobak Zone",
-        spot_green_desc: "A safe location for stationed gerobak",
-        // spot_green_name: "🟢 Gerobak Friendly Zone",
-        // spot_green_desc: "A relatively safe location for stationed gerobak. Usually quite spacious, not too close to the road, and rarely subject to surveillance or raids.",
-        spot_yellow_name: "🟡 Flexible Zone",
-        spot_yellow_desc: "Locations that can be used for selling for a limited time or at specific hours. Vendors need to be ready to move not to crowd the space.",
-        spot_red_name: "🔴 High Risk Zone",
-        spot_red_desc: "High-risk locations, such as heavy traffic, frequent security patrols, or sales restrictions, are recommended to be avoided.",
+        spot_green_desc: "This area provides designated zones for gerobak vendors to station safely!",
         title_edit_profil: "EDIT GEROBAK PROFILE",
         lbl_nama_gerobak: "Gerobak Name:",
         lbl_foto_gerobak: "Gerobak Photo:",
@@ -1318,7 +1359,7 @@ function setLanguage(lang) {
     }
 
     // --- TAMBAHKAN INI AGAR POPUP MAP IKUT BERUBAH ---
-    if (currentRole === 'vendor' && map && map.hasLayer(safeSpotsLayer)) {
+    if (map && (map.hasLayer(safeSpotsCirclesLayer) || map.hasLayer(safeSpotsMarkersLayer))) {
         renderSafeSpots();
     }
 }
