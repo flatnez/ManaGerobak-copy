@@ -503,7 +503,7 @@ auth.onAuthStateChanged(user => {
 });
 
 function logout() {
-    if (confirm("Keluar dari akun Vendor?")) {
+    if (confirm(t('msg_logout_confirm'))) {
         if(watchID) navigator.geolocation.clearWatch(watchID);
         if(currentUser) db.ref("vendors/" + currentUser.uid).update({ isLive: false });
         
@@ -1269,7 +1269,8 @@ const translations = {
         lbl_edit_menu: "📋 Daftar Menu:",
         ph_menu: "Tulis menu di sini... (Tekan 'Enter' untuk baris baru)",
         msg_delete_foto: "Apakah Anda yakin ingin menghapus foto gerobak?",
-        msg_stop_share: "Berhenti membagikan lokasi."
+        msg_stop_share: "Berhenti membagikan lokasi.",
+        msg_logout_confirm: "Keluar dari akun Vendor?"
     },
     en: {
         btn_search: "🔍 Search",
@@ -1309,7 +1310,8 @@ const translations = {
         lbl_edit_menu: "📋 Menu List:",
         ph_menu: "Write menu here... (Press 'Enter' for new line)",
         msg_delete_foto: "Are you sure you want to delete the street cart photo?",
-        msg_stop_share: "Stopped sharing location."
+        msg_stop_share: "Stopped sharing location.",
+        msg_logout_confirm: "Log out of Vendor account?"
     }
 };
 
