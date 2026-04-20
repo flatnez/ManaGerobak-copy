@@ -735,13 +735,45 @@ function loadVendorsOnMap() {
   if(!map) return;
   
   db.ref("vendors").on("value", snap => {
-    const data = snap.val();
+    // 1. Ambil data dari Firebase, jika kosong buat object baru {}
+    let data = snap.val() || {}; 
+    
+    // === 2. TAMBAHKAN DATA DUMMY DI SINI ===
+    // Gerobak Dummy 1 (Mangkal di dekat Safe Spot)
+    data["dummy_vendor_1"] = {
+        nama: "Gerobak Batagor Pak Bambang",
+        status: "mangkal",
+        jamBuka: "12:00",
+        jamTutup: "18:00",
+        pengumuman: "Will move tomorrow!",
+        menu: ["Batagor (Rp 7.000)", "Batagor + somay (Rp 12.000)"],
+        lat: 1.303000, // Koordinat diatur dekat Safe Spot pertama Anda
+        lng: 103.852300,
+        isLive: true,
+        gambar: "image/img-gerobak_batagor.jpeg"
+    };
+
+    // Gerobak Dummy 2 (Keliling)
+    data["dummy_vendor_2"] = {
+        nama: "Gerobak Es Podeng Wawan",
+        status: "keliling",
+        jamBuka: "13:00",
+        jamTutup: "17:00",
+        pengumuman: "Close every Sunday!",
+        menu: ["Es podeng (Rp 5.000)", "Es podeng komplit (Rp 8.000)"],
+        lat: 1.300500, // Koordinat diatur dekat Safe Spot kedua
+        lng: 103.854800,
+        isLive: true
+    };
+    // ========================================
+
     let activeVendorIds = [];
     
     if (data) {
         Object.keys(data).forEach(id => {
           const v = data[id];
           
+          // Pastikan gerobak punya kordinat dan sedang live
           if (!v.lat || !v.lng || v.isLive !== true) return;
           
           activeVendorIds.push(id); 
@@ -751,7 +783,6 @@ function loadVendorsOnMap() {
           let displayName = v.nama || t('default_cart_name'); 
           
           if (currentUser && !currentUser.isAnonymous && id === currentUser.uid) {
-             // Gunakan t() untuk menambahkan "(Anda)" atau "(You)"
              displayName += " (" + t('lbl_you') + ")";
           }
 
@@ -784,6 +815,7 @@ function loadVendorsOnMap() {
         });
     }
     
+    // Hapus marker yang sudah tidak aktif (offline)
     Object.keys(vendorMarkers).forEach(existingId => {
         if (!activeVendorIds.includes(existingId)) {
             map.removeLayer(vendorMarkers[existingId]);
