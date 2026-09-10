@@ -23,7 +23,7 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         position: sticky; top: 0;
         display: flex;
-        justify-content: space-between; /* Agar logo di kiri dan bahasa di kanan (jika di layar besar) */
+        justify-content: space-between;
         align-items: center;    
         flex-wrap: wrap; 
         z-index: 9999;
@@ -45,10 +45,10 @@
         height: 6.5px;
         margin: 6px 0 8px 0;
         width: 100%;
-        max-width: 180px; /* Menyesuaikan garis dengan panjang logo */
+        max-width: 180px;
     }
 
-    /* --- HEADER ACTIONS (Untuk Tombol Bahasa) --- */
+    /* --- HEADER ACTIONS --- */
     .header-actions { 
         display: flex; 
         gap: 8px; 
@@ -309,13 +309,11 @@ const translations = {
         btn_register: "Daftar Sekarang",
         btn_processing: "Memproses...",
         err_pwd_len: "Password harus minimal 6 karakter.",
-        err_email_used: "Email ini sudah terdaftar & terverifikasi. Silakan Login.",
-        err_login_diff: "Email sudah terdaftar. Jika Anda belum verifikasi, pastikan password yang dimasukkan SAMA persis seperti saat mendaftar pertama kali.",
+        err_email_used: "Email ini sudah terdaftar. Silakan Login.",
         err_invalid_email: "Format email tidak valid.",
         err_weak_pwd: "Password terlalu lemah.",
         err_fail: "Gagal daftar: ",
-        msg_success: "Pendaftaran berhasil!\n\nLink verifikasi telah dikirim ke email Anda. Harap cek Inbox atau folder Spam untuk mengaktifkan akun sebelum Login.",
-        msg_resend: "Email ini sebelumnya sudah didaftarkan tapi belum diverifikasi.\n\nLink verifikasi BARU telah berhasil dikirim ulang. Harap cek email Anda sekarang.",
+        msg_success: "Pendaftaran berhasil! Akun Anda telah dibuat.",
         txt_have_account: "Sudah punya akun?",
         link_login: "Login disini"
     },
@@ -327,13 +325,11 @@ const translations = {
         btn_register: "Register Now",
         btn_processing: "Processing...",
         err_pwd_len: "Password must be at least 6 characters.",
-        err_email_used: "This email is already registered & verified. Please Login.",
-        err_login_diff: "Email already registered. If not verified, ensure the password matches exactly as initially registered.",
+        err_email_used: "This email is already registered. Please Login.",
         err_invalid_email: "Invalid email format.",
         err_weak_pwd: "Password is too weak.",
         err_fail: "Registration failed: ",
-        msg_success: "Registration successful!\n\nA verification link has been sent to your email. Please check your Inbox or Spam folder to activate your account before logging in.",
-        msg_resend: "This email was previously registered but not verified.\n\nA NEW verification link has been resent. Please check your email now.",
+        msg_success: "Registration successful! Your account has been created.",
         txt_have_account: "Already have an account?",
         link_login: "Login here"
     }
@@ -366,7 +362,6 @@ function setLanguage(lang) {
     updateLanguageUI();
     document.getElementById("langDropdown").classList.remove("show-dropdown");
     
-    // Reset error messages if any
     const errorText = document.getElementById("errorText");
     if(errorText.style.display === "block") {
         errorText.style.display = "none";
@@ -411,12 +406,6 @@ function togglePasswordVisibility() {
     }
 }
 
-function showSuccessAndRedirect(isResend = false) {
-    let msg = isResend ? t("msg_resend") : t("msg_success");
-    alert(msg);
-    window.location.href = "login.html";
-}
-
 function signUp(e) {
   e.preventDefault(); 
 
@@ -426,74 +415,54 @@ function signUp(e) {
   const regBtn = document.getElementById("regBtn");
   const errorText = document.getElementById("errorText");
 
-  errorText.style.display = "none"; errorText.innerText = "";
+  errorText.style.display = "none"; 
+  errorText.innerText = "";
 
-  if (password.length < 6) { showError(t("err_pwd_len")); return; }
+  if (password.length < 6) { 
+      showError(t("err_pwd_len")); 
+      return; 
+  }
 
-  regBtn.innerText = t("btn_processing"); regBtn.disabled = true;
+  regBtn.innerText = t("btn_processing"); 
+  regBtn.disabled = true;
 
-  // Percobaan 1: Buat Akun Baru
+  // Buat Akun Baru Tanpa Verifikasi Email
   auth.createUserWithEmailAndPassword(email, password)
     .then(res => {
       const user = res.user;
-      return user.sendEmailVerification().then(() => {
-          return db.ref("vendors/" + user.uid).set({
-            idGerobak: gerobakId,
-            nama: gerobakId, 
-            email: email, 
-            lat: 0, lng: 0,
-            jamBuka: "08:00", jamTutup: "17:00",
-            status: "tutup",
-            menu: ["Contoh Menu 1", "Contoh Menu 2"], 
-            gambar: ""
-          });
-      }).then(() => {
-          return auth.signOut();
-      }).then(() => {
-          showSuccessAndRedirect(false);
+
+      // Simpan data vendor langsung ke Realtime Database
+      return db.ref("vendors/" + user.uid).set({
+        idGerobak: gerobakId,
+        nama: gerobakId, 
+        email: email, 
+        lat: 0, 
+        lng: 0,
+        jamBuka: "08:00", 
+        jamTutup: "17:00",
+        status: "tutup",
+        menu: ["Contoh Menu 1", "Contoh Menu 2"], 
+        gambar: ""
       });
     })
+    .then(() => {
+      alert(t("msg_success"));
+      window.location.href = "login.html";
+    })
     .catch(err => {
-        // Percobaan 2: Jika Email Sudah Ada, Cek Apakah Belum Verifikasi
-        if (err.code === "auth/email-already-in-use") {
-            
-            auth.signInWithEmailAndPassword(email, password)
-                .then(userCredential => {
-                    const user = userCredential.user;
-                    
-                    if (!user.emailVerified) {
-                        // Jika belum verifikasi, kirim ulang link dan update nama gerobak jika diganti
-                        user.sendEmailVerification().then(() => {
-                            return db.ref("vendors/" + user.uid).update({
-                                idGerobak: gerobakId,
-                                nama: gerobakId
-                            });
-                        }).then(() => {
-                            return auth.signOut();
-                        }).then(() => {
-                            showSuccessAndRedirect(true);
-                        });
-                    } else {
-                        // Jika ternyata sudah verifikasi, larang daftar ulang
-                        auth.signOut();
-                        regBtn.innerText = t("btn_register"); regBtn.disabled = false;
-                        showError(t("err_email_used"));
-                    }
-                })
-                .catch(loginErr => {
-                    // Jika login gagal (contoh: user masukkin password beda dari saat pertama daftar)
-                    regBtn.innerText = t("btn_register"); regBtn.disabled = false;
-                    showError(t("err_login_diff"));
-                });
+      regBtn.innerText = t("btn_register"); 
+      regBtn.disabled = false;
+      console.error(err);
 
-        } else {
-            // Error pendaftaran lainnya
-            regBtn.innerText = t("btn_register"); regBtn.disabled = false;
-            console.error(err);
-            if (err.code === "auth/invalid-email") { showError(t("err_invalid_email")); } 
-            else if (err.code === "auth/weak-password") { showError(t("err_weak_pwd")); } 
-            else { showError(t("err_fail") + err.message); }
-        }
+      if (err.code === "auth/email-already-in-use") { 
+          showError(t("err_email_used")); 
+      } else if (err.code === "auth/invalid-email") { 
+          showError(t("err_invalid_email")); 
+      } else if (err.code === "auth/weak-password") { 
+          showError(t("err_weak_pwd")); 
+      } else { 
+          showError(t("err_fail") + err.message); 
+      }
     });
 }
 

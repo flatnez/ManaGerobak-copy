@@ -240,25 +240,25 @@ const gerobakZoneIcon = L.icon({
 // === DATA SAFE SPOTS & LAYER GROUP ===
 const safeSpotsData = [
     { 
-        lat: 1.303100, lng: 103.851900, 
+        lat: -6.22842, lng: 106.80591, 
         type: 'green', 
         nameKey: 'spot_green_name', 
         descKey: 'spot_green_desc' 
     },
     { 
-        lat: 1.300500, lng: 103.854900, 
+        lat: -6.16491, lng: 106.79742, 
         type: 'green', 
         nameKey: 'spot_green_name', 
         descKey: 'spot_green_desc' 
     },
     { 
-        lat: 1.301950, lng: 103.858900, 
+        lat: -6.23020, lng: 106.80735, 
         type: 'green', 
         nameKey: 'spot_green_name', 
         descKey: 'spot_green_desc' 
     },
     { 
-        lat: 1.297500, lng: 103.849900, 
+        lat: -6.16942, lng: 106.78518,
         type: 'green', 
         nameKey: 'spot_green_name', 
         descKey: 'spot_green_desc' 
@@ -295,7 +295,7 @@ function renderSafeSpots() {
 
         // 1. Buat Lingkaran
         const areaCircle = L.circle([spot.lat, spot.lng], {
-            color: spotColor, fillColor: spotColor, fillOpacity: fillOpacity, weight: 2, radius: 50
+            color: spotColor, fillColor: spotColor, fillOpacity: fillOpacity, weight: 2, radius: 70
         });
         areaCircle.bindPopup(popupContent);
         safeSpotsCirclesLayer.addLayer(areaCircle);
@@ -753,28 +753,42 @@ function loadVendorsOnMap() {
     // === 2. TAMBAHKAN DATA DUMMY DI SINI ===
     // Gerobak Dummy 1 (Mangkal di dekat Safe Spot)
     data["dummy_vendor_1"] = {
-        nama: "Gerobak Batagor Pak Bambang",
+        nama: "Gerobak Batagor Pak Bambang (Dummy)",
         status: "mangkal",
         jamBuka: "12:00",
         jamTutup: "18:00",
         pengumuman: "Will move tomorrow!",
         menu: ["Batagor (Rp 7.000)", "Batagor + somay (Rp 12.000)"],
-        lat: 1.303000, // Koordinat diatur dekat Safe Spot pertama Anda
-        lng: 103.852300,
+        lat: -6.23015, // Koordinat diatur dekat Safe Spot pertama Anda
+        lng: 106.80742,
         isLive: true,
         gambar: "image/img-gerobak_batagor.jpeg"
     };
 
-    // Gerobak Dummy 2 (Keliling)
+    // Gerobak Dummy 2 (Mangkal di dekat Safe Spot)
     data["dummy_vendor_2"] = {
-        nama: "Gerobak Es Podeng Wawan",
+        nama: "Gerobak Mie Yanto (Dummy)",
+        status: "mangkal",
+        jamBuka: "11:00",
+        jamTutup: "18:00",
+        pengumuman: "Away for an event on Sunday",
+        menu: ["Mie polos (Rp 8.000)", "Mie Special (Rp 12.000)"],
+        lat: -6.16935,
+        lng: 106.78525,
+        isLive: true,
+        gambar: "image/img-gerobak_mie.jpeg"
+    };
+
+    // Gerobak Dummy 3 (Keliling)
+    data["dummy_vendor_3"] = {
+        nama: "Gerobak Es Podeng Siti (Dummy)",
         status: "keliling",
         jamBuka: "13:00",
         jamTutup: "17:00",
-        pengumuman: "Close every Sunday!",
+        pengumuman: "Will not roam around X area tomorrow!",
         menu: ["Es podeng (Rp 5.000)", "Es podeng komplit (Rp 8.000)"],
-        lat: 1.300500, // Koordinat diatur dekat Safe Spot kedua
-        lng: 103.854800,
+        lat: -6.22761, // Koordinat diatur dekat Safe Spot kedua
+        lng: 106.80814,
         isLive: true
     };
     // ========================================
